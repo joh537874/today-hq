@@ -1,14 +1,15 @@
 import React, { useEffect, useMemo, useReducer, useState, useRef } from 'react'
 import { BEATS, CHAPTERS, ENDINGS, THRESHOLD } from './story.js'
 import Scene from './Scene.jsx'
-import { ActButton, useTypewriter, ChapterCard, RelationFlash, GlitchNum } from './ui.jsx'
+import { ActButton, useTypewriter, ChapterCard, GlitchNum } from './ui.jsx'
 
 const PASSIVE = ['narr', 'line', 'term', 'news', 'notify']
 
 const initial = {
   started: false, idx: 0, log: [], hq: 81, ai: 0, std: 0,
   picks: [], route: null, final: null, set: {}, shake: 0,
-  lastRelation: null, // { who, direction } — 선택 후 관계 플래시
+  lastRelation: null,
+  lastReact: null, // { who, text, sign } 선택 직후 상대의 반응
   history: [], // 뒤로가기용 스냅샷
   hqLog: [], // HQ 변동 기록 { at, from, to, why }
 }
@@ -93,6 +94,7 @@ function reducer(state, a) {
         log: [...state.log, beat.who === '나' ? { kind: 'narr', text: beat.prompt } : { kind: 'line', who: beat.who, text: beat.prompt }, { kind: 'me', text: opt.text }],
         shake: state.shake + 1,
         lastRelation: relAxis ? { who: RELATION_NAMES[relAxis] || relAxis, direction: opt.sign } : null,
+        lastReact: opt.react ? { ...opt.react, sign: opt.sign } : null,
       }
       return enter(s, state.idx + 1)
     }
@@ -228,16 +230,14 @@ function Game({ state, beat, dispatch }) {
   })
 
   const chapter = CHAPTERS[beat.chapter - 1]
-  const interactive = ['gate', 'glance', 'bell', 'letter'].includes(beat.type)
+  const interactive = ['gate', 'glance', 'bell', 'letter', 'rewind'].includes(beat.type)
 
   return (
     <div className="game">
       <Scene beat={beat} set={state.set} hq={state.hq} next={next} dispatch={dispatch} reply={reply} onReply={sendReply} picks={state.picks} />
 
       {/* 관계 변화 플래시 */}
-      {state.lastRelation && (
-        <RelationFlash key={state.shake} who={state.lastRelation.who} direction={state.lastRelation.direction} />
-      )}
+      {state.lastReact && <ReactionToast key={state.shake} react={state.lastReact} />}
 
       {/* 상단 HUD */}
       <header className="top">
@@ -379,6 +379,24 @@ function HQReport({ state, onClose }) {
           ))}
         </ul>
       </aside>
+    </div>
+  )
+}
+
+// 선택 직후 상대의 반응 한 줄. 몇 초 뒤 스스로 사라진다.
+function ReactionToast({ react }) {
+  const [out, setOut] = useState(false)
+  const [gone, setGone] = useState(false)
+  useEffect(() => {
+    const a = setTimeout(() => setOut(true), 3200)
+    const b = setTimeout(() => setGone(true), 3700)
+    return () => { clearTimeout(a); clearTimeout(b) }
+  }, [])
+  if (gone) return null
+  return (
+    <div className={`react-toast ${out ? 'out' : ''} ${react.sign > 0 ? 'warm' : 'cool'}`}>
+      <span className="rt-avatar">{react.who.slice(0, 1)}</span>
+      <div><small>{react.who}</small><p>{react.text}</p></div>
     </div>
   )
 }
@@ -563,6 +581,7 @@ function Epilogue({ state, dispatch }) {
 }
 
 const HINTS = {
+  rewind: '오늘 하루가 스쳐 지나갑니다. 눌러서 넘길 수 있어요',
   gate: '카메라로 스캔을 눌러 측정하세요',
   glance: '승객 위에 마우스를 올려보세요',
   bell: '초인종을 누르세요',
@@ -608,11 +627,8 @@ function Ending({ state, onBack, onRestart }) {
 
       <section className="end-side">
         <div className="end-card">
-          <div className="ec-head">
-            <svg viewBox="0 0 16 16" width="12" height="12"><path d="M8 1 L15 8 L8 15 L1 8 Z" className="end" /></svg>
-            두 개의 질문 위의 나
-          </div>
-          <AxisChart pos={pos} />
+          <div className="ec-head">두 개의 질문 위의 나</div>
+          <Quadrant pos={pos} current={state.final} />
           <div className="axis-sum">
             <span><i className="dot ai" />AI 축 <b>{fmt(state.ai)}</b></span>
             <span><i className="dot std" />기준 축 <b>{fmt(state.std)}</b></span>
@@ -620,16 +636,13 @@ function Ending({ state, onBack, onRestart }) {
           </div>
         </div>
         <div className="end-card picks-card">
-          <div className="ec-head">
-            <svg viewBox="0 0 16 16" width="12" height="12"><path d="M8 1 L15 8 L8 15 L1 8 Z" className="ai" /></svg>
-            내가 한 선택
-          </div>
-          <ul className="picks">
+          <div className="ec-head">내가 한 선택</div>
+          <ul className="picks2">
             {state.picks.map((p) => (
               <li key={p.id}>
-                <svg viewBox="0 0 10 10" width="8" height="8"><path d="M5 1 L9 5 L5 9 L1 5 Z" className={p.axis} /></svg>
-                <span className="pick-title">{p.num} {p.title}</span>
-                <span className="pick-text">{p.text}</span>
+                <span className={`pk-axis ${p.axis}`}>{p.axis === 'ai' ? 'AI' : '기준'}</span>
+                <span className="pk-title">{p.title}</span>
+                <span className="pk-text">{p.text}</span>
                 <b className={p.delta > 0 ? 'plus' : 'minus'}>{fmt(p.delta)}</b>
               </li>
             ))}
@@ -646,6 +659,31 @@ function Ending({ state, onBack, onRestart }) {
         </button>
         </div>
       </section>
+    </div>
+  )
+}
+
+const QUADS = [
+  { key: 'zealot', name: 'The Zealot', ko: 'AI 적대 · HQ 맹신' },
+  { key: 'adapter', name: 'The Adapter', ko: 'AI 인정 · HQ 인정' },
+  { key: 'outlier', name: 'The Outlier', ko: 'AI 적대 · HQ 거부' },
+  { key: 'insurgent', name: 'The Insurgent', ko: 'AI 인정 · HQ 거부' },
+]
+function Quadrant({ pos, current }) {
+  const x = 50 + Math.max(-1, Math.min(1, pos.x)) * 42
+  const y = 50 - Math.max(-1, Math.min(1, pos.y)) * 42
+  return (
+    <div className="quad">
+      <span className="qa top">수긍</span><span className="qa bottom">반대</span>
+      <span className="qa left">배척</span><span className="qa right">포용</span>
+      <div className="quad-grid">
+        {QUADS.map((q) => (
+          <div key={q.key} className={`quad-cell ${q.key === current ? 'on' : ''}`}>
+            <b>{q.name}</b><small>{q.ko}</small>
+          </div>
+        ))}
+        <i className="quad-me" style={{ left: `${x}%`, top: `${y}%` }}><em>나</em></i>
+      </div>
     </div>
   )
 }
