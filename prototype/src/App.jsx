@@ -160,7 +160,7 @@ function Title({ onStart }) {
       <div className="title-info">
         <div className="title-stat"><span className="ts-label">플레이</span><span className="ts-val">약 5분</span></div>
         <div className="title-divider" />
-        <div className="title-stat"><span className="ts-label">선택</span><span className="ts-val">7회 · 12초 제한</span></div>
+        <div className="title-stat"><span className="ts-label">선택</span><span className="ts-val">7회</span></div>
         <div className="title-divider" />
         <div className="title-stat"><span className="ts-label">엔딩</span><span className="ts-val">4개</span></div>
       </div>
@@ -302,35 +302,11 @@ function Speech({ entry, typing }) {
   )
 }
 
-// 디트로이트식 다이아몬드 선택 — 중앙 프롬프트, 양쪽에 선택지
-const CHOICE_TIME = 12000
-
 function DiamondChoice({ beat, onPick }) {
   const [hover, setHover] = useState(null)
-  const [elapsed, setElapsed] = useState(0)
-  const startRef = useRef(Date.now())
-  const picked = useRef(false)
-
-  useEffect(() => {
-    const tick = () => {
-      if (picked.current) return
-      const e = Date.now() - startRef.current
-      setElapsed(e)
-      if (e >= CHOICE_TIME) { picked.current = true; onPick(Math.floor(Math.random() * beat.options.length)); return }
-      requestAnimationFrame(tick)
-    }
-    const raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(raf)
-  }, []) // eslint-disable-line
-
-  const handlePick = (i) => { if (!picked.current) { picked.current = true; onPick(i) } }
-  const remain = Math.max(0, 1 - elapsed / CHOICE_TIME)
-  const warning = remain < 0.25
-  const secs = Math.ceil((CHOICE_TIME - elapsed) / 1000)
 
   return (
     <div className="diamond-choice">
-      {/* 중앙 다이아몬드 + 프롬프트 */}
       <div className="dc-center">
         <div className="dc-meta">
           <svg viewBox="0 0 20 20" width="14" height="14"><path d="M10 2 L18 10 L10 18 L2 10 Z" className={beat.axis} /></svg>
@@ -344,23 +320,14 @@ function DiamondChoice({ beat, onPick }) {
         <div className={`dc-inner ${hover != null ? 'on' : ''}`}>
           {hover != null ? beat.options[hover].inner : ''}
         </div>
-        {/* 타이머 링 */}
-        <svg className={`dc-timer ${warning ? 'warning' : ''}`} viewBox="0 0 60 60" width="52" height="52">
-          <circle cx="30" cy="30" r="26" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="2" />
-          <circle cx="30" cy="30" r="26" fill="none" stroke="currentColor" strokeWidth="2"
-            strokeDasharray={`${remain * 163.36} 163.36`}
-            strokeLinecap="round" transform="rotate(-90 30 30)" />
-          <text x="30" y="34" textAnchor="middle" fontSize="16" fill="currentColor">{secs}</text>
-        </svg>
       </div>
 
-      {/* 선택지 — 양쪽 배치 */}
       <div className="dc-opts">
         {beat.options.map((o, i) => (
           <button
             key={i}
             className={`dc-opt dc-opt-${i}`}
-            onClick={() => handlePick(i)}
+            onClick={() => onPick(i)}
             onPointerEnter={() => setHover(i)}
             onPointerLeave={() => setHover(null)}
           >
