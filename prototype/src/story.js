@@ -118,7 +118,6 @@ const raw = [
   { when: (s) => s.route === 'A', set: { hands: true, panel: true, open: true }, shot: 'door-chloe', ...L('클로이', '“아, 말한다는 게… 애들이 기준 못 낮춘대. 조금만 올려서 오면 안 돼?”') },
   { when: (s) => s.route === 'A', type: 'letter', lines: ['SNS가 시키는 대로 쓴 문장들.', '카페에서 일부러 삼킨 대답.', '지하철에서 연습한 말투.', '오늘 하루 한 모든 일이 이 문 하나를 열기 위한 것이었다.'] },
   { when: (s) => s.route === 'A', set: { hands: true, panel: true, open: true, nine: true }, shot: 'door-nine', ...L('나인', '“꼭 들어가고 싶으신 거예요?”') },
-  { when: (s) => s.route === 'A', type: 'rewind' },
   {
     when: (s) => s.route === 'A', type: 'final', shot: 'door-chloe', num: '⑧', title: '문 앞의 선택',
     who: '클로이', prompt: '“조금만 올려서 오면 안 돼?”',
@@ -133,7 +132,6 @@ const raw = [
   { when: (s) => s.route === 'B', set: { hands: true, panel: true, memory: true }, ...L('줄리안', '“HQ를 올리는 건 쉬워. AI 몸 안에 있는 휴미터를 꺼내서 끼우면 돼.”') },
   { when: (s) => s.route === 'B', set: { hands: true, panel: true, nine: true }, shot: 'door-nine', ...N('나인을 바라본다. 나인은 아무것도 모르는 얼굴로 서 있다.') },
   { when: (s) => s.route === 'B', type: 'message', from: '클로이', text: '언제 와? 다들 기다려.', replies: [], set: { hands: true, panel: true, nine: true } },
-  { when: (s) => s.route === 'B', type: 'rewind' },
   {
     when: (s) => s.route === 'B', type: 'final', num: '⑧', title: '문 앞의 선택',
     who: '나', prompt: '문은 닫혀 있고, 나인은 옆에 서 있다.',

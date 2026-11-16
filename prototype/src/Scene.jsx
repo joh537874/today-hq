@@ -25,7 +25,6 @@ export default function Scene({ beat, set, hq, next, dispatch, reply, onReply, p
         {beat.type === 'gate' && <Gate key={beat.at} beat={beat} hq={hq} next={next} />}
         {beat.type === 'term' && beat.scene !== 'home' && <Term key={beat.term} beat={beat} />}
         {beat.type === 'letter' && <Letter beat={beat} next={next} picks={picks} />}
-        {beat.type === 'rewind' && <Rewind picks={picks} next={next} />}
 
         {/* 1인칭 HUD — 화면 모서리 장식 */}
         <div className="hud-corner hud-tl" />
@@ -462,38 +461,6 @@ function Letter({ beat, next, picks }) {
           </div>
         </div>
       )}
-    </div>
-  )
-}
-
-// 문 앞, 마지막 선택 직전. 오늘 하루 고른 대답들이 장면 사진과 함께 차례로 스쳐 지나간다.
-const PICK_SHOT = { c1: 'cafe2', c2: 'cafe-man', c3: 'street2', c4: 'street-jae', c6: 'subway-child', c7a: 'ref-julian-subway', c7b: 'ref-julian-subway' }
-
-function Rewind({ picks, next }) {
-  const [n, setN] = useState(0)
-  const done = n >= picks.length
-  useEffect(() => {
-    if (done) return
-    const t = setTimeout(() => setN((v) => v + 1), n === 0 ? 700 : 850)
-    return () => clearTimeout(t)
-  }, [n, done])
-  const finish = () => (done ? next({ kind: 'narr', text: '오늘 하루 한 모든 대답이 이 문 앞에 모여 있다.' }) : setN(picks.length))
-  return (
-    <div className="rewind" onClick={finish}>
-      <div className="rw-head">
-        <span>Rewind · Today</span>
-        <h3>이 문을 열기 위해 한 대답들</h3>
-      </div>
-      <div className="rw-strip">
-        {picks.map((p, i) => (
-          <div key={p.id} className={`rw-card ${i < n ? 'on' : ''}`} style={{ '--i': i }}>
-            <div className="rw-img" style={{ backgroundImage: `url(${import.meta.env.BASE_URL}img/${PICK_SHOT[p.id]}.jpg)` }} />
-            <div className="rw-meta"><i className={`rw-dot ${p.axis}`} />{p.title}</div>
-            <p>{p.text}</p>
-          </div>
-        ))}
-      </div>
-      <button className={`rw-next ${done ? 'on' : ''}`}>{done ? '문 앞으로 돌아온다' : '건너뛰기'}</button>
     </div>
   )
 }

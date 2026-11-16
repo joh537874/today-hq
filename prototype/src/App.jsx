@@ -234,7 +234,7 @@ function Game({ state, beat, dispatch }) {
   })
 
   const chapter = CHAPTERS[beat.chapter - 1]
-  const interactive = ['gate', 'glance', 'bell', 'letter', 'rewind'].includes(beat.type)
+  const interactive = ['gate', 'glance', 'bell', 'letter'].includes(beat.type)
 
   return (
     <div className="game">
@@ -593,7 +593,6 @@ function Epilogue({ state, dispatch }) {
 }
 
 const HINTS = {
-  rewind: '오늘 하루가 스쳐 지나갑니다. 눌러서 넘길 수 있어요',
   gate: 'Scan Face를 눌러 측정하세요',
   glance: '승객 위에 마우스를 올려보세요',
   bell: '초인종을 누르세요',
