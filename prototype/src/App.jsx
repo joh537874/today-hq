@@ -167,14 +167,24 @@ function Title({ onStart }) {
   const [phase, setPhase] = useState('idle')
   useEffect(() => { const t = setTimeout(() => setPhase('reveal'), 300); return () => clearTimeout(t) }, [])
   return (
-    <div className={`title ${phase}`}>
+    <div className={`title cover ${phase}`}>
       <div className="title-photo" style={{ backgroundImage: `url(${import.meta.env.BASE_URL}img/ref-city1.jpg)` }} />
-      <div className="tt-block">
-        <span className="tt-eyebrow">Interactive Story · 2069</span>
-        <h1>오늘의 HQ</h1>
-        <p>인간다움이 숫자로 매겨지는 도시.<br />친구의 생일 모임에 가는 하루를 따라갑니다.</p>
-        <button className="title-start" onClick={onStart}>시작하기</button>
-        <small className="tt-meta">약 5분 · 선택 7번 · 결말 4개 · Space로 진행</small>
+
+      <div className="cv-top">
+        <span>Seoul, 2069</span>
+        <span>An Interactive Story</span>
+      </div>
+
+      <div className="cv-bottom">
+        <div className="cv-title">
+          <em>Humanity Quotient</em>
+          <h1>오늘의 HQ</h1>
+          <p>인간다움이 숫자로 매겨지는 도시, 친구의 생일 모임에 가는 하루</p>
+        </div>
+        <div className="cv-start">
+          <small>5 min · 7 choices · 4 endings</small>
+          <button className="cv-btn" onClick={onStart}>시작하기<i>→</i></button>
+        </div>
       </div>
     </div>
   )
@@ -196,7 +206,7 @@ function Game({ state, beat, dispatch }) {
   // 화면 패널에 이미 같은 문장이 떠 있는 비트는 대화창에 짧은 서술만 둔다
   const CAPTION = {
     news: '밤 11시, 뉴스 속보가 뜬다.',
-    term: `앵커가 ‘${beat.term}’을 짚어 준다.`,
+    term: `앵커가 ‘${beat.term}’를 짚어 준다.`,
     notify: '아침, 휴미터 알림이 울린다.',
     message: `${beat.from}에게서 메시지가 왔다.`,
   }[beat.type]

@@ -50,47 +50,35 @@ function Home({ beat, set }) {
 }
 
 // 프롤로그 뉴스. 화면이 TV로 다가가고, 방송 화면이 장면을 가득 채운다.
+const TERM_NO = { 휴미터: 1, HQ: 2, 크로스오버: 3 }
+
 function Broadcast({ beat }) {
   const term = beat.type === 'term'
   return (
-    <div className="bc">
-      <div className="bc-screen">
-        <div className="bc-top">
-          <div className="bc-bug"><i />LIVE<span>HQN 뉴스</span></div>
-          <div className="bc-clock">2069. 3. 14 · 23:48</div>
-        </div>
+    <div className="bc2">
+      <div className="bc2-bug"><i />LIVE<span>HQN</span><em>2069. 3. 14 · 23:48</em></div>
 
-        {term ? (
-          <div className="bc-body" key={beat.term}>
-            <div className="bc-eyebrow">용어 해설</div>
-            <div className="bc-term-card">
-              <div className="bc-dot-title"><i className="ai" />{beat.en}</div>
-              <h3>{beat.term}</h3>
-              <p>{beat.text}</p>
-            </div>
-          </div>
-        ) : (
-          <div className="bc-body">
-            <div className="bc-eyebrow">Breaking News</div>
-            <h2 className="bc-title">AI 평균 HQ가 인간을 넘어섰습니다</h2>
-            <div className="bc-cards">
-              <div className="bc-card">
-                <div className="bc-dot-title"><i className="ai" />AI 평균</div>
-                <b className="ai"><Count to={82} /></b>
-              </div>
-              <div className="bc-cross">크로스오버</div>
-              <div className="bc-card">
-                <div className="bc-dot-title"><i className="human" />인간 평균</div>
-                <b><Count to={81} /></b>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="bc-foot">
-          <span className="bc-tag">속보</span>
-          <div className="bc-ticker"><span>관측 이래 처음으로 AI가 인간을 넘어섰습니다 · HQ 관리국 “기준 재검토 착수” · 내일부터 관리국 기준 v.48 적용 · 주요 매장 입장 기준 상향 예정 · 관측 이래 처음으로 AI가 인간을 넘어섰습니다 · HQ 관리국 “기준 재검토 착수” · 내일부터 관리국 기준 v.48 적용 · 주요 매장 입장 기준 상향 예정 ·&nbsp;</span></div>
+      {term ? (
+        <div className="bc2-main" key={beat.term}>
+          <div className="bc2-eyebrow">Glossary · {String(TERM_NO[beat.term]).padStart(2, '0')} / 03</div>
+          <div className="bc2-term"><em>{beat.en}</em><h3>{beat.term}</h3></div>
+          <p className="bc2-desc">{beat.text}</p>
         </div>
+      ) : (
+        <div className="bc2-main">
+          <div className="bc2-eyebrow">Breaking News</div>
+          <h2 className="bc2-title">AI 평균 HQ가 인간을 넘어섰습니다</h2>
+          <div className="bc2-versus">
+            <div><span><i className="ai" />AI 평균</span><b className="ai"><Count to={82} /></b></div>
+            <div className="bc2-cross">Crossover</div>
+            <div><span><i className="human" />인간 평균</span><b><Count to={81} /></b></div>
+          </div>
+        </div>
+      )}
+
+      <div className="bc2-ticker">
+        <span className="bc2-tag">속보</span>
+        <div className="bc2-run"><span>관측 이래 처음으로 AI가 인간을 넘어섰습니다 · HQ 관리국 “기준 재검토 착수” · 내일부터 관리국 기준 v.48 적용 · 주요 매장 입장 기준 상향 예정 · 관측 이래 처음으로 AI가 인간을 넘어섰습니다 · HQ 관리국 “기준 재검토 착수” · 내일부터 관리국 기준 v.48 적용 · 주요 매장 입장 기준 상향 예정 ·&nbsp;</span></div>
       </div>
     </div>
   )
