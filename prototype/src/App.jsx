@@ -176,10 +176,12 @@ function Title({ onStart }) {
       </div>
 
       <div className="cv-bottom">
-        <div className="cv-title">
-          <em>Humanity Quotient</em>
-          <h1>오늘의 HQ</h1>
-          <p>인간다움이 숫자로 매겨지는 도시, 친구의 생일 모임에 가는 하루</p>
+        <div className="cv-logo">
+          <span className="cv-hq">HQ</span>
+          <div className="cv-hq-side">
+            <b>Human quotient</b>
+            <p>인간다움에 점수가 매겨지는 도시</p>
+          </div>
         </div>
         <div className="cv-start">
           <small>5 min · 7 choices · 4 endings</small>
