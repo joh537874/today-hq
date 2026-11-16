@@ -10,6 +10,7 @@ const initial = {
   picks: [], route: null, final: null, set: {}, shake: 0,
   lastRelation: null, // { who, direction } — 선택 후 관계 플래시
   history: [], // 뒤로가기용 스냅샷
+  hqLog: [], // HQ 변동 기록 { at, from, to, why }
 }
 
 function logOf(beat) {
@@ -42,6 +43,7 @@ function enter(state, from) {
   const beat = BEATS[i]
   if (!beat) return s
   s.idx = i
+  if (beat.hq != null && beat.hq !== s.hq) s.hqLog = [...s.hqLog, { at: beat.place, from: s.hq, to: beat.hq, why: beat.hqWhy ?? '' }]
   if (beat.hq != null) s.hq = beat.hq
   if (beat.sceneChanged) s.set = beat.set ?? {}
   else if (beat.set) s.set = beat.set
@@ -65,7 +67,7 @@ function snap(state) {
 
 function reducer(state, a) {
   switch (a.type) {
-    case 'START': return enter({ ...initial, started: true, history: [], log: [{ kind: 'place', text: '1장 · 집' }] }, 0)
+    case 'START': return enter({ ...initial, started: true, history: [], hqLog: [{ at: '어제', from: null, to: 81, why: '마지막 정기 측정' }], log: [{ kind: 'place', text: '1장 · 집' }] }, 0)
     case 'RESTART': return initial
     case 'BACK': {
       if (state.history.length === 0) return state
@@ -101,7 +103,7 @@ function reducer(state, a) {
       return enter(s, state.idx + 1)
     }
     case 'LOG': return { ...state, log: [...state.log, ...[].concat(a.log)] }
-    case 'HQ': return { ...state, hq: a.hq, shake: state.shake + 1 }
+    case 'HQ': return { ...state, hq: a.hq, shake: state.shake + 1, hqLog: a.hq === state.hq ? state.hqLog : [...state.hqLog, { at: BEATS[state.idx]?.place ?? '', from: state.hq, to: a.hq, why: a.why ?? '' }] }
     case 'SET': return { ...state, set: { ...state.set, ...a.set } }
     default: return state
   }
@@ -192,6 +194,7 @@ function Title({ onStart }) {
 
 function Game({ state, beat, dispatch }) {
   const next = (log) => dispatch({ type: 'NEXT', log })
+  const [report, setReport] = useState(false)
   // 휴대폰 답장. 고른 답장이 화면에 전송된 뒤 다음으로 넘어간다.
   const [reply, setReply] = useState(null)
   useEffect(() => { setReply(null) }, [state.idx])
@@ -212,8 +215,11 @@ function Game({ state, beat, dispatch }) {
 
   useEffect(() => {
     const onKey = (e) => {
-      if (e.repeat) return
-      if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); advance() }
+      if (e.repeat || e.target.closest?.('input, textarea')) return
+      if (!report && (e.code === 'Space' || e.code === 'Enter')) { e.preventDefault(); advance() }
+      if (e.key === 'h' || e.key === 'H' || e.key === 'ㅗ') { setReport((v) => !v); return }
+      if (e.key === 'Escape') { setReport(false); return }
+      if (report) return
       if ((e.key === 'ArrowLeft' || e.key === 'Backspace') && state.history.length > 0) { e.preventDefault(); dispatch({ type: 'BACK' }) }
       if (beat.type === 'choice' && (e.key === '1' || e.key === '2')) dispatch({ type: 'CHOOSE', index: Number(e.key) - 1 })
     }
@@ -226,7 +232,7 @@ function Game({ state, beat, dispatch }) {
 
   return (
     <div className="game">
-      <Scene beat={beat} set={state.set} hq={state.hq} next={next} dispatch={dispatch} reply={reply} />
+      <Scene beat={beat} set={state.set} hq={state.hq} next={next} dispatch={dispatch} reply={reply} onReply={sendReply} picks={state.picks} />
 
       {/* 관계 변화 플래시 */}
       {state.lastRelation && (
@@ -258,12 +264,17 @@ function Game({ state, beat, dispatch }) {
           ))}
         </div>
 
-        <InstabilityMeter hq={state.hq} shake={state.shake} empty={state.set.tagEmpty} />
+        <button className="meter-btn" onClick={() => setReport(true)} aria-label="HQ 리포트 열기">
+          <InstabilityMeter hq={state.hq} shake={state.shake} empty={state.set.tagEmpty} />
+          <span className="meter-hint">리포트 <kbd>H</kbd></span>
+        </button>
       </header>
+
+      {report && <HQReport state={state} onClose={() => setReport(false)} />}
 
       {/* 하단 대화 영역 */}
       <footer className={`dialog ${passive ? 'passive' : ''}`} onClick={passive ? advance : undefined}>
-        {beat.type !== 'choice' && beat.type !== 'final' && beat.type !== 'message' && (
+        {beat.type !== 'choice' && beat.type !== 'final' && (
           <Speech entry={last} typing={passive ? typing : null} />
         )}
         {passive && (
@@ -276,7 +287,7 @@ function Game({ state, beat, dispatch }) {
         {beat.type === 'choice' && <DiamondChoice beat={beat} onPick={(index) => dispatch({ type: 'CHOOSE', index })} />}
         {beat.type === 'final' && <Final beat={beat} onPick={(key) => dispatch({ type: 'FINAL', key })} />}
         {beat.type === 'epilogue' && <Epilogue state={state} dispatch={dispatch} />}
-        {beat.type === 'message' && <ReplyChoice beat={beat} reply={reply} onPick={sendReply} />}
+        {beat.type === 'message' && <div className="hint"><i className="hint-dot" />{beat.replies.length ? '폰에서 답장을 고르거나 직접 입력하세요' : '폰 화면을 확인하세요'}</div>}
         {interactive && <Hint type={beat.type} />}
       </footer>
     </div>
@@ -311,6 +322,67 @@ function InstabilityMeter({ hq, shake, empty }) {
   )
 }
 
+// HQ를 누르면 열리는 측정 리포트. 항목 값은 HQ와 지금까지의 선택에서 계산한 연출용 수치다.
+function HQReport({ state, onClose }) {
+  // 리포트가 열려 있는 동안에는 진행·선택 키를 막는다
+  useEffect(() => {
+    const block = (e) => {
+      if (e.target.closest?.('input, textarea')) return
+      if (['Escape', 'h', 'H', 'ㅗ'].includes(e.key)) { e.stopImmediatePropagation(); onClose(); return }
+      e.stopImmediatePropagation()
+    }
+    window.addEventListener('keydown', block, true)
+    return () => window.removeEventListener('keydown', block, true)
+  }, [onClose])
+  const empty = state.hq == null
+  const base = state.hq ?? 0
+  const clamp = (v) => Math.max(8, Math.min(99, Math.round(v)))
+  const items = [
+    { label: '표정 안정성', v: clamp(base + 4 + state.std * 2) },
+    { label: '공감 반응', v: clamp(base - 3 + state.ai * 1.2) },
+    { label: '말과 표정의 일치', v: clamp(base + 1 - Math.abs(state.ai) * 0.6) },
+    { label: '망설임 억제', v: clamp(base - 6 + state.std) },
+  ]
+  const below = !empty && base < THRESHOLD
+  return (
+    <div className="report-wrap" onClick={onClose}>
+      <aside className="report" onClick={(e) => e.stopPropagation()}>
+        <div className="rp-head">
+          <span>휴미터 리포트</span>
+          <button onClick={onClose}>닫기 <kbd>Esc</kbd></button>
+        </div>
+        <div className="rp-now">
+          <b className={below ? 'bad' : 'good'}>{empty ? '미측정' : base}</b>
+          <div>
+            <span className={`rp-pill ${below ? 'bad' : 'good'}`}>{empty ? '측정 불가' : below ? `기준 ${THRESHOLD} 미달` : `기준 ${THRESHOLD} 통과`}</span>
+            <p>곁에 있는 나인 <strong>88</strong></p>
+          </div>
+        </div>
+        <div className="rp-sec">측정 항목</div>
+        {items.map((it) => (
+          <div className="rp-bar" key={it.label}>
+            <span>{it.label}</span>
+            <i><em style={{ width: `${empty ? 0 : it.v}%` }} className={it.v < THRESHOLD ? 'bad' : ''} /><u style={{ left: `${THRESHOLD}%` }} /></i>
+            <b>{empty ? '' : it.v}</b>
+          </div>
+        ))}
+        <div className="rp-sec">변동 기록</div>
+        <ul className="rp-log">
+          {[...state.hqLog].reverse().map((h, i) => (
+            <li key={i}>
+              <span className="rp-at">{h.at}</span>
+              <span className="rp-why">{h.why}</span>
+              <b className={h.from != null && h.to != null ? (h.to < h.from ? 'bad' : 'good') : ''}>
+                {h.from != null && <s>{h.from}</s>}{h.to ?? '—'}
+              </b>
+            </li>
+          ))}
+        </ul>
+      </aside>
+    </div>
+  )
+}
+
 const WHO_TONE = { 나: 'me', 나인: 'ai', 줄리안: 'violet', 클로이: 'teal', 휴미터: 'std', '뉴스 속보': 'red' }
 
 function Speech({ entry, typing }) {
@@ -328,43 +400,6 @@ function Speech({ entry, typing }) {
         </div>
       )}
       <p>{text}{typing && !typing.done && <span className="caret" />}</p>
-    </div>
-  )
-}
-
-function ReplyChoice({ beat, reply, onPick }) {
-  const options = beat.replies.length > 0 ? beat.replies : [null]
-  useEffect(() => {
-    const onKey = (e) => { const i = Number(e.key) - 1; if (i >= 0 && i < options.length) onPick(options[i]) }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  })
-  return (
-    <div className="diamond-choice reply">
-      <div className="dc-center">
-        <div className="dc-meta">
-          <svg viewBox="0 0 20 20" width="14" height="14"><path d="M10 2 L18 10 L10 18 L2 10 Z" className="teal" /></svg>
-          <span>답장</span>
-        </div>
-        <div className="dc-who">
-          <svg viewBox="0 0 12 12" width="10" height="10"><path d="M6 1 L11 6 L6 11 L1 6 Z" className="teal" /></svg>
-          {beat.from} · 메시지
-        </div>
-        <p className="dc-prompt">“{beat.text}”</p>
-      </div>
-      <div className="dc-opts">
-        {options.map((o, i) => (
-          <button key={i} className={`dc-opt ${reply && reply === (o ?? '__none') ? 'picked' : ''}`} disabled={!!reply} onClick={() => onPick(o)}>
-            <div className="dc-opt-diamond">
-              <svg viewBox="0 0 32 32" width="28" height="28">
-                <path d="M16 2 L30 16 L16 30 L2 16 Z" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                <text x="16" y="20" textAnchor="middle" fontSize="14" fill="currentColor">{i + 1}</text>
-              </svg>
-            </div>
-            <span className="dc-opt-text">{o ?? '답장하지 않고 화면을 끈다'}</span>
-          </button>
-        ))}
-      </div>
     </div>
   )
 }
@@ -470,7 +505,7 @@ function Epilogue({ state, dispatch }) {
     if (n >= end.steps.length) return dispatch({ type: 'NEXT' })
     const s = end.steps[n]
     dispatch({ type: 'LOG', log: { kind: 'narr', text: s.text } })
-    if (s.hq != null && s.hq !== state.hq) dispatch({ type: 'HQ', hq: s.hq })
+    if (s.hq != null && s.hq !== state.hq) dispatch({ type: 'HQ', hq: s.hq, why: s.text.split('.')[0] })
     if (n === 0 && (state.final === 'adapter' || state.final === 'zealot')) dispatch({ type: 'SET', set: { open: true, passed: true } })
     setStep(n)
   }
@@ -488,7 +523,7 @@ function Epilogue({ state, dispatch }) {
         </div>
         <ActButton key={done} className="final-opt task" onDone={() => {
           dispatch({ type: 'LOG', log: [{ kind: 'me', text: t.label }, { kind: 'narr', text: t.result }] })
-          dispatch({ type: 'HQ', hq: t.hq })
+          dispatch({ type: 'HQ', hq: t.hq, why: t.label })
           if (done + 1 >= end.tasks.length) setActed(true)
           else setDone(done + 1)
         }}>
@@ -509,7 +544,7 @@ function Epilogue({ state, dispatch }) {
         <ActButton className="final-opt danger" confirm armed={armed} onArm={() => setArmed(true)} onDone={() => {
           dispatch({ type: 'LOG', log: { kind: 'narr', text: end.hold.result } })
           dispatch({ type: 'SET', set: state.final === 'zealot' ? { nineOff: true } : { tagEmpty: true } })
-          if (state.final === 'outlier') dispatch({ type: 'HQ', hq: null })
+          if (state.final === 'outlier') dispatch({ type: 'HQ', hq: null, why: '휴미터 분리' })
           setActed(true)
         }}>
           <b className="final-num">!</b>

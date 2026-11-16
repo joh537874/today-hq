@@ -4,7 +4,7 @@ import { Figure, ScanMarker } from './ui.jsx'
 
 const TIME = { home: '23:48', cafe: '08:12', street: '08:31', subway: '18:40', door: '19:06' }
 
-export default function Scene({ beat, set, hq, next, dispatch, reply }) {
+export default function Scene({ beat, set, hq, next, dispatch, reply, onReply, picks = [] }) {
   const View = { home: Home, cafe: Cafe, street: Street, subway: Subway, door: Door }[beat.scene]
   return (
     <section className={`scene scene-${beat.scene} ${set.tv === 'breaking' ? 'tv-on' : ''}`} key={beat.scene}>
@@ -19,10 +19,10 @@ export default function Scene({ beat, set, hq, next, dispatch, reply }) {
         <View beat={beat} set={set} hq={hq} next={next} dispatch={dispatch} />
 
         {beat.type === 'notify' && <Notify beat={beat} />}
-        {beat.type === 'message' && <Message key={beat.text} beat={beat} reply={reply} />}
+        {beat.type === 'message' && <Message key={beat.text} beat={beat} reply={reply} onReply={onReply} />}
         {beat.type === 'gate' && <Gate key={beat.at} beat={beat} hq={hq} next={next} />}
         {beat.type === 'term' && beat.scene !== 'home' && <Term key={beat.term} beat={beat} />}
-        {beat.type === 'letter' && <Letter beat={beat} next={next} />}
+        {beat.type === 'letter' && <Letter beat={beat} next={next} picks={picks} />}
 
         {/* 1인칭 HUD — 화면 모서리 장식 */}
         <div className="hud-corner hud-tl" />
@@ -52,34 +52,42 @@ function Broadcast({ beat }) {
   return (
     <div className="bc">
       <div className="bc-screen">
-        <div className="bc-bug"><i />LIVE<span>HQN 뉴스</span></div>
-        <div className="bc-clock">23:48</div>
+        <div className="bc-top">
+          <div className="bc-bug"><i />LIVE<span>HQN 뉴스</span></div>
+          <div className="bc-clock">2069. 3. 14 · 23:48</div>
+        </div>
 
         {term ? (
-          <div className="bc-term" key={beat.term}>
-            <small>용어 해설 · {beat.en}</small>
-            <h3>{beat.term}</h3>
-            <p>{beat.text}</p>
+          <div className="bc-body" key={beat.term}>
+            <div className="bc-eyebrow">용어 해설</div>
+            <div className="bc-term-card">
+              <div className="bc-dot-title"><i className="ai" />{beat.en}</div>
+              <h3>{beat.term}</h3>
+              <p>{beat.text}</p>
+            </div>
           </div>
         ) : (
-          <div className="bc-versus">
-            <div className="bc-side ai"><span>AI 평균</span><b><Count to={82} /></b></div>
-            <div className="bc-vs">
-              <i />
-              <em>크로스오버</em>
+          <div className="bc-body">
+            <div className="bc-eyebrow">Breaking News</div>
+            <h2 className="bc-title">AI 평균 HQ가 인간을 넘어섰습니다</h2>
+            <div className="bc-cards">
+              <div className="bc-card">
+                <div className="bc-dot-title"><i className="ai" />AI 평균</div>
+                <b className="ai"><Count to={82} /></b>
+              </div>
+              <div className="bc-cross">크로스오버</div>
+              <div className="bc-card">
+                <div className="bc-dot-title"><i className="human" />인간 평균</div>
+                <b><Count to={81} /></b>
+              </div>
             </div>
-            <div className="bc-side human"><span>인간 평균</span><b><Count to={81} /></b></div>
           </div>
         )}
 
-        <div className="bc-lower">
-          <div className="bc-tag">속보</div>
-          <div className="bc-text">
-            <strong>AI 평균 HQ 82, 인간 평균 81</strong>
-            <span>관측 이래 처음으로 AI가 인간을 넘어섰습니다</span>
-          </div>
+        <div className="bc-foot">
+          <span className="bc-tag">속보</span>
+          <div className="bc-ticker"><span>관측 이래 처음으로 AI가 인간을 넘어섰습니다 · HQ 관리국 “기준 재검토 착수” · 내일부터 관리국 기준 v.48 적용 · 주요 매장 입장 기준 상향 예정 · 관측 이래 처음으로 AI가 인간을 넘어섰습니다 · HQ 관리국 “기준 재검토 착수” · 내일부터 관리국 기준 v.48 적용 · 주요 매장 입장 기준 상향 예정 ·&nbsp;</span></div>
         </div>
-        <div className="bc-ticker"><span>HQ 관리국 “기준 재검토 착수” · 내일부터 관리국 기준 v.48 적용 · 주요 매장 입장 기준 상향 예정 · HQ 관리국 “기준 재검토 착수” · 내일부터 관리국 기준 v.48 적용 · 주요 매장 입장 기준 상향 예정 ·&nbsp;</span></div>
       </div>
     </div>
   )
@@ -219,16 +227,24 @@ function Door({ beat, set, next }) {
 /* ───────── 장면 위에 뜨는 인터랙션 */
 
 function Notify({ beat }) {
+  const [open, setOpen] = useState(false)
+  const diff = beat.prevHq != null ? beat.title.match(/\d+/)?.[0] - beat.prevHq : null
   return (
-    <div className="notify">
+    <button className={`notify ${open ? 'open' : ''}`} onClick={() => setOpen((v) => !v)}>
       <div className="notify-head">
-        <svg viewBox="0 0 12 12" width="10" height="10"><path d="M6 1 L11 6 L6 11 L1 6 Z" className="std" /></svg>
         <span>{beat.app}</span>
         <em>지금</em>
       </div>
       <strong>{beat.title}</strong>
       <p>{beat.body}</p>
-    </div>
+      {open && beat.prevHq != null && (
+        <div className="notify-more">
+          <div className="nm-row"><span>어제</span><b>{beat.prevHq}</b><span>오늘</span><b className="bad">{beat.title.match(/\d+/)?.[0]}</b><em>{diff < 0 ? `−${-diff}` : `+${diff}`}</em></div>
+          <p>측정 방식이 바뀌었습니다. 어제와 달라진 행동은 감지되지 않았습니다.</p>
+        </div>
+      )}
+      {!open && beat.prevHq != null && <small className="notify-tap">눌러서 자세히 보기</small>}
+    </button>
   )
 }
 
@@ -243,10 +259,22 @@ function Term({ beat }) {
   )
 }
 
-// 클로이의 연락. 휴대폰 화면만 보여 주고, 답장은 하단 선택지에서 고른다.
-function Message({ beat, reply }) {
+// 클로이의 연락. 폰 안에서 추천 답장을 고르거나 직접 입력해 보낸다.
+function Message({ beat, reply, onReply }) {
   const [typing, setTyping] = useState(true)
+  const [text, setText] = useState('')
+  const canReply = beat.replies.length > 0
   useEffect(() => { const t = setTimeout(() => setTyping(false), 1100); return () => clearTimeout(t) }, [])
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.target.closest?.('input')) return
+      const i = Number(e.key) - 1
+      if (!typing && canReply && i >= 0 && i < beat.replies.length) onReply(beat.replies[i])
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
+  const send = () => { const t = text.trim(); if (t) onReply(t) }
   return (
     <div className="phone2-wrap">
       <div className="phone2">
@@ -263,10 +291,27 @@ function Message({ beat, reply }) {
             : <div className="p2-bubble in">{beat.text}</div>}
           {reply && reply !== '__none' && <div className="p2-bubble out">{reply}<small>읽음</small></div>}
         </div>
-        <div className={`p2-input ${reply ? 'sent' : ''}`}>
-          <span>{reply ? (reply === '__none' ? '' : '전송됨') : '답장 쓰기'}</span>
-          <i />
-        </div>
+
+        {!typing && !reply && (
+          <div className="p2-quick">
+            {canReply
+              ? beat.replies.map((r, i) => (
+                <button key={r} onClick={() => onReply(r)}><kbd>{i + 1}</kbd>{r}</button>
+              ))
+              : <button className="ghost" onClick={() => onReply(null)}>답장하지 않고 화면을 끈다</button>}
+          </div>
+        )}
+
+        <form className={`p2-input ${reply ? 'sent' : ''}`} onSubmit={(e) => { e.preventDefault(); send() }}>
+          <input
+            value={reply ? '' : text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder={reply ? '' : canReply ? '직접 입력해서 보내기' : '답장할 말이 떠오르지 않는다'}
+            disabled={!!reply || typing || !canReply}
+            maxLength={60}
+          />
+          <button type="submit" disabled={!text.trim() || !!reply} aria-label="보내기">↑</button>
+        </form>
       </div>
     </div>
   )
@@ -377,28 +422,49 @@ function Gate({ beat, hq, next }) {
   )
 }
 
-function Letter({ beat, next }) {
+// 문 앞에서 내려다보는 편지. ③에서 나인의 SNS 검색을 받았는지에 따라 편지 내용이 달라진다.
+const LETTER_SNS = [
+  { t: '생일 축하해, 클로이!', tag: '추천 문장' },
+  { t: '올해도 너의 반짝이는 하루들을 응원할게.', tag: '추천 문장' },
+  { t: '요즘 빠져 있다는 필름 카메라처럼, 오래 남는 순간만 가득하길.', tag: 'SNS에서 찾음' },
+  { t: '언제나 고마운 친구에게.', tag: '추천 문장' },
+]
+const LETTER_OWN = [
+  { t: '생일 축하해.' },
+  { t: '뭐라고 써야 할지 몰라서 세 번 다시 썼어.', strike: '너는 늘 완벽해서' },
+  { t: '줄 서서 커피 기다리다 처음 말 걸었던 날, 아직 기억나.' },
+  { t: '숫자 말고, 그냥 오늘 보고 싶어서 가.' },
+]
+
+function Letter({ beat, next, picks }) {
   const [n, setN] = useState(0)
+  const sns = picks.find((p) => p.id === 'c3')?.sign > 0
+  const body = sns ? LETTER_SNS : LETTER_OWN
   const open = n > 0
-  const done = n >= beat.lines.length
+  const done = n > beat.lines.length
   return (
     <div className={`letter-view ${open ? 'open' : ''}`}>
       {!open && (
         <button className="letter-open-btn" onClick={() => setN(1)}>
-          <svg viewBox="0 0 32 32" width="28" height="28">
-            <path d="M16 4 L28 16 L16 28 L4 16 Z" fill="none" stroke="currentColor" strokeWidth="1.5" />
-          </svg>
           <span>편지를 내려다본다</span>
         </button>
       )}
       {open && (
-        <div className="paper" onClick={() => (done ? next(beat.lines.map((t) => ({ kind: 'narr', text: t }))) : setN(n + 1))}>
-          <small>클로이에게</small>
-          {beat.lines.slice(0, n).map((t) => <p key={t}>{t}</p>)}
-          <span className="paper-next">
-            <svg viewBox="0 0 12 12" width="10" height="10"><path d="M6 1 L11 6 L6 11 L1 6 Z" fill="currentColor" /></svg>
-            {done ? '편지를 접는다' : '계속 읽기'}
-          </span>
+        <div className="letter-spread" onClick={() => (done ? next(beat.lines.map((t) => ({ kind: 'narr', text: t }))) : setN(n + 1))}>
+          <div className={`paper ${sns ? 'typed' : 'hand'}`}>
+            <small>클로이에게</small>
+            {body.map((l, i) => (
+              <p key={i} style={{ animationDelay: `${i * 0.25}s` }}>
+                {l.strike && <del>{l.strike}</del>}{l.t}
+                {l.tag && <span className="ltag">{l.tag}</span>}
+              </p>
+            ))}
+            <div className="sign">진</div>
+          </div>
+          <div className="letter-thoughts">
+            {beat.lines.slice(0, n - 1).map((t) => <p key={t}>{t}</p>)}
+            <span className="paper-next">{done ? '편지를 접는다' : n === 1 ? '눌러서 다시 생각해 보기' : '계속'}</span>
+          </div>
         </div>
       )}
     </div>

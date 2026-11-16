@@ -28,7 +28,7 @@ const raw = [
   },
 
   // ───────── 2장 · 카페 앞
-  { chapter: 2, scene: 'cafe', place: '카페 앞', type: 'notify', app: '휴미터', title: '오늘의 HQ 72', body: '관리국 기준 v.48 적용', hq: 72 },
+  { chapter: 2, scene: 'cafe', place: '카페 앞', type: 'notify', app: '휴미터', title: '오늘의 HQ 72', body: '관리국 기준 v.48 적용', hq: 72, hqWhy: '관리국 기준 v.48 적용', prevHq: 81 },
   N('어제는 81이었다. 달라진 건 기준뿐이다.'),
   N('단골 카페 입구의 기준선이 75로 올라 있다.', { set: { gate: true } }),
   { type: 'gate', at: '단골 카페', fail: '입장 불가', after: '문은 열리지 않는다.' },
@@ -109,7 +109,7 @@ const raw = [
 
   // ───────── 4장 · 문 앞
   { type: 'route' },
-  { chapter: 4, scene: 'door', place: '클로이의 집 앞', hq: 69, set: { hands: true }, ...N('클로이의 집 앞. 한 손에는 꽃, 한 손에는 편지.') },
+  { chapter: 4, scene: 'door', place: '클로이의 집 앞', hq: 69, hqWhy: '문 앞에서 길어진 망설임', set: { hands: true }, ...N('클로이의 집 앞. 한 손에는 꽃, 한 손에는 편지.') },
   { type: 'bell' },
   N('초인종을 누르려다 문 옆의 패널을 본다. 오늘 하루 나를 막아 온 그 화면이다.', { set: { hands: true, panel: true } }),
   { type: 'gate', at: '클로이의 집', fail: '입장 불가', after: '친구 집에까지 기준선이 걸려 있을 거라고는 생각하지 못했다.' },
