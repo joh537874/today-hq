@@ -62,7 +62,7 @@ export function ChapterCard({ chapter, title, place, onDone, slow }) {
   return (
     <div className={`chapter-card ${phase}`} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
       <div className="ch-sub">
-        <span className="ch-label">{chapter}</span>
+        <span className="ch-label">Chapter {parseInt(chapter, 10)}</span>
         <h2 className="ch-title">{title}</h2>
         <span className="ch-place">{place}</span>
       </div>

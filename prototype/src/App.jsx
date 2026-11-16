@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useReducer, useState, useRef } from 'react'
 import { BEATS, CHAPTERS, ENDINGS, THRESHOLD } from './story.js'
-import Scene from './Scene.jsx'
+import Scene, { TIME } from './Scene.jsx'
 import { ActButton, useTypewriter, ChapterCard, GlitchNum } from './ui.jsx'
 
 const PASSIVE = ['narr', 'line', 'term', 'news', 'notify']
@@ -164,32 +164,18 @@ function useStageScale() {
 }
 
 function Title({ onStart }) {
-  const [phase, setPhase] = useState('idle') // idle → reveal
+  const [phase, setPhase] = useState('idle')
   useEffect(() => { const t = setTimeout(() => setPhase('reveal'), 300); return () => clearTimeout(t) }, [])
   return (
     <div className={`title ${phase}`}>
       <div className="title-photo" style={{ backgroundImage: `url(${import.meta.env.BASE_URL}img/ref-city1.jpg)` }} />
-      <div className="title-top">
-        <div className="title-line" />
-        <div className="eyebrow">인터랙티브 스토리</div>
+      <div className="tt-block">
+        <span className="tt-eyebrow">Interactive Story · 2069</span>
+        <h1>오늘의 HQ</h1>
+        <p>인간다움이 숫자로 매겨지는 도시.<br />친구의 생일 모임에 가는 하루를 따라갑니다.</p>
+        <button className="title-start" onClick={onStart}>시작하기</button>
+        <small className="tt-meta">약 5분 · 선택 7번 · 결말 4개 · Space로 진행</small>
       </div>
-      <h1>오늘의<br/>HQ</h1>
-      <p className="title-sub">2069년, 인간다움이 숫자로 매겨지는 도시.<br/>친구의 생일 모임에 가는 하루를 따라갑니다.</p>
-      <div className="title-info">
-        <div className="title-stat"><span className="ts-label">플레이</span><span className="ts-val">약 5분</span></div>
-        <div className="title-divider" />
-        <div className="title-stat"><span className="ts-label">선택</span><span className="ts-val">7회</span></div>
-        <div className="title-divider" />
-        <div className="title-stat"><span className="ts-label">엔딩</span><span className="ts-val">4개</span></div>
-      </div>
-      <button className="title-start" onClick={onStart}>
-        <svg viewBox="0 0 48 48" width="48" height="48">
-          <path d="M24 4 L44 24 L24 44 L4 24 Z" fill="none" stroke="currentColor" strokeWidth="2" />
-          <path d="M20 16 L32 24 L20 32 Z" fill="currentColor" />
-        </svg>
-        <span>시작하기</span>
-      </button>
-      <div className="title-hint">Space 진행&nbsp;&nbsp;·&nbsp;&nbsp;1, 2 선택&nbsp;&nbsp;·&nbsp;&nbsp;← 뒤로</div>
     </div>
   )
 }
@@ -206,7 +192,15 @@ function Game({ state, beat, dispatch }) {
     setTimeout(() => next(text ? { kind: 'me', text } : { kind: 'narr', text: '답장을 쓰지 못하고 화면을 끈다.' }), 1200)
   }
   const passive = PASSIVE.includes(beat.type)
-  const last = [...state.log].reverse().find((e) => e.kind !== 'place')
+  const logLast = [...state.log].reverse().find((e) => e.kind !== 'place')
+  // 화면 패널에 이미 같은 문장이 떠 있는 비트는 대화창에 짧은 서술만 둔다
+  const CAPTION = {
+    news: '밤 11시, 뉴스 속보가 뜬다.',
+    term: `앵커가 ‘${beat.term}’을 짚어 준다.`,
+    notify: '아침, 휴미터 알림이 울린다.',
+    message: `${beat.from}에게서 메시지가 왔다.`,
+  }[beat.type]
+  const last = CAPTION ? { kind: 'narr', text: CAPTION } : logLast
   const typing = useTypewriter(passive ? last?.text ?? '' : '', state.log.length)
 
   const advance = () => {
@@ -239,35 +233,23 @@ function Game({ state, beat, dispatch }) {
       {/* 관계 변화 플래시 */}
       {state.lastReact && <ReactionToast key={state.shake} react={state.lastReact} />}
 
-      {/* 상단 HUD */}
-      <header className="top">
-        <div className="top-left">
+      {/* 상단 HUD: 왼쪽 위치 정보 한 줄, 오른쪽 HQ */}
+      <header className="top2">
+        <div className="hud-l">
           {state.history.length > 0 && (
             <button className="back-btn" onClick={() => dispatch({ type: 'BACK' })}>
-              <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 2 L22 12 L12 22 L2 12 Z" fill="none" stroke="currentColor" strokeWidth="1.5" /><path d="M14 12 L8 12 M10 9 L7 12 L10 15" fill="none" stroke="currentColor" strokeWidth="1.5" /></svg>
-              <span>뒤로</span><kbd>←</kbd>
+              <span>← 뒤로</span>
             </button>
           )}
-          <div className="tl-chapter">{chapter.label}</div>
-          <h2 className="tl-title">{chapter.title}</h2>
-          {beat.place !== chapter.title && <div className="tl-place">{beat.place}</div>}
+          <div className="hud-where">
+            <b>Chapter {chapter.id}</b>
+            <span>{chapter.title}</span>
+            <i />
+            <span>{beat.place}</span>
+            <em>{TIME[beat.scene]}</em>
+          </div>
         </div>
-
-        {/* 챕터 진행 — 수직 다이아몬드 */}
-        <div className="progress-diamonds">
-          {CHAPTERS.map((c) => (
-            <div key={c.id} className={`pd ${c.id === beat.chapter ? 'on' : ''} ${c.id < beat.chapter ? 'past' : ''}`}>
-              <svg viewBox="0 0 16 16" width="12" height="12">
-                <path d="M8 1 L15 8 L8 15 L1 8 Z" />
-              </svg>
-            </div>
-          ))}
-        </div>
-
-        <button className="meter-btn" onClick={() => setReport(true)} aria-label="HQ 리포트 열기">
-          <InstabilityMeter hq={state.hq} shake={state.shake} empty={state.set.tagEmpty} />
-          <span className="meter-hint">리포트 <kbd>H</kbd></span>
-        </button>
+        <HQChip hq={state.hq} shake={state.shake} empty={state.set.tagEmpty} onClick={() => setReport(true)} />
       </header>
 
       {report && <HQReport state={state} onClose={() => setReport(false)} />}
@@ -291,6 +273,26 @@ function Game({ state, beat, dispatch }) {
         {interactive && <Hint type={beat.type} />}
       </footer>
     </div>
+  )
+}
+
+function HQChip({ hq, shake, empty, onClick }) {
+  const [shown, setShown] = useState(hq)
+  useEffect(() => {
+    if (hq == null || shown === hq) return
+    const t = setTimeout(() => setShown((v) => v + Math.sign(hq - v)), 45)
+    return () => clearTimeout(t)
+  }, [hq, shown])
+  const below = hq != null && shown < THRESHOLD
+  return (
+    <button className={`hq-chip ${empty ? 'empty' : below ? 'bad' : 'good'}`} onClick={onClick} aria-label="HQ 리포트 열기">
+      <span className="hq-k">HQ</span>
+      <b key={shake}>{empty ? '—' : shown}</b>
+      <div className="hq-side">
+        <div className="hq-bar"><i style={{ width: `${empty ? 0 : Math.min(100, shown)}%` }} /><u style={{ left: `${THRESHOLD}%` }} /></div>
+        <small>{empty ? 'Unread' : below ? `Below ${THRESHOLD}` : `Pass ${THRESHOLD}`}<kbd>H</kbd></small>
+      </div>
+    </button>
   )
 }
 
@@ -348,7 +350,7 @@ function HQReport({ state, onClose }) {
     <div className="report-wrap" onClick={onClose}>
       <aside className="report" onClick={(e) => e.stopPropagation()}>
         <div className="rp-head">
-          <span>휴미터 리포트</span>
+          <span>Humeter Report</span>
           <button onClick={onClose}>닫기 <kbd>Esc</kbd></button>
         </div>
         <div className="rp-now">
@@ -430,7 +432,7 @@ function DiamondChoice({ beat, onPick }) {
       <div className="dc-center">
         <div className="dc-meta">
           <svg viewBox="0 0 20 20" width="14" height="14"><path d="M10 2 L18 10 L10 18 L2 10 Z" className={beat.axis} /></svg>
-          <span>{beat.num} {beat.title}</span>
+          <span><em className="dc-en">Choice {beat.num}</em>{beat.title}</span>
         </div>
         <div className="dc-who">
           <svg viewBox="0 0 12 12" width="10" height="10"><path d="M6 1 L11 6 L6 11 L1 6 Z" className={WHO_TONE[beat.who] ?? 'gray'} /></svg>
@@ -483,7 +485,7 @@ function Final({ beat, onPick }) {
       <div className="dc-center">
         <div className="dc-meta">
           <svg viewBox="0 0 20 20" width="14" height="14"><path d="M10 2 L18 10 L10 18 L2 10 Z" className="end" /></svg>
-          <span>{beat.num} {beat.title}</span>
+          <span><em className="dc-en">Choice {beat.num}</em>{beat.title}</span>
         </div>
         <div className="dc-who">
           <svg viewBox="0 0 12 12" width="10" height="10"><path d="M6 1 L11 6 L6 11 L1 6 Z" className={WHO_TONE[beat.who] ?? 'gray'} /></svg>
@@ -582,7 +584,7 @@ function Epilogue({ state, dispatch }) {
 
 const HINTS = {
   rewind: '오늘 하루가 스쳐 지나갑니다. 눌러서 넘길 수 있어요',
-  gate: '카메라로 스캔을 눌러 측정하세요',
+  gate: 'Scan Face를 눌러 측정하세요',
   glance: '승객 위에 마우스를 올려보세요',
   bell: '초인종을 누르세요',
   letter: '편지를 눌러 읽으세요',
@@ -627,7 +629,7 @@ function Ending({ state, onBack, onRestart }) {
 
       <section className="end-side">
         <div className="end-card">
-          <div className="ec-head">두 개의 질문 위의 나</div>
+          <div className="ec-head"><span>Where I Stand</span>두 개의 질문 위의 나</div>
           <Quadrant pos={pos} current={state.final} />
           <div className="axis-sum">
             <span><i className="dot ai" />AI 축 <b>{fmt(state.ai)}</b></span>
@@ -636,7 +638,7 @@ function Ending({ state, onBack, onRestart }) {
           </div>
         </div>
         <div className="end-card picks-card">
-          <div className="ec-head">내가 한 선택</div>
+          <div className="ec-head"><span>My Choices</span>내가 한 선택</div>
           <ul className="picks2">
             {state.picks.map((p) => (
               <li key={p.id}>
@@ -651,11 +653,11 @@ function Ending({ state, onBack, onRestart }) {
         <div className="end-actions">
         <button className="back-btn end-back" onClick={onBack}>
           <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 2 L22 12 L12 22 L2 12 Z" fill="none" stroke="currentColor" strokeWidth="1.5" /><path d="M14 12 L8 12 M10 9 L7 12 L10 15" fill="none" stroke="currentColor" strokeWidth="1.5" /></svg>
-          <span>마지막 장면으로</span>
+          <span>← Back to the door</span>
         </button>
         <button className="btn-restart" onClick={onRestart}>
           <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 2 L22 12 L12 22 L2 12 Z" fill="none" stroke="currentColor" strokeWidth="1.5" /></svg>
-          처음부터 다시
+          Play again
         </button>
         </div>
       </section>

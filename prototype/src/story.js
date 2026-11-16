@@ -32,9 +32,9 @@ const raw = [
   N('어제는 81이었다. 달라진 건 기준뿐이다.'),
   N('단골 카페 입구의 기준선이 75로 올라 있다.', { set: { gate: true } }),
   { type: 'gate', at: '단골 카페', fail: '입장 불가', after: '문은 열리지 않는다.' },
-  N('나인만 들어갔다가 커피 두 잔을 들고 나온다.', { set: { gate: true, coffee: true } }),
+  N('나인만 들어갔다가 커피 두 잔을 들고 나온다.', { set: { gate: true, coffee: true }, shot: 'cafe2' }),
   {
-    type: 'choice', id: 'c1', num: '①', title: '나인의 위로', axis: 'ai', amount: 1,
+    type: 'choice', shot: 'cafe2', id: 'c1', num: '①', title: '나인의 위로', axis: 'ai', amount: 1,
     who: '나인', prompt: '“오늘 많이 당황스러우시죠. 저도 그 기분 알 것 같아요.”',
     options: [
       { text: '“응, 그러네. 위로 고마워.”', sign: 1, react: { who: '나인', text: '나인이 작게 웃는다. “다행이에요.”' }, inner: '나인이 옆에 있어서 다행이다.' },

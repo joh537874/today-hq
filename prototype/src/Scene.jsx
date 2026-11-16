@@ -2,9 +2,9 @@ import React, { useEffect, useRef, useState } from 'react'
 import { THRESHOLD } from './story.js'
 import { Figure, ScanMarker } from './ui.jsx'
 
-const PHOTO = { home: 'home2', cafe: 'cafe2', street: 'street2', subway: 'subway3', door: 'door' }
+const PHOTO = { home: 'home2', cafe: 'cafe-empty', street: 'street2', subway: 'subway3', door: 'door' }
 
-const TIME = { home: '23:48', cafe: '08:12', street: '08:31', subway: '18:40', door: '19:06' }
+export const TIME = { home: '23:48', cafe: '08:12', street: '08:31', subway: '18:40', door: '19:06' }
 
 export default function Scene({ beat, set, hq, next, dispatch, reply, onReply, picks = [] }) {
   const View = { home: Home, cafe: Cafe, street: Street, subway: Subway, door: Door }[beat.scene]
@@ -320,6 +320,7 @@ function Message({ beat, reply, onReply }) {
 function Gate({ beat, hq, next }) {
   const [phase, setPhase] = useState('idle') // idle → camera → scan → fail
   const [n, setN] = useState(0)
+  const [noCam, setNoCam] = useState(false)
   const videoRef = useRef(null)
   const streamRef = useRef(null)
 
@@ -334,8 +335,8 @@ function Gate({ beat, hq, next }) {
         videoRef.current.play()
       }
     } catch {
-      // 카메라 권한 거부 시 바로 스캔 진행
-      setPhase('scan')
+      // 카메라를 쓸 수 없으면 스캔 그래픽으로 대신하고 그대로 측정한다
+      setNoCam(true)
     }
   }
 
@@ -369,8 +370,8 @@ function Gate({ beat, hq, next }) {
   return (
     <div className={`gate ${phase}`}>
       <div className="gate-head">
-        <span>{beat.at}</span>
-        <em>기준 {THRESHOLD}</em>
+        <span><b>Face Scan</b>{beat.at}</span>
+        <em>Threshold {THRESHOLD}</em>
       </div>
 
       {phase === 'idle' && (
@@ -383,7 +384,7 @@ function Gate({ beat, hq, next }) {
               <path d="M24 32 Q32 34 34 40" fill="none" stroke="currentColor" strokeWidth="1.5" opacity=".5" />
             </svg>
           </div>
-          <span>카메라로 스캔</span>
+          <span>Scan Face</span>
         </button>
       )}
 
@@ -391,12 +392,18 @@ function Gate({ beat, hq, next }) {
         <div className="gate-camera">
           <div className="gate-viewfinder">
             <video ref={videoRef} className="gate-video" playsInline muted />
+            {noCam && (
+              <div className="gate-fallback">
+                <svg viewBox="0 0 200 200" className="gf-face"><path className="gf-frame" d="M30 52 V36 A6 6 0 0 1 36 30 H52 M148 30 H164 A6 6 0 0 1 170 36 V52 M170 148 V164 A6 6 0 0 1 164 170 H148 M52 170 H36 A6 6 0 0 1 30 164 V148" /><circle cx="54.6" cy="93.7" r="1.8" /><circle cx="57.5" cy="104.9" r="1.8" /><circle cx="62.8" cy="115.0" r="1.8" /><circle cx="70.1" cy="123.6" r="1.8" /><circle cx="79.1" cy="130.0" r="1.8" /><circle cx="89.3" cy="134.0" r="1.8" /><circle cx="100.0" cy="135.4" r="1.8" /><circle cx="110.7" cy="134.0" r="1.8" /><circle cx="120.9" cy="130.0" r="1.8" /><circle cx="129.9" cy="123.6" r="1.8" /><circle cx="137.2" cy="115.0" r="1.8" /><circle cx="142.5" cy="104.9" r="1.8" /><circle cx="145.4" cy="93.7" r="1.8" /><circle cx="74.0" cy="74.0" r="1.8" /><circle cx="82.0" cy="71.0" r="1.8" /><circle cx="90.0" cy="72.0" r="1.8" /><circle cx="110.0" cy="72.0" r="1.8" /><circle cx="118.0" cy="71.0" r="1.8" /><circle cx="126.0" cy="74.0" r="1.8" /><circle cx="78.0" cy="86.0" r="1.8" /><circle cx="86.0" cy="84.0" r="1.8" /><circle cx="94.0" cy="86.0" r="1.8" /><circle cx="106.0" cy="86.0" r="1.8" /><circle cx="114.0" cy="84.0" r="1.8" /><circle cx="122.0" cy="86.0" r="1.8" /><circle cx="100.0" cy="90.0" r="1.8" /><circle cx="100.0" cy="100.0" r="1.8" /><circle cx="100.0" cy="108.0" r="1.8" /><circle cx="93.0" cy="112.0" r="1.8" /><circle cx="107.0" cy="112.0" r="1.8" /><circle cx="88.0" cy="124.0" r="1.8" /><circle cx="96.0" cy="122.0" r="1.8" /><circle cx="104.0" cy="122.0" r="1.8" /><circle cx="112.0" cy="124.0" r="1.8" /><circle cx="100.0" cy="128.0" r="1.8" /></svg>
+                <div className="gf-grid" />
+              </div>
+            )}
             {/* 뷰파인더 코너 */}
             <i className="vf-corner vf-tl" /><i className="vf-corner vf-tr" />
             <i className="vf-corner vf-bl" /><i className="vf-corner vf-br" />
             {/* 스캔라인 */}
             {phase === 'camera' && <div className="gate-scanline-cam" />}
-            {phase === 'camera' && <div className="gate-cam-label">얼굴을 인식하고 있습니다…</div>}
+            {phase === 'camera' && <div className="gate-cam-label">Reading your face…</div>}
           </div>
 
           {phase !== 'camera' && (
@@ -409,9 +416,9 @@ function Gate({ beat, hq, next }) {
               </div>
               <div className="gate-msg">
                 {phase === 'scan' ? (
-                  <span className="gate-dots">측정 중</span>
+                  <span className="gate-dots">Measuring</span>
                 ) : (
-                  <span className="gate-fail-text">{beat.fail}</span>
+                  <span className="gate-fail-text">Access Denied</span>
                 )}
               </div>
             </div>
@@ -486,7 +493,7 @@ function Rewind({ picks, next }) {
   return (
     <div className="rewind" onClick={finish}>
       <div className="rw-head">
-        <span>오늘 하루</span>
+        <span>Rewind · Today</span>
         <h3>이 문을 열기 위해 한 대답들</h3>
       </div>
       <div className="rw-strip">

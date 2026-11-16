@@ -1209,3 +1209,81 @@ svg path.me { fill: var(--violet); } svg path.red { fill: var(--end); }
 .stage:has(.rewind) .top-left { opacity: 0; }
 .rewind { padding-top: 40px; }
 .quad { padding: 34px 46px; } .end-no, .end-tag { color: rgba(255,255,255,.75) !important; text-shadow: 0 1px 10px rgba(0,0,0,.6); }
+
+/* ═══════════════════════════════════════
+   상단 HUD 정리: 왼쪽 위치 한 줄, 오른쪽 HQ 칩
+   ═══════════════════════════════════════ */
+.scene .hud-top-bar { display: none; }
+.top2 { position: absolute; z-index: 25; top: 34px; left: 44px; right: 44px; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; }
+.top2 > * { pointer-events: auto; }
+.hud-l { display: flex; align-items: center; gap: 10px; transition: opacity .5s; }
+.top2 .back-btn { margin: 0; height: 48px; padding: 0 16px; border-radius: 14px; font-size: 20px; color: #fff; }
+.hud-where { display: flex; align-items: center; gap: 12px; height: 48px; padding: 0 20px; border-radius: 14px; font-size: 20px; color: rgba(255,255,255,.75);
+  background: linear-gradient(135deg, rgba(22,28,36,.72), rgba(10,14,20,.58)); backdrop-filter: blur(20px); box-shadow: inset 0 1px 0 rgba(170,220,255,.22); }
+.hud-where b { font-weight: 500; color: #8fd0ff; }
+.hud-where span:first-of-type { color: #fff; }
+.hud-where i { width: 4px; height: 4px; border-radius: 50%; background: rgba(255,255,255,.35); }
+.hud-where em { font-style: normal; color: rgba(255,255,255,.5); font-variant-numeric: tabular-nums; }
+.hq-chip { display: flex; align-items: center; gap: 14px; padding: 10px 18px 10px 18px; border-radius: 18px; text-align: left;
+  background: linear-gradient(135deg, rgba(22,28,36,.78), rgba(10,14,20,.62)); backdrop-filter: blur(20px); box-shadow: inset 0 1px 0 rgba(170,220,255,.25), 0 10px 30px rgba(0,0,0,.25); transition: transform .2s; }
+.hq-chip:hover { transform: translateY(-2px); }
+.hq-k { font-size: 18px; color: rgba(255,255,255,.6); }
+.hq-chip b { font-size: 44px; font-weight: 500; line-height: 1; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; animation: wobble .5s; }
+.hq-chip.bad b { color: #ff7b78; } .hq-chip.good b { color: #8fd0ff; } .hq-chip.empty b { color: rgba(255,255,255,.4); }
+.hq-side { display: flex; flex-direction: column; gap: 8px; }
+.hq-bar { position: relative; width: 140px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.14); }
+.hq-bar i { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: #ff7b78; transition: width .5s; }
+.hq-chip.good .hq-bar i { background: #8fd0ff; }
+.hq-bar u { position: absolute; top: -4px; width: 2px; height: 14px; border-radius: 1px; background: #fff; }
+.hq-side small { display: flex; align-items: center; gap: 8px; font-size: 16px; color: rgba(255,255,255,.65); }
+.hq-side kbd { font-size: 12px; padding: 0 5px; border: 0; border-radius: 4px; background: rgba(255,255,255,.14); color: rgba(255,255,255,.7); }
+.stage:has(.chapter-card) .hud-l, .stage:has(.rewind) .hud-l { opacity: 0; }
+.react-toast { top: 118px; }
+
+/* ═══════════════════════════════════════
+   타이틀: 왼쪽 정렬 표지
+   ═══════════════════════════════════════ */
+.title { align-items: flex-start; justify-content: flex-end; padding: 0 0 130px 130px; }
+.title-photo::after { background: linear-gradient(90deg, rgba(4,7,11,.85) 0%, rgba(4,7,11,.55) 38%, rgba(4,7,11,.05) 70%), linear-gradient(0deg, rgba(4,7,11,.6), transparent 40%) !important; }
+.tt-block { display: flex; flex-direction: column; align-items: flex-start; animation: rise 1s .3s both; }
+.tt-eyebrow { font-size: 22px; color: #8fd0ff; }
+.tt-block h1 { margin: 6px 0 18px; font-size: 128px; font-weight: 500; line-height: 1; letter-spacing: -0.05em; color: #fff; text-align: left; }
+.tt-block p { font-size: 26px; line-height: 1.55; color: rgba(255,255,255,.82); letter-spacing: -0.03em; }
+.tt-block .title-start { margin-top: 36px; height: 60px; padding: 0 34px; border-radius: 16px; font-size: 22px; color: #fff;
+  background: linear-gradient(135deg, rgba(110,180,255,.38), rgba(110,180,255,.12)) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 0 34px rgba(110,180,255,.25); }
+.tt-block .title-start:hover { transform: translateY(-2px); }
+.tt-meta { margin-top: 18px; font-size: 18px; color: rgba(255,255,255,.55); }
+
+/* ═══════════════════════════════════════
+   카메라 없이 스캔할 때의 그래픽
+   ═══════════════════════════════════════ */
+.gate-fallback { position: absolute; inset: 0; display: grid; place-items: center; background: radial-gradient(circle at 50% 45%, rgba(110,180,255,.16), rgba(6,10,16,.95) 70%); overflow: hidden; }
+.gf-face { width: 220px; height: 220px; fill: none; stroke: #8fd0ff; stroke-width: 1.6; opacity: .85; filter: drop-shadow(0 0 10px rgba(143,208,255,.6)); }
+.gf-face circle { fill: #8fd0ff; stroke: none; }
+.gf-grid { position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(143,208,255,.08) 0 1px, transparent 1px 22px), repeating-linear-gradient(90deg, rgba(143,208,255,.08) 0 1px, transparent 1px 22px); }
+.gf-grid::after { content: ''; position: absolute; left: 0; right: 0; height: 60px; background: linear-gradient(180deg, transparent, rgba(143,208,255,.35), transparent); animation: gf-scan 1.6s linear infinite; }
+@keyframes gf-scan { from { top: -60px; } to { top: 100%; } }
+.tt-block h1 { margin: 12px 0 28px; font-size: 136px; }
+.tt-block p { font-size: 26px; line-height: 1.6; }
+.tt-block .title-start { margin-top: 48px; height: 66px; padding: 0 44px; font-size: 23px; border-radius: 18px; }
+.tt-meta { margin-top: 22px; }
+
+/* Face ID 방식 스캔 표시 */
+.gf-face { width: 260px; height: 260px; fill: #8fd0ff; stroke: none; filter: drop-shadow(0 0 6px rgba(143,208,255,.7)); opacity: 1; }
+.gf-face .gf-frame { fill: none; stroke: rgba(255,255,255,.85); stroke-width: 3; stroke-linecap: round; }
+.gf-face circle { opacity: 0; animation: gf-dot 2.4s ease-in-out infinite; }
+.gf-face circle:nth-of-type(3n) { animation-delay: .3s; } .gf-face circle:nth-of-type(3n+1) { animation-delay: .6s; } .gf-face circle:nth-of-type(5n) { animation-delay: .9s; }
+.gf-grid { opacity: .5; }
+@keyframes gf-dot { 0% { opacity: 0; } 30%, 70% { opacity: .95; } 100% { opacity: .35; } }
+
+/* 영어 eyebrow 라벨: 장표의 'Story / Concept' 방식 */
+.gate-head { align-items: baseline; }
+.gate-head span { display: flex; gap: 12px; align-items: baseline; color: rgba(255,255,255,.7); }
+.gate-head b { font-weight: 500; color: #fff; }
+.gate-head em { color: #ff8a86; }
+.dc-en { font-style: normal; color: #8fd0ff; margin-right: 10px; }
+.ec-head { display: flex; flex-direction: column; gap: 2px; }
+.ec-head span { font-size: 16px; color: #8fd0ff; }
+.end-body h1 { font-family: var(--serif) !important; font-style: italic !important; font-weight: 400 !important; font-size: 128px !important; letter-spacing: -0.02em !important; }
+.quad-cell b { font-family: var(--serif); font-style: italic; font-weight: 400; font-size: 24px; letter-spacing: 0; }
+.rw-head span { letter-spacing: -0.01em; }
