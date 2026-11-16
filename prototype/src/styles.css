@@ -187,20 +187,20 @@ svg path.me { fill: var(--violet); } svg path.red { fill: var(--end); }
 /* ═══════════════════════════════════════
    다이아몬드 선택 — 디트로이트 핵심
    ═══════════════════════════════════════ */
-.diamond-choice { flex: 1; display: flex; align-items: center; gap: 0; animation: rise .4s both; }
+.diamond-choice { flex: 1; display: flex; flex-direction: column; gap: 14px; animation: rise .4s both; }
 
-.dc-center { flex: 0 0 420px; padding-right: 40px; }
-.dc-meta { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-2); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 6px; }
-.dc-who { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--gray); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; }
-.dc-prompt { font-size: 26px; line-height: 1.5; color: rgba(255,255,255,0.8); font-weight: 400; word-break: keep-all; }
-.dc-inner { font-size: 17px; color: rgba(255,255,255,0.08); min-height: 24px; margin-top: 10px; font-style: italic; transition: color .4s; }
+.dc-center { display: flex; align-items: baseline; gap: 20px; flex-wrap: wrap; }
+.dc-meta { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-2); text-transform: uppercase; letter-spacing: .1em; }
+.dc-who { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--gray); text-transform: uppercase; letter-spacing: .06em; }
+.dc-prompt { width: 100%; font-size: 32px; line-height: 1.5; color: rgba(255,255,255,0.85); font-weight: 400; word-break: keep-all; }
+.dc-inner { width: 100%; font-size: 17px; color: rgba(255,255,255,0.08); min-height: 22px; font-style: italic; transition: color .4s; }
 .dc-inner.on { color: rgba(126,108,168,0.7); }
 
 /* 선택지 카드 */
-.dc-opts { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+.dc-opts { display: flex; gap: 10px; }
 .dc-opt {
-  display: flex; align-items: center; gap: 16px; text-align: left;
-  padding: 20px 24px; font-size: 21px; line-height: 1.5; word-break: keep-all; font-weight: 400;
+  flex: 1; display: flex; align-items: center; gap: 14px; text-align: left;
+  padding: 16px 20px; font-size: 19px; line-height: 1.45; word-break: keep-all; font-weight: 400;
   background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.04);
   transition: all .25s; position: relative; cursor: pointer; color: var(--ink);
 }
