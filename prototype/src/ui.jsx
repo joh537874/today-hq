@@ -60,12 +60,13 @@ export function Figure({ name, hq, tone = 'gray', ai = false, off = false, style
 }
 
 // 디트로이트식 챕터 타이틀 카드 — 장 전환 시 풀스크린 표시
-export function ChapterCard({ chapter, title, place, onDone }) {
+export function ChapterCard({ chapter, title, place, onDone, slow }) {
   const [phase, setPhase] = useState('enter') // enter → hold → exit
+  const d = slow ? 1.8 : 1 // 1장은 1.8배 느리게
   useEffect(() => {
-    const t1 = setTimeout(() => setPhase('hold'), 800)
-    const t2 = setTimeout(() => setPhase('exit'), 2200)
-    const t3 = setTimeout(() => onDone?.(), 3000)
+    const t1 = setTimeout(() => setPhase('hold'), 800 * d)
+    const t2 = setTimeout(() => setPhase('exit'), 2800 * d)
+    const t3 = setTimeout(() => onDone?.(), 3600 * d)
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
   }, []) // eslint-disable-line
   return (

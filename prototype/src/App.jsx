@@ -9,6 +9,7 @@ const initial = {
   started: false, idx: 0, log: [], hq: 81, ai: 0, std: 0,
   picks: [], route: null, final: null, set: {}, shake: 0,
   lastRelation: null, // { who, direction } — 선택 후 관계 플래시
+  history: [], // 뒤로가기용 스냅샷
 }
 
 function logOf(beat) {
@@ -57,12 +58,22 @@ const CHOICE_RELATION = {
 }
 const RELATION_NAMES = { ai: '나인', std: '기준 태도' }
 
+function snap(state) {
+  const { history, ...rest } = state
+  return rest
+}
+
 function reducer(state, a) {
   switch (a.type) {
-    case 'START': return enter({ ...initial, started: true, log: [{ kind: 'place', text: '1장 · 집' }] }, 0)
+    case 'START': return enter({ ...initial, started: true, history: [], log: [{ kind: 'place', text: '1장 · 집' }] }, 0)
     case 'RESTART': return initial
+    case 'BACK': {
+      if (state.history.length === 0) return state
+      const prev = state.history[state.history.length - 1]
+      return { ...prev, history: state.history.slice(0, -1) }
+    }
     case 'NEXT': {
-      let s = { ...state, lastRelation: null }
+      let s = { ...state, lastRelation: null, history: [...state.history, snap(state)] }
       if (a.log) s = { ...s, log: [...s.log, ...[].concat(a.log)] }
       return enter(s, state.idx + 1)
     }
@@ -73,6 +84,7 @@ function reducer(state, a) {
       const relAxis = CHOICE_RELATION[beat.id]
       const s = {
         ...state,
+        history: [...state.history, snap(state)],
         ai: state.ai + (beat.axis === 'ai' ? delta : 0),
         std: state.std + (beat.axis === 'std' ? delta : 0),
         picks: [...state.picks, { id: beat.id, num: beat.num, title: beat.title, axis: beat.axis, sign: opt.sign, delta, text: opt.text }],
@@ -85,7 +97,7 @@ function reducer(state, a) {
     case 'FINAL': {
       const beat = BEATS[state.idx]
       const opt = beat.options.find((o) => o.key === a.key)
-      const s = { ...state, final: a.key, log: [...state.log, { kind: 'me', text: opt.text }], shake: state.shake + 1, lastRelation: null }
+      const s = { ...state, history: [...state.history, snap(state)], final: a.key, log: [...state.log, { kind: 'me', text: opt.text }], shake: state.shake + 1, lastRelation: null }
       return enter(s, state.idx + 1)
     }
     case 'LOG': return { ...state, log: [...state.log, ...[].concat(a.log)] }
@@ -123,6 +135,7 @@ export default function App() {
                 chapter={CHAPTERS[chapterShowing - 1].label}
                 title={CHAPTERS[chapterShowing - 1].title}
                 place={beat.place}
+                slow={chapterShowing === 1}
                 onDone={() => setChapterShowing(null)}
               />
             )}
@@ -213,6 +226,12 @@ function Game({ state, beat, dispatch }) {
       {/* 상단 HUD */}
       <header className="top">
         <div className="top-left">
+          {state.history.length > 0 && (
+            <button className="back-btn" onClick={() => dispatch({ type: 'BACK' })}>
+              <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 2 L22 12 L12 22 L2 12 Z" fill="none" stroke="currentColor" strokeWidth="1.5" /><path d="M14 12 L8 12 M10 9 L7 12 L10 15" fill="none" stroke="currentColor" strokeWidth="1.5" /></svg>
+              <span>뒤로</span>
+            </button>
+          )}
           <div className="tl-chapter">{chapter.label}</div>
           <h2 className="tl-title">{chapter.title}</h2>
           {beat.place !== chapter.title && <div className="tl-place">{beat.place}</div>}
@@ -449,7 +468,7 @@ function Epilogue({ state, dispatch }) {
 }
 
 const HINTS = {
-  gate: '스캔 패널을 길게 눌러 측정하세요',
+  gate: '카메라로 스캔을 눌러 측정하세요',
   glance: '승객 위에 마우스를 올려보세요',
   bell: '초인종을 누르세요',
   letter: '편지를 눌러 읽으세요',

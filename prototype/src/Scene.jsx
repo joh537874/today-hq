@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { THRESHOLD } from './story.js'
 import { Figure, HoldButton, ScanMarker } from './ui.jsx'
 
@@ -227,19 +227,53 @@ function Message({ beat, next }) {
 }
 
 function Gate({ beat, hq, next }) {
-  const [phase, setPhase] = useState('idle')
+  const [phase, setPhase] = useState('idle') // idle → camera → scan → fail
   const [n, setN] = useState(0)
+  const videoRef = useRef(null)
+  const streamRef = useRef(null)
+
+  // 카메라 시작
+  const startCamera = async () => {
+    setPhase('camera')
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 480, height: 480 } })
+      streamRef.current = stream
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+        videoRef.current.play()
+      }
+    } catch {
+      // 카메라 권한 거부 시 바로 스캔 진행
+      setPhase('scan')
+    }
+  }
+
+  // 카메라 켜진 후 2.5초 뒤 자동으로 스캔 시작
+  useEffect(() => {
+    if (phase !== 'camera') return
+    const t = setTimeout(() => setPhase('scan'), 2500)
+    return () => clearTimeout(t)
+  }, [phase])
+
+  // 스캔 카운트
   useEffect(() => {
     if (phase !== 'scan') return
     if (n >= hq) { const t = setTimeout(() => setPhase('fail'), 350); return () => clearTimeout(t) }
     const t = setTimeout(() => setN((v) => Math.min(hq, v + 3)), 28)
     return () => clearTimeout(t)
   }, [phase, n, hq])
+
+  // 실패 후 진행
   useEffect(() => {
     if (phase !== 'fail') return
     const t = setTimeout(() => next({ kind: 'sys', who: beat.at, text: `입장 기준 ${THRESHOLD}. 측정값 ${hq}. ${beat.fail}. ${beat.after}` }), 1700)
     return () => clearTimeout(t)
   }, [phase]) // eslint-disable-line
+
+  // 카메라 정리
+  useEffect(() => () => {
+    streamRef.current?.getTracks().forEach((t) => t.stop())
+  }, [])
 
   return (
     <div className={`gate ${phase}`}>
@@ -249,32 +283,48 @@ function Gate({ beat, hq, next }) {
       </div>
 
       {phase === 'idle' && (
-        <HoldButton className="gate-pad" ms={1100} onDone={() => setPhase('scan')}>
-          <span className="ring" />
-          <div className="gate-scan-prompt">
-            <svg viewBox="0 0 32 32" width="32" height="32">
-              <path d="M16 4 L28 16 L16 28 L4 16 Z" fill="none" stroke="currentColor" strokeWidth="1.5" />
+        <button className="gate-cam-btn" onClick={startCamera}>
+          <div className="gate-cam-icon">
+            <svg viewBox="0 0 48 48" width="48" height="48">
+              <path d="M24 4 L44 24 L24 44 L4 24 Z" fill="none" stroke="currentColor" strokeWidth="1.5" opacity=".4" />
+              <circle cx="24" cy="22" r="8" fill="none" stroke="currentColor" strokeWidth="1.5" />
+              <path d="M24 32 Q16 34 14 40" fill="none" stroke="currentColor" strokeWidth="1.5" opacity=".5" />
+              <path d="M24 32 Q32 34 34 40" fill="none" stroke="currentColor" strokeWidth="1.5" opacity=".5" />
             </svg>
-            <span>길게 눌러 스캔</span>
           </div>
-        </HoldButton>
+          <span>카메라로 스캔</span>
+        </button>
       )}
 
-      {phase !== 'idle' && (
-        <div className="gate-read">
-          <div className="gate-scanline" />
-          <div className="gate-num">{n}</div>
-          <div className="gate-line">
-            <i style={{ width: `${n}%` }} />
-            <b style={{ left: `${THRESHOLD}%` }} />
+      {(phase === 'camera' || phase === 'scan' || phase === 'fail') && (
+        <div className="gate-camera">
+          <div className="gate-viewfinder">
+            <video ref={videoRef} className="gate-video" playsInline muted />
+            {/* 뷰파인더 코너 */}
+            <i className="vf-corner vf-tl" /><i className="vf-corner vf-tr" />
+            <i className="vf-corner vf-bl" /><i className="vf-corner vf-br" />
+            {/* 스캔라인 */}
+            {phase === 'camera' && <div className="gate-scanline-cam" />}
+            {phase === 'camera' && <div className="gate-cam-label">얼굴을 인식하고 있습니다…</div>}
           </div>
-          <div className="gate-msg">
-            {phase === 'scan' ? (
-              <><span className="gate-dots">측정 중</span></>
-            ) : (
-              <span className="gate-fail-text">{beat.fail}</span>
-            )}
-          </div>
+
+          {phase !== 'camera' && (
+            <div className="gate-read">
+              <div className="gate-scanline" />
+              <div className="gate-num">{n}</div>
+              <div className="gate-line">
+                <i style={{ width: `${n}%` }} />
+                <b style={{ left: `${THRESHOLD}%` }} />
+              </div>
+              <div className="gate-msg">
+                {phase === 'scan' ? (
+                  <span className="gate-dots">측정 중</span>
+                ) : (
+                  <span className="gate-fail-text">{beat.fail}</span>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
