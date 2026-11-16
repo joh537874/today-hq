@@ -1,13 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { THRESHOLD } from './story.js'
-import { Figure, HoldButton, ScanMarker } from './ui.jsx'
+import { Figure, ScanMarker } from './ui.jsx'
 
 const TIME = { home: '23:48', cafe: '08:12', street: '08:31', subway: '18:40', door: '19:06' }
 
-export default function Scene({ beat, set, hq, next, dispatch }) {
+export default function Scene({ beat, set, hq, next, dispatch, reply }) {
   const View = { home: Home, cafe: Cafe, street: Street, subway: Subway, door: Door }[beat.scene]
   return (
-    <section className={`scene scene-${beat.scene}`} key={beat.scene}>
+    <section className={`scene scene-${beat.scene} ${set.tv === 'breaking' ? 'tv-on' : ''}`} key={beat.scene}>
+      <div className="scene-photo" style={{ backgroundImage: `url(${import.meta.env.BASE_URL}img/${beat.scene}.jpg)` }} />
       <div className="scene-inner">
         {/* 1인칭 HUD 상단 — 시간, 장소 */}
         <div className="hud-top-bar">
@@ -18,9 +19,9 @@ export default function Scene({ beat, set, hq, next, dispatch }) {
         <View beat={beat} set={set} hq={hq} next={next} dispatch={dispatch} />
 
         {beat.type === 'notify' && <Notify beat={beat} />}
-        {beat.type === 'message' && <Message key={beat.text} beat={beat} next={next} />}
+        {beat.type === 'message' && <Message key={beat.text} beat={beat} reply={reply} />}
         {beat.type === 'gate' && <Gate key={beat.at} beat={beat} hq={hq} next={next} />}
-        {beat.type === 'term' && <Term key={beat.term} beat={beat} />}
+        {beat.type === 'term' && beat.scene !== 'home' && <Term key={beat.term} beat={beat} />}
         {beat.type === 'letter' && <Letter beat={beat} next={next} />}
 
         {/* 1인칭 HUD — 화면 모서리 장식 */}
@@ -36,27 +37,68 @@ export default function Scene({ beat, set, hq, next, dispatch }) {
 /* ───────── 장면 */
 
 function Home({ beat, set }) {
+  const on = set.tv === 'breaking'
   return (
     <>
-      <div className={`tv ${set.tv ?? 'idle'}`}>
-        <div className="tv-bar"><b>속보</b><span>HQ 관리국 발표</span></div>
-        {beat.type === 'news' || set.tv === 'breaking' ? (
-          <div className="tv-body">
-            <h3>{beat.headline ?? 'AI 평균 HQ 82, 인간 평균 81'}</h3>
-            <div className="tv-bars">
-              <div><span>AI 평균</span><i style={{ width: '82%' }} className="ai" /><b>82</b></div>
-              <div><span>인간 평균</span><i style={{ width: '81%' }} /><b>81</b></div>
-            </div>
-            <p>{beat.sub ?? '관측 이래 처음으로 AI가 인간을 넘어섰습니다'}</p>
-          </div>
-        ) : (
-          <div className="tv-body idle"><h3>밤 11시 뉴스</h3><p>잠시 후 HQ 관리국의 발표가 이어집니다</p></div>
-        )}
-        <div className="tv-ticker"><span>AI 평균 HQ 82 · 인간 평균 81 · 크로스오버 · 관리국 "기준 재검토 착수" · AI 평균 HQ 82 · 인간 평균 81 · 크로스오버 · 관리국 "기준 재검토 착수" ·&nbsp;</span></div>
-      </div>
-      {set.nine && <Figure name="나인" hq="88" tone="ai" ai style={{ left: '78%' }} />}
+      {on && <Broadcast beat={beat} />}
+      {set.nine && <Figure name="나인" hq="88" tone="ai" ai style={{ left: '74%' }} />}
     </>
   )
+}
+
+// 프롤로그 뉴스. 화면이 TV로 다가가고, 방송 화면이 장면을 가득 채운다.
+function Broadcast({ beat }) {
+  const term = beat.type === 'term'
+  return (
+    <div className="bc">
+      <div className="bc-screen">
+        <div className="bc-bug"><i />LIVE<span>HQN 뉴스</span></div>
+        <div className="bc-clock">23:48</div>
+
+        {term ? (
+          <div className="bc-term" key={beat.term}>
+            <small>용어 해설 · {beat.en}</small>
+            <h3>{beat.term}</h3>
+            <p>{beat.text}</p>
+          </div>
+        ) : (
+          <div className="bc-versus">
+            <div className="bc-side ai"><span>AI 평균</span><b><Count to={82} /></b></div>
+            <div className="bc-vs">
+              <i />
+              <em>크로스오버</em>
+            </div>
+            <div className="bc-side human"><span>인간 평균</span><b><Count to={81} /></b></div>
+          </div>
+        )}
+
+        <div className="bc-lower">
+          <div className="bc-tag">속보</div>
+          <div className="bc-text">
+            <strong>AI 평균 HQ 82, 인간 평균 81</strong>
+            <span>관측 이래 처음으로 AI가 인간을 넘어섰습니다</span>
+          </div>
+        </div>
+        <div className="bc-ticker"><span>HQ 관리국 “기준 재검토 착수” · 내일부터 관리국 기준 v.48 적용 · 주요 매장 입장 기준 상향 예정 · HQ 관리국 “기준 재검토 착수” · 내일부터 관리국 기준 v.48 적용 · 주요 매장 입장 기준 상향 예정 ·&nbsp;</span></div>
+      </div>
+    </div>
+  )
+}
+
+function Count({ to, ms = 1400 }) {
+  const [n, setN] = useState(0)
+  useEffect(() => {
+    let raf, t0
+    const tick = (t) => {
+      t0 ??= t
+      const p = Math.min(1, (t - t0) / ms)
+      setN(Math.round(to * (1 - Math.pow(1 - p, 3))))
+      if (p < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [to, ms])
+  return n
 }
 
 function Cafe({ set }) {
@@ -92,7 +134,7 @@ function Street({ set }) {
       )}
       <Figure name="나인" hq="88" tone="ai" ai style={{ left: '74%' }} />
       {set.protest && (
-        <Figure name="재이" hq="—" tone="mono" style={{ left: '14%' }} className="protester">
+        <Figure name="재이" hq="?" tone="mono" style={{ left: '14%' }} className="protester">
           <div className="picket">HQ 폐지</div>
         </Figure>
       )}
@@ -133,7 +175,7 @@ function Subway({ beat, set, hq, next }) {
       {glancing && (
         <div className="glance-bar">
           <svg viewBox="0 0 16 16" width="12" height="12"><path d="M8 2 L14 8 L8 14 L2 8 Z" fill="currentColor" opacity=".5" /></svg>
-          <span>분석 중 — {seen.length} / {PASSENGERS.length}</span>
+          <span>흘끗 본 사람 {seen.length} / {PASSENGERS.length}</span>
           <button className="btn light" disabled={!enough} onClick={() => next({ kind: 'narr', text: '창에 비친 내 얼굴 위에도 숫자가 떠 있다. 72.' })}>
             {enough ? '시선을 거둔다' : `${beat.need}명 이상 관찰`}
           </button>
@@ -201,26 +243,30 @@ function Term({ beat }) {
   )
 }
 
-function Message({ beat, next }) {
+// 클로이의 연락. 휴대폰 화면만 보여 주고, 답장은 하단 선택지에서 고른다.
+function Message({ beat, reply }) {
+  const [typing, setTyping] = useState(true)
+  useEffect(() => { const t = setTimeout(() => setTyping(false), 1100); return () => clearTimeout(t) }, [])
   return (
-    <div className="phone">
-      <div className="phone-head">
-        <div className="ph-avatar" />
-        <div className="ph-info"><span className="ph-name">{beat.from}</span><span className="ph-status">온라인</span></div>
-      </div>
-      <div className="bubble in">{beat.text}</div>
-      <div className="phone-replies">
-        {beat.replies.length > 0
-          ? beat.replies.map((r) => (
-            <button key={r} className="bubble out" onClick={() => next({ kind: 'me', text: r })}>
-              <svg viewBox="0 0 12 12" width="8" height="8"><path d="M6 1 L11 6 L6 11 L1 6 Z" fill="currentColor" /></svg>
-              {r}
-            </button>
-          ))
-          : <button className="bubble out ghost" onClick={() => next({ kind: 'narr', text: '답장을 쓰지 못하고 화면을 끈다.' })}>
-            <svg viewBox="0 0 12 12" width="8" height="8"><path d="M6 1 L11 6 L6 11 L1 6 Z" fill="currentColor" opacity=".3" /></svg>
-            답장하지 않고 화면을 끈다
-          </button>}
+    <div className="phone2-wrap">
+      <div className="phone2">
+        <div className="p2-status"><span>{beat.scene === 'home' ? '23:52' : '19:07'}</span><i className="p2-island" /><span className="p2-bat"><b /></span></div>
+        <div className="p2-head">
+          <span className="p2-back">‹</span>
+          <div className="p2-avatar">{beat.from.slice(0, 1)}</div>
+          <div className="p2-who"><strong>{beat.from}</strong><small>HQ 91</small></div>
+        </div>
+        <div className="p2-chat">
+          <div className="p2-day">오늘</div>
+          {typing
+            ? <div className="p2-bubble in typing"><i /><i /><i /></div>
+            : <div className="p2-bubble in">{beat.text}</div>}
+          {reply && reply !== '__none' && <div className="p2-bubble out">{reply}<small>읽음</small></div>}
+        </div>
+        <div className={`p2-input ${reply ? 'sent' : ''}`}>
+          <span>{reply ? (reply === '__none' ? '' : '전송됨') : '답장 쓰기'}</span>
+          <i />
+        </div>
       </div>
     </div>
   )

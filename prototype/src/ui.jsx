@@ -12,36 +12,20 @@ export function useTypewriter(full, key, speed = 26) {
   return { text: full.slice(0, n), done: n >= full.length, finish: () => setN(full.length) }
 }
 
-// 길게 눌러야 실행되는 버튼. 진행률은 CSS 변수 --p(0~1)로 넘긴다.
-export function HoldButton({ ms = 1200, onDone, className = '', children }) {
-  const ref = useRef(null)
-  const raf = useRef(0)
-  const fired = useRef(false)
-
-  const paint = (p) => ref.current?.style.setProperty('--p', p)
-  const stop = () => {
-    cancelAnimationFrame(raf.current)
-    if (!fired.current) paint(0)
-    ref.current?.classList.remove('holding')
+// 누르면 실행되는 버튼. confirm이면 첫 클릭은 고르기만 하고, 같은 버튼을 한 번 더 눌러야 실행된다.
+// armed/onArm을 넘기면 여러 버튼 중 하나만 골라진 상태를 부모가 관리한다.
+export function ActButton({ onDone, confirm = false, armed = false, onArm, className = '', children }) {
+  const [fired, setFired] = useState(false)
+  const click = () => {
+    if (fired) return
+    if (confirm && !armed) return onArm?.()
+    setFired(true)
+    onDone?.()
   }
-  const start = (e) => {
-    if (fired.current) return
-    e.currentTarget.setPointerCapture?.(e.pointerId)
-    ref.current.classList.add('holding')
-    const t0 = performance.now()
-    const tick = (t) => {
-      const p = Math.min(1, (t - t0) / ms)
-      paint(p)
-      if (p >= 1) { fired.current = true; ref.current?.classList.add('fired'); onDone?.(); return }
-      raf.current = requestAnimationFrame(tick)
-    }
-    raf.current = requestAnimationFrame(tick)
-  }
-  useEffect(() => () => cancelAnimationFrame(raf.current), [])
-
   return (
-    <button ref={ref} className={`hold ${className}`} onPointerDown={start} onPointerUp={stop} onPointerCancel={stop} onPointerLeave={stop}>
+    <button className={`act-btn ${armed ? 'armed' : ''} ${fired ? 'fired' : ''} ${className}`} onClick={click}>
       {children}
+      {confirm && <span className="act-confirm">{armed ? '한 번 더 눌러 확정' : '눌러서 고르기'}</span>}
     </button>
   )
 }

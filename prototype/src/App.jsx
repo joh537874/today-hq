@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useReducer, useState, useRef } from 'react'
 import { BEATS, CHAPTERS, ENDINGS, THRESHOLD } from './story.js'
 import Scene from './Scene.jsx'
-import { HoldButton, useTypewriter, ChapterCard, RelationFlash, GlitchNum } from './ui.jsx'
+import { ActButton, useTypewriter, ChapterCard, RelationFlash, GlitchNum } from './ui.jsx'
 
 const PASSIVE = ['narr', 'line', 'term', 'news', 'notify']
 
@@ -142,7 +142,7 @@ export default function App() {
             <Game state={state} beat={beat} dispatch={dispatch} />
           </>
         )}
-        {state.started && beat.type === 'ending' && <Ending state={state} onRestart={() => dispatch({ type: 'RESTART' })} />}
+        {state.started && beat.type === 'ending' && <Ending state={state} onBack={() => dispatch({ type: 'BACK' })} onRestart={() => dispatch({ type: 'RESTART' })} />}
       </div>
     </div>
   )
@@ -164,6 +164,7 @@ function Title({ onStart }) {
   useEffect(() => { const t = setTimeout(() => setPhase('reveal'), 300); return () => clearTimeout(t) }, [])
   return (
     <div className={`title ${phase}`}>
+      <div className="title-photo" style={{ backgroundImage: `url(${import.meta.env.BASE_URL}img/title.jpg)` }} />
       <div className="title-top">
         <div className="title-line" />
         <div className="eyebrow">인터랙티브 스토리</div>
@@ -184,13 +185,21 @@ function Title({ onStart }) {
         </svg>
         <span>시작하기</span>
       </button>
-      <div className="title-hint">스페이스바 — 진행&nbsp;&nbsp;·&nbsp;&nbsp;1, 2 — 선택</div>
+      <div className="title-hint">Space 진행&nbsp;&nbsp;·&nbsp;&nbsp;1, 2 선택&nbsp;&nbsp;·&nbsp;&nbsp;← 뒤로</div>
     </div>
   )
 }
 
 function Game({ state, beat, dispatch }) {
   const next = (log) => dispatch({ type: 'NEXT', log })
+  // 휴대폰 답장. 고른 답장이 화면에 전송된 뒤 다음으로 넘어간다.
+  const [reply, setReply] = useState(null)
+  useEffect(() => { setReply(null) }, [state.idx])
+  const sendReply = (text) => {
+    if (reply) return
+    setReply(text ?? '__none')
+    setTimeout(() => next(text ? { kind: 'me', text } : { kind: 'narr', text: '답장을 쓰지 못하고 화면을 끈다.' }), 1200)
+  }
   const passive = PASSIVE.includes(beat.type)
   const last = [...state.log].reverse().find((e) => e.kind !== 'place')
   const typing = useTypewriter(passive ? last?.text ?? '' : '', state.log.length)
@@ -205,6 +214,7 @@ function Game({ state, beat, dispatch }) {
     const onKey = (e) => {
       if (e.repeat) return
       if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); advance() }
+      if ((e.key === 'ArrowLeft' || e.key === 'Backspace') && state.history.length > 0) { e.preventDefault(); dispatch({ type: 'BACK' }) }
       if (beat.type === 'choice' && (e.key === '1' || e.key === '2')) dispatch({ type: 'CHOOSE', index: Number(e.key) - 1 })
     }
     window.addEventListener('keydown', onKey)
@@ -212,11 +222,11 @@ function Game({ state, beat, dispatch }) {
   })
 
   const chapter = CHAPTERS[beat.chapter - 1]
-  const interactive = ['gate', 'glance', 'bell', 'letter', 'message'].includes(beat.type)
+  const interactive = ['gate', 'glance', 'bell', 'letter'].includes(beat.type)
 
   return (
     <div className="game">
-      <Scene beat={beat} set={state.set} hq={state.hq} next={next} dispatch={dispatch} />
+      <Scene beat={beat} set={state.set} hq={state.hq} next={next} dispatch={dispatch} reply={reply} />
 
       {/* 관계 변화 플래시 */}
       {state.lastRelation && (
@@ -229,7 +239,7 @@ function Game({ state, beat, dispatch }) {
           {state.history.length > 0 && (
             <button className="back-btn" onClick={() => dispatch({ type: 'BACK' })}>
               <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 2 L22 12 L12 22 L2 12 Z" fill="none" stroke="currentColor" strokeWidth="1.5" /><path d="M14 12 L8 12 M10 9 L7 12 L10 15" fill="none" stroke="currentColor" strokeWidth="1.5" /></svg>
-              <span>뒤로</span>
+              <span>뒤로</span><kbd>←</kbd>
             </button>
           )}
           <div className="tl-chapter">{chapter.label}</div>
@@ -253,7 +263,7 @@ function Game({ state, beat, dispatch }) {
 
       {/* 하단 대화 영역 */}
       <footer className={`dialog ${passive ? 'passive' : ''}`} onClick={passive ? advance : undefined}>
-        {beat.type !== 'choice' && beat.type !== 'final' && (
+        {beat.type !== 'choice' && beat.type !== 'final' && beat.type !== 'message' && (
           <Speech entry={last} typing={passive ? typing : null} />
         )}
         {passive && (
@@ -266,6 +276,7 @@ function Game({ state, beat, dispatch }) {
         {beat.type === 'choice' && <DiamondChoice beat={beat} onPick={(index) => dispatch({ type: 'CHOOSE', index })} />}
         {beat.type === 'final' && <Final beat={beat} onPick={(key) => dispatch({ type: 'FINAL', key })} />}
         {beat.type === 'epilogue' && <Epilogue state={state} dispatch={dispatch} />}
+        {beat.type === 'message' && <ReplyChoice beat={beat} reply={reply} onPick={sendReply} />}
         {interactive && <Hint type={beat.type} />}
       </footer>
     </div>
@@ -293,7 +304,7 @@ function InstabilityMeter({ hq, shake, empty }) {
         {[25, 50, 75].map(v => <div key={v} className="inst-tick" style={{ bottom: `${v}%` }} />)}
       </div>
       <div className="inst-num" key={shake}>
-        <GlitchNum value={empty ? '—' : shown} glitch={shake} />
+        <GlitchNum value={empty ? '' : shown} glitch={shake} />
       </div>
       <div className="inst-sub">{empty ? '미측정' : below ? '기준 미달' : '기준 통과'}</div>
     </div>
@@ -317,6 +328,43 @@ function Speech({ entry, typing }) {
         </div>
       )}
       <p>{text}{typing && !typing.done && <span className="caret" />}</p>
+    </div>
+  )
+}
+
+function ReplyChoice({ beat, reply, onPick }) {
+  const options = beat.replies.length > 0 ? beat.replies : [null]
+  useEffect(() => {
+    const onKey = (e) => { const i = Number(e.key) - 1; if (i >= 0 && i < options.length) onPick(options[i]) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
+  return (
+    <div className="diamond-choice reply">
+      <div className="dc-center">
+        <div className="dc-meta">
+          <svg viewBox="0 0 20 20" width="14" height="14"><path d="M10 2 L18 10 L10 18 L2 10 Z" className="teal" /></svg>
+          <span>답장</span>
+        </div>
+        <div className="dc-who">
+          <svg viewBox="0 0 12 12" width="10" height="10"><path d="M6 1 L11 6 L6 11 L1 6 Z" className="teal" /></svg>
+          {beat.from} · 메시지
+        </div>
+        <p className="dc-prompt">“{beat.text}”</p>
+      </div>
+      <div className="dc-opts">
+        {options.map((o, i) => (
+          <button key={i} className={`dc-opt ${reply && reply === (o ?? '__none') ? 'picked' : ''}`} disabled={!!reply} onClick={() => onPick(o)}>
+            <div className="dc-opt-diamond">
+              <svg viewBox="0 0 32 32" width="28" height="28">
+                <path d="M16 2 L30 16 L16 30 L2 16 Z" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                <text x="16" y="20" textAnchor="middle" fontSize="14" fill="currentColor">{i + 1}</text>
+              </svg>
+            </div>
+            <span className="dc-opt-text">{o ?? '답장하지 않고 화면을 끈다'}</span>
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
@@ -365,6 +413,17 @@ function DiamondChoice({ beat, onPick }) {
 }
 
 function Final({ beat, onPick }) {
+  const [armed, setArmed] = useState(null)
+  useEffect(() => {
+    const onKey = (e) => {
+      const i = Number(e.key) - 1
+      if (!beat.options[i]) return
+      if (armed === i) onPick(beat.options[i].key)
+      else setArmed(i)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [armed, beat, onPick])
   return (
     <div className="diamond-choice final">
       <div className="dc-center">
@@ -377,11 +436,11 @@ function Final({ beat, onPick }) {
           {beat.who}
         </div>
         <p className="dc-prompt">{beat.prompt}</p>
-        <div className="dc-inner">길게 눌러 결정 · 손을 떼면 취소</div>
+        <div className="dc-inner">{armed == null ? '하나를 고르면 한 번 더 확인합니다' : '다른 쪽을 누르면 바꿀 수 있습니다'}</div>
       </div>
       <div className="dc-opts final-opts">
         {beat.options.map((o, i) => (
-          <HoldButton key={o.key} className="dc-final-hold" ms={1300} onDone={() => onPick(o.key)}>
+          <ActButton key={o.key} className="dc-final-hold" confirm armed={armed === i} onArm={() => setArmed(i)} onDone={() => onPick(o.key)}>
             <div className="dc-opt-diamond">
               <svg viewBox="0 0 32 32" width="28" height="28">
                 <path d="M16 2 L30 16 L16 30 L2 16 Z" fill="none" stroke="currentColor" strokeWidth="1.5" />
@@ -392,7 +451,7 @@ function Final({ beat, onPick }) {
               <strong>{o.text}</strong>
               <p>{o.desc}</p>
             </div>
-          </HoldButton>
+          </ActButton>
         ))}
       </div>
     </div>
@@ -403,6 +462,7 @@ function Epilogue({ state, dispatch }) {
   const end = ENDINGS[state.final]
   const [done, setDone] = useState(0)
   const [acted, setActed] = useState(!end.tasks && !end.hold)
+  const [armed, setArmed] = useState(false)
   const [step, setStep] = useState(-1)
 
   const nextStep = () => {
@@ -426,15 +486,15 @@ function Epilogue({ state, dispatch }) {
           <span>나인의 제안</span>
           <em>{done + 1} / {end.tasks.length}</em>
         </div>
-        <HoldButton key={done} className="final-opt task" ms={1000} onDone={() => {
+        <ActButton key={done} className="final-opt task" onDone={() => {
           dispatch({ type: 'LOG', log: [{ kind: 'me', text: t.label }, { kind: 'narr', text: t.result }] })
           dispatch({ type: 'HQ', hq: t.hq })
           if (done + 1 >= end.tasks.length) setActed(true)
           else setDone(done + 1)
         }}>
           <b className="final-num">{done + 1}</b>
-          <div><strong>{t.label}</strong><p>길게 눌러 실행</p></div>
-        </HoldButton>
+          <div><strong>{t.label}</strong><p>눌러서 실행</p></div>
+        </ActButton>
       </div>
     )
   }
@@ -446,15 +506,15 @@ function Epilogue({ state, dispatch }) {
           <svg viewBox="0 0 16 16" width="12" height="12"><path d="M8 1 L15 8 L8 15 L1 8 Z" className="end" /></svg>
           <span>되돌릴 수 없는 행동</span>
         </div>
-        <HoldButton className="final-opt danger" ms={2200} onDone={() => {
+        <ActButton className="final-opt danger" confirm armed={armed} onArm={() => setArmed(true)} onDone={() => {
           dispatch({ type: 'LOG', log: { kind: 'narr', text: end.hold.result } })
           dispatch({ type: 'SET', set: state.final === 'zealot' ? { nineOff: true } : { tagEmpty: true } })
           if (state.final === 'outlier') dispatch({ type: 'HQ', hq: null })
           setActed(true)
         }}>
           <b className="final-num">!</b>
-          <div><strong>{end.hold.label}</strong><p>손을 떼면 취소됩니다</p></div>
-        </HoldButton>
+          <div><strong>{end.hold.label}</strong><p>되돌릴 수 없습니다</p></div>
+        </ActButton>
       </div>
     )
   }
@@ -485,12 +545,18 @@ function Hint({ type }) {
   )
 }
 
-function Ending({ state, onRestart }) {
+function Ending({ state, onBack, onRestart }) {
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'ArrowLeft' || e.key === 'Backspace') { e.preventDefault(); onBack() } }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onBack])
   const end = ENDINGS[state.final]
   const pos = useMemo(() => ({ x: state.ai / 10, y: state.std / 2 }), [state.ai, state.std])
   return (
     <div className={`ending tone-${end.tone}`}>
       <section className="end-hero">
+        <div className="end-photo" style={{ backgroundImage: `url(${import.meta.env.BASE_URL}img/end-${state.final}.jpg)` }} />
         <div className="end-top">
           <span className="end-no">{end.no}</span>
           <span className="end-tag">{end.hq}</span>
@@ -534,10 +600,16 @@ function Ending({ state, onRestart }) {
             ))}
           </ul>
         </div>
+        <div className="end-actions">
+        <button className="back-btn end-back" onClick={onBack}>
+          <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 2 L22 12 L12 22 L2 12 Z" fill="none" stroke="currentColor" strokeWidth="1.5" /><path d="M14 12 L8 12 M10 9 L7 12 L10 15" fill="none" stroke="currentColor" strokeWidth="1.5" /></svg>
+          <span>마지막 장면으로</span>
+        </button>
         <button className="btn-restart" onClick={onRestart}>
           <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 2 L22 12 L12 22 L2 12 Z" fill="none" stroke="currentColor" strokeWidth="1.5" /></svg>
           처음부터 다시
         </button>
+        </div>
       </section>
     </div>
   )
