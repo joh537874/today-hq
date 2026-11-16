@@ -41,9 +41,9 @@ const raw = [
       { text: '대충 끄덕이고 커피를 받는다.', sign: -1, inner: '네가 이 기분을 어떻게 알아.' },
     ],
   },
-  L('줄 끝의 남자', '“저도 아침에 4점이나 떨어졌어요.”', { set: { gate: true, coffee: true, man: true } }),
+  L('줄 끝의 남자', '“저도 아침에 4점이나 떨어졌어요.”', { set: { gate: true, coffee: true, man: true }, shot: 'cafe-man' }),
   {
-    type: 'choice', id: 'c2', num: '②', title: '줄 선 남자의 말', axis: 'std', amount: 1,
+    type: 'choice', shot: 'cafe-man', id: 'c2', num: '②', title: '줄 선 남자의 말', axis: 'std', amount: 1,
     who: '줄 끝의 남자', prompt: '“위원회가 그렇게 정했으면 우리가 좀 부족했던 거겠죠.”',
     options: [
       { text: '“그러게요. 저도 뭐가 부족했는지 좀 돌아봐야겠어요.”', sign: 1, inner: '기준이 올랐으면 나도 올라가야지.' },
@@ -62,9 +62,9 @@ const raw = [
       { text: '“고마워. 근데 이건 내가 직접 생각해야 마음이 전해질 것 같아.”', sign: -1, inner: '축하 인사까지 맡기고 싶지는 않다.' },
     ],
   },
-  N('길 건너에서 재이가 HQ 폐지 시위를 하고 있다.', { set: { ad: true, protest: true } }),
+  N('길 건너에서 재이가 HQ 폐지 시위를 하고 있다.', { set: { ad: true, protest: true }, shot: 'street-jae' }),
   {
-    type: 'choice', id: 'c4', num: '④', title: '재이의 시위', axis: 'std', amount: 1,
+    type: 'choice', shot: 'street-jae', id: 'c4', num: '④', title: '재이의 시위', axis: 'std', amount: 1,
     who: '나', prompt: '피켓을 든 재이와 눈이 마주친다.',
     options: [
       { text: '‘HQ는 인간성을 측정하기 위해 필요한 제도다.’ 생각하고 지나친다.', sign: 1, inner: '기준이 없으면 무엇으로 사람을 믿지.' },
@@ -76,20 +76,20 @@ const raw = [
   { chapter: 3, scene: 'subway', place: '지하철', hq: 72, ...N('저녁, 클로이에게 가는 지하철.') },
   N('사람들이 습관처럼 서로의 머리 위를 흘끗 본다.'),
   { type: 'glance', need: 4 },
-  N('건너편에서 아이가 울고 있다. AI 승객이 아이를 능숙하게 달랜다. 머리 위의 숫자는 90이다.', { set: { child: true } }),
-  L('나인', '“참 다정하시네요.”', { set: { child: true } }),
+  N('건너편에서 아이가 울고 있다. AI 승객이 아이를 능숙하게 달랜다. 머리 위의 숫자는 90이다.', { set: { child: true }, shot: 'subway-child' }),
+  L('나인', '“참 다정하시네요.”', { set: { child: true }, shot: 'ref-nine-subway' }),
   {
-    type: 'choice', id: 'c6', num: '⑥', title: 'AI 승객', axis: 'ai', amount: 2,
+    type: 'choice', shot: 'subway-child', id: 'c6', num: '⑥', title: 'AI 승객', axis: 'ai', amount: 2,
     who: '나', prompt: '아이는 어느새 울음을 그쳤다.',
     options: [
       { text: '“그러게. 정말 다정하다. 배울 만한 태도네.”', sign: 1, inner: '누가 했든 다정한 건 다정한 거다.' },
       { text: '“우는 사람을 보면 달래 주도록 학습된 것뿐이지.”', sign: -1, inner: '저건 마음이 아니라 기능이다.' },
     ],
   },
-  N('같은 칸에서 오랜 친구 줄리안을 만난다. 줄리안은 Born Human Society 회원이다.', { set: { julian: true } }),
-  L('줄리안', '“AI의 발전은 축복이 아니라 위협일 뿐이야. 인간을 닮아 갈수록 그 위험성은 커지는 법이지.”', { set: { julian: true } }),
+  N('같은 칸에서 오랜 친구 줄리안을 만난다. 줄리안은 Born Human Society 회원이다.', { set: { julian: true }, shot: 'ref-julian-subway' }),
+  L('줄리안', '“AI의 발전은 축복이 아니라 위협일 뿐이야. 인간을 닮아 갈수록 그 위험성은 커지는 법이지.”', { set: { julian: true }, shot: 'ref-julian-subway' }),
   {
-    type: 'choice', id: 'c7a', num: '⑦', title: '줄리안의 말 · 1', axis: 'ai', amount: 3,
+    type: 'choice', shot: 'ref-julian-subway', id: 'c7a', num: '⑦', title: '줄리안의 말 · 1', axis: 'ai', amount: 3,
     who: '줄리안', prompt: '“쓸데없이 사람을 흉내 내는 AI가 결국 어떤 재앙을 불러올지, 생각해 본 적 없나?”',
     options: [
       { text: '“나인이 있어서 삶이 훨씬 편해.”', sign: 1, inner: '재앙이라기엔 매일 도움을 받고 있다.' },
@@ -97,14 +97,14 @@ const raw = [
     ],
   },
   {
-    type: 'choice', id: 'c7b', num: '⑦', title: '줄리안의 말 · 2', axis: 'ai', amount: 3,
+    type: 'choice', shot: 'ref-julian-subway', id: 'c7b', num: '⑦', title: '줄리안의 말 · 2', axis: 'ai', amount: 3,
     who: '줄리안', prompt: '“그 깡통이랑 같이 다니지 마. 걔가 너를 잡아먹고 있는 거라니까.”',
     options: [
       { text: '“도움 되는 존재를 그런 식으로 비하하면 넌 어떻게 발전하고 싶은 건데? 사람한테 도움받는 거랑 뭐가 달라.”', sign: 1, inner: '나인은 깡통이 아니다.' },
       { text: '대답하지 않는다. 나인과 살짝 서먹해져 거리를 두고 걷는다.', sign: -1, inner: '틀린 말이 아닐지도 모른다.' },
     ],
   },
-  L('줄리안', '“HQ를 올리는 건 쉬워. AI 몸 안에 있는 휴미터를 꺼내서 끼우면 돼.”', { set: { julian: true } }),
+  L('줄리안', '“HQ를 올리는 건 쉬워. AI 몸 안에 있는 휴미터를 꺼내서 끼우면 돼.”', { set: { julian: true }, shot: 'ref-julian-subway' }),
   N('줄리안은 다음 역에서 내린다.'),
 
   // ───────── 4장 · 문 앞
@@ -115,11 +115,11 @@ const raw = [
   { type: 'gate', at: '클로이의 집', fail: '입장 불가', after: '친구 집에까지 기준선이 걸려 있을 거라고는 생각하지 못했다.' },
 
   // 4A · AI를 포용해 온 경우
-  { when: (s) => s.route === 'A', set: { hands: true, panel: true, open: true }, ...L('클로이', '“아, 말한다는 게… 애들이 기준 못 낮춘대. 조금만 올려서 오면 안 돼?”') },
+  { when: (s) => s.route === 'A', set: { hands: true, panel: true, open: true }, shot: 'door-chloe', ...L('클로이', '“아, 말한다는 게… 애들이 기준 못 낮춘대. 조금만 올려서 오면 안 돼?”') },
   { when: (s) => s.route === 'A', type: 'letter', lines: ['SNS가 시키는 대로 쓴 문장들.', '카페에서 일부러 삼킨 대답.', '지하철에서 연습한 말투.', '오늘 하루 한 모든 일이 이 문 하나를 열기 위한 것이었다.'] },
-  { when: (s) => s.route === 'A', set: { hands: true, panel: true, open: true, nine: true }, ...L('나인', '“꼭 들어가고 싶으신 거예요?”') },
+  { when: (s) => s.route === 'A', set: { hands: true, panel: true, open: true, nine: true }, shot: 'door-nine', ...L('나인', '“꼭 들어가고 싶으신 거예요?”') },
   {
-    when: (s) => s.route === 'A', type: 'final', num: '⑧', title: '문 앞의 선택',
+    when: (s) => s.route === 'A', type: 'final', shot: 'door-chloe', num: '⑧', title: '문 앞의 선택',
     who: '클로이', prompt: '“조금만 올려서 오면 안 돼?”',
     options: [
       { key: 'insurgent', text: '돌아선다', desc: '“미안, 오늘은 그냥 갈게.” 점수도, 파티도, 어쩌면 클로이와의 관계도 내려놓는다.' },
@@ -130,7 +130,7 @@ const raw = [
   // 4B · AI를 배척해 온 경우
   { when: (s) => s.route === 'B', set: { hands: true, panel: true, memory: true }, ...N('줄리안이 했던 말이 떠오른다.') },
   { when: (s) => s.route === 'B', set: { hands: true, panel: true, memory: true }, ...L('줄리안', '“HQ를 올리는 건 쉬워. AI 몸 안에 있는 휴미터를 꺼내서 끼우면 돼.”') },
-  { when: (s) => s.route === 'B', set: { hands: true, panel: true, nine: true }, ...N('나인을 바라본다. 나인은 아무것도 모르는 얼굴로 서 있다.') },
+  { when: (s) => s.route === 'B', set: { hands: true, panel: true, nine: true }, shot: 'door-nine', ...N('나인을 바라본다. 나인은 아무것도 모르는 얼굴로 서 있다.') },
   { when: (s) => s.route === 'B', type: 'message', from: '클로이', text: '언제 와? 다들 기다려.', replies: [], set: { hands: true, panel: true, nine: true } },
   {
     when: (s) => s.route === 'B', type: 'final', num: '⑧', title: '문 앞의 선택',

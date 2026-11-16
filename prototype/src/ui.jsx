@@ -53,8 +53,14 @@ export function ChapterCard({ chapter, title, place, onDone, slow }) {
     const t3 = setTimeout(() => onDone?.(), 3600 * d)
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
   }, []) // eslint-disable-line
+  // 장 제목이 떠 있는 동안에는 키 입력으로 이야기가 넘어가지 않게 막는다
+  useEffect(() => {
+    const block = (e) => { e.stopImmediatePropagation(); e.preventDefault() }
+    window.addEventListener('keydown', block, true)
+    return () => window.removeEventListener('keydown', block, true)
+  }, [])
   return (
-    <div className={`chapter-card ${phase}`}>
+    <div className={`chapter-card ${phase}`} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
       <div className="ch-line" />
       <div className="ch-label">{chapter}</div>
       <h2 className="ch-title">{title}</h2>

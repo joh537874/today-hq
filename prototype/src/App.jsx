@@ -166,7 +166,7 @@ function Title({ onStart }) {
   useEffect(() => { const t = setTimeout(() => setPhase('reveal'), 300); return () => clearTimeout(t) }, [])
   return (
     <div className={`title ${phase}`}>
-      <div className="title-photo" style={{ backgroundImage: `url(${import.meta.env.BASE_URL}img/title.jpg)` }} />
+      <div className="title-photo" style={{ backgroundImage: `url(${import.meta.env.BASE_URL}img/ref-city1.jpg)` }} />
       <div className="title-top">
         <div className="title-line" />
         <div className="eyebrow">인터랙티브 스토리</div>
@@ -448,17 +448,18 @@ function DiamondChoice({ beat, onPick }) {
 }
 
 function Final({ beat, onPick }) {
-  const [armed, setArmed] = useState(null)
+  // 한 번 누르면 고른 카드가 빛나고 나머지가 흐려진 뒤 넘어간다
+  const [picked, setPicked] = useState(null)
+  const choose = (i) => {
+    if (picked != null) return
+    setPicked(i)
+    setTimeout(() => onPick(beat.options[i].key), 900)
+  }
   useEffect(() => {
-    const onKey = (e) => {
-      const i = Number(e.key) - 1
-      if (!beat.options[i]) return
-      if (armed === i) onPick(beat.options[i].key)
-      else setArmed(i)
-    }
+    const onKey = (e) => { const i = Number(e.key) - 1; if (beat.options[i]) choose(i) }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [armed, beat, onPick])
+  })
   return (
     <div className="diamond-choice final">
       <div className="dc-center">
@@ -471,11 +472,11 @@ function Final({ beat, onPick }) {
           {beat.who}
         </div>
         <p className="dc-prompt">{beat.prompt}</p>
-        <div className="dc-inner">{armed == null ? '하나를 고르면 한 번 더 확인합니다' : '다른 쪽을 누르면 바꿀 수 있습니다'}</div>
+        <div className="dc-inner on">되돌릴 수 없는 선택입니다</div>
       </div>
       <div className="dc-opts final-opts">
         {beat.options.map((o, i) => (
-          <ActButton key={o.key} className="dc-final-hold" confirm armed={armed === i} onArm={() => setArmed(i)} onDone={() => onPick(o.key)}>
+          <button key={o.key} className={`dc-final-hold ${picked === i ? 'picked' : ''} ${picked != null && picked !== i ? 'faded' : ''}`} onClick={() => choose(i)}>
             <div className="dc-opt-diamond">
               <svg viewBox="0 0 32 32" width="28" height="28">
                 <path d="M16 2 L30 16 L16 30 L2 16 Z" fill="none" stroke="currentColor" strokeWidth="1.5" />
@@ -486,7 +487,7 @@ function Final({ beat, onPick }) {
               <strong>{o.text}</strong>
               <p>{o.desc}</p>
             </div>
-          </ActButton>
+          </button>
         ))}
       </div>
     </div>
@@ -497,7 +498,6 @@ function Epilogue({ state, dispatch }) {
   const end = ENDINGS[state.final]
   const [done, setDone] = useState(0)
   const [acted, setActed] = useState(!end.tasks && !end.hold)
-  const [armed, setArmed] = useState(false)
   const [step, setStep] = useState(-1)
 
   const nextStep = () => {
@@ -541,7 +541,7 @@ function Epilogue({ state, dispatch }) {
           <svg viewBox="0 0 16 16" width="12" height="12"><path d="M8 1 L15 8 L8 15 L1 8 Z" className="end" /></svg>
           <span>되돌릴 수 없는 행동</span>
         </div>
-        <ActButton className="final-opt danger" confirm armed={armed} onArm={() => setArmed(true)} onDone={() => {
+        <ActButton className="final-opt danger" onDone={() => {
           dispatch({ type: 'LOG', log: { kind: 'narr', text: end.hold.result } })
           dispatch({ type: 'SET', set: state.final === 'zealot' ? { nineOff: true } : { tagEmpty: true } })
           if (state.final === 'outlier') dispatch({ type: 'HQ', hq: null, why: '휴미터 분리' })

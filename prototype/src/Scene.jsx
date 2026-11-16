@@ -2,13 +2,15 @@ import React, { useEffect, useRef, useState } from 'react'
 import { THRESHOLD } from './story.js'
 import { Figure, ScanMarker } from './ui.jsx'
 
+const PHOTO = { home: 'home2', cafe: 'cafe2', street: 'street2', subway: 'subway2', door: 'door' }
+
 const TIME = { home: '23:48', cafe: '08:12', street: '08:31', subway: '18:40', door: '19:06' }
 
 export default function Scene({ beat, set, hq, next, dispatch, reply, onReply, picks = [] }) {
   const View = { home: Home, cafe: Cafe, street: Street, subway: Subway, door: Door }[beat.scene]
   return (
-    <section className={`scene scene-${beat.scene} ${set.tv === 'breaking' ? 'tv-on' : ''}`} key={beat.scene}>
-      <div className="scene-photo" style={{ backgroundImage: `url(${import.meta.env.BASE_URL}img/${beat.scene}.jpg)` }} />
+    <section className={`scene scene-${beat.scene} ${set.tv === 'breaking' ? 'tv-on' : ''} ${beat.shot ? 'shot-on' : ''}`} key={beat.scene}>
+      <div className="scene-photo" key={beat.shot ?? 'base'} style={{ backgroundImage: `url(${import.meta.env.BASE_URL}img/${beat.shot ?? PHOTO[beat.scene]}.jpg)` }} />
       <div className="scene-inner">
         {/* 1인칭 HUD 상단 — 시간, 장소 */}
         <div className="hud-top-bar">
@@ -150,8 +152,9 @@ function Street({ set }) {
   )
 }
 
+// subway2.jpg 속 승객 다섯 명의 얼굴 위치(화면 대비 %)
 const PASSENGERS = [
-  { hq: 84, x: 10 }, { hq: 77, x: 26 }, { hq: 90, x: 42, ai: true }, { hq: 68, x: 58 }, { hq: 81, x: 74 }, { hq: 79, x: 90 },
+  { hq: 84, x: 6.8, y: 30 }, { hq: 77, x: 23.4, y: 29 }, { hq: 68, x: 39.8, y: 32 }, { hq: 90, x: 53, y: 32, ai: true }, { hq: 79, x: 68.6, y: 29 },
 ]
 
 function Subway({ beat, set, hq, next }) {
@@ -164,19 +167,15 @@ function Subway({ beat, set, hq, next }) {
       <div className="train-windows"><i /><i /><i /><i /></div>
       <div className="reflection"><span>창에 비친 나</span><b>{hq}</b></div>
       <div className="train-pole" /><div className="train-seat" />
-      {PASSENGERS.map((p, k) => (
-        <Figure
-          key={k} hq={p.hq} ai={p.ai} tone={p.ai ? 'ai' : 'gray'}
-          hidden={glancing && !seen.includes(k)}
-          className={`passenger ${glancing ? 'lookable' : ''} ${set.julian || set.child ? 'dim' : ''} ${set.child && p.ai ? 'focus' : ''}`}
-          style={{ left: `${p.x}%` }} onPointerEnter={() => look(k)}
+      {glancing && PASSENGERS.map((p, k) => (
+        <button
+          key={k}
+          className={`look-spot ${seen.includes(k) ? 'seen' : ''} ${p.ai ? 'ai' : ''}`}
+          style={{ left: `${p.x}%`, top: `${p.y * 10.8}px` }}
+          onPointerEnter={() => look(k)} onClick={() => look(k)}
         >
-          {/* 디트로이트 스캔 마커 — 흘끗보기 모드에서 각 승객에 */}
-          {glancing && !seen.includes(k) && (
-            <ScanMarker active style={{ position: 'absolute', top: -20, left: '50%', transform: 'translateX(-50%)' }} />
-          )}
-          {set.child && p.ai && <div className="child" />}
-        </Figure>
+          {seen.includes(k) ? <b>{p.hq}</b> : <i />}
+        </button>
       ))}
       {set.julian && <Figure name="줄리안" hq="92" tone="violet" className="front" style={{ left: '30%' }} />}
       {set.julian && <Figure name="나인" hq="88" tone="ai" ai className="front" style={{ left: '62%' }} />}
