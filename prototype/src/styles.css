@@ -1086,3 +1086,18 @@ svg path.me { fill: var(--violet); } svg path.red { fill: var(--end); }
 .look-spot.seen { cursor: default; }
 .scene-cafe .scan-marker, .shot-on .scan-marker { display: none; }
 .look-spot b { margin-top: -70px; }
+
+/* 밝은 사진 위에서도 읽히도록 유리 패널 바탕을 어둡게 깐다 */
+.notify, .gate, .hint, .continue, .back-btn, .meter-btn, .look-spot b, .glance-bar {
+  background: linear-gradient(135deg, rgba(22,28,36,.78), rgba(10,14,20,.66)) !important;
+  backdrop-filter: blur(22px) saturate(140%); -webkit-backdrop-filter: blur(22px) saturate(140%);
+}
+.notify-head, .notify-head em { color: rgba(255,255,255,.62); }
+.notify strong { color: #fff; font-size: 26px; }
+.notify p, .notify-more p { color: rgba(255,255,255,.78); }
+.nm-row { color: rgba(255,255,255,.6); }
+.nm-row b { color: #fff; }
+.nm-row b.bad, .nm-row em { color: #ff7b78; }
+.notify-more { background: rgba(255,255,255,.07); }
+.notify-tap { color: #8fd0ff; }
+.hud-time, .hud-loc, .tl-chapter, .tl-place, .tl-title, .inst-label, .inst-sub, .inst-num { text-shadow: 0 1px 10px rgba(0,0,0,.7); }
