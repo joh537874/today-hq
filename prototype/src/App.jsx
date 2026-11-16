@@ -118,7 +118,7 @@ function Title({ onStart }) {
     <div className="title">
       <div className="eyebrow">Interactive Story</div>
       <h1>오늘의 HQ</h1>
-      <p className="title-sub">2069년, 인간다움이 숫자로 매겨지는 도시. 친구의 생일 모임에 가는 하루를 따라갑니다.</p>
+      <p className="title-sub">2069년, 인간다움이 숫자로 매겨지는 도시.<br/>친구의 생일 모임에 가는 하루를 따라갑니다.</p>
       <div className="title-cards">
         <div className="card title-card">
           <div className="dot-title"><i className="dot ai" />플레이 시간</div>
@@ -126,15 +126,15 @@ function Title({ onStart }) {
         </div>
         <div className="card title-card">
           <div className="dot-title"><i className="dot std" />선택</div>
-          <p>7번의 선택과 문 앞의 마지막 선택</p>
+          <p>7번의 선택 · 12초 제한</p>
         </div>
         <div className="card title-card">
           <div className="dot-title"><i className="dot end" />결말</div>
-          <p>네 개 중 하나</p>
+          <p>네 개의 엔딩</p>
         </div>
       </div>
       <button className="btn primary big" onClick={onStart}>시작하기</button>
-      <div className="title-hint">클릭 또는 스페이스바로 진행 · 선택은 1, 2 키로도 가능</div>
+      <div className="title-hint">스페이스바로 진행 · 선택은 1, 2 키</div>
     </div>
   )
 }
@@ -232,8 +232,28 @@ function Speech({ entry, typing }) {
   )
 }
 
+const CHOICE_TIME = 12000 // 12초 제한
+
 function Choice({ beat, onPick }) {
   const [hover, setHover] = useState(null)
+  const [elapsed, setElapsed] = useState(0)
+  const startRef = React.useRef(Date.now())
+
+  // 타이머: 시간 지나면 랜덤 선택
+  useEffect(() => {
+    const tick = () => {
+      const e = Date.now() - startRef.current
+      setElapsed(e)
+      if (e >= CHOICE_TIME) { onPick(Math.floor(Math.random() * beat.options.length)); return }
+      requestAnimationFrame(tick)
+    }
+    const raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, []) // eslint-disable-line
+
+  const remain = Math.max(0, 1 - elapsed / CHOICE_TIME)
+  const warning = remain < 0.25
+
   return (
     <div className="choice">
       <div className="choice-q">
@@ -251,6 +271,7 @@ function Choice({ beat, onPick }) {
           </button>
         ))}
       </div>
+      <div className={`timer-bar ${warning ? 'warning' : ''}`}><i style={{ width: `${remain * 100}%` }} /></div>
     </div>
   )
 }
