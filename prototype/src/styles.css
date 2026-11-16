@@ -1348,3 +1348,4 @@ svg path.me { fill: var(--violet); } svg path.red { fill: var(--end); }
 .cv-hq-side b { display: block; font-family: var(--serif); font-style: normal; font-weight: 400; font-size: 92px; line-height: 1; letter-spacing: -0.02em; color: #fff; }
 .cv-hq-side p { margin-top: 14px; font-size: 30px; letter-spacing: -0.03em; color: rgba(255,255,255,.82); }
 .title.cover .cv-bottom { bottom: 150px; }
+.hq-chip { cursor: default; } .hq-chip:hover { transform: none; } .hq-chip b { animation: none; }

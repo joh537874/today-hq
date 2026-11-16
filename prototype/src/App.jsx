@@ -194,7 +194,6 @@ function Title({ onStart }) {
 
 function Game({ state, beat, dispatch }) {
   const next = (log) => dispatch({ type: 'NEXT', log })
-  const [report, setReport] = useState(false)
   // 휴대폰 답장. 고른 답장이 화면에 전송된 뒤 다음으로 넘어간다.
   const [reply, setReply] = useState(null)
   useEffect(() => { setReply(null) }, [state.idx])
@@ -224,10 +223,7 @@ function Game({ state, beat, dispatch }) {
   useEffect(() => {
     const onKey = (e) => {
       if (e.repeat || e.target.closest?.('input, textarea')) return
-      if (!report && (e.code === 'Space' || e.code === 'Enter')) { e.preventDefault(); advance() }
-      if (e.key === 'h' || e.key === 'H' || e.key === 'ㅗ') { setReport((v) => !v); return }
-      if (e.key === 'Escape') { setReport(false); return }
-      if (report) return
+      if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); advance() }
       if ((e.key === 'ArrowLeft' || e.key === 'Backspace') && state.history.length > 0) { e.preventDefault(); dispatch({ type: 'BACK' }) }
       if (beat.type === 'choice' && (e.key === '1' || e.key === '2')) dispatch({ type: 'CHOOSE', index: Number(e.key) - 1 })
     }
@@ -261,10 +257,9 @@ function Game({ state, beat, dispatch }) {
             <em>{TIME[beat.scene]}</em>
           </div>
         </div>
-        <HQChip hq={state.hq} shake={state.shake} empty={state.set.tagEmpty} onClick={() => setReport(true)} />
+        <HQChip hq={state.hq} empty={state.set.tagEmpty} />
       </header>
 
-      {report && <HQReport state={state} onClose={() => setReport(false)} />}
 
       {/* 하단 대화 영역 */}
       <footer className={`dialog ${passive ? 'passive' : ''}`} onClick={passive ? advance : undefined}>
@@ -288,23 +283,14 @@ function Game({ state, beat, dispatch }) {
   )
 }
 
-function HQChip({ hq, shake, empty, onClick }) {
-  const [shown, setShown] = useState(hq)
-  useEffect(() => {
-    if (hq == null || shown === hq) return
-    const t = setTimeout(() => setShown((v) => v + Math.sign(hq - v)), 45)
-    return () => clearTimeout(t)
-  }, [hq, shown])
-  const below = hq != null && shown < THRESHOLD
+// 오른쪽 위 HQ. 숫자만 떠 있고, 선택에 반응해 흔들리지 않는다.
+function HQChip({ hq, empty }) {
+  const below = hq != null && hq < THRESHOLD
   return (
-    <button className={`hq-chip ${empty ? 'empty' : below ? 'bad' : 'good'}`} onClick={onClick} aria-label="HQ 리포트 열기">
+    <div className={`hq-chip ${empty ? 'empty' : below ? 'bad' : 'good'}`}>
       <span className="hq-k">HQ</span>
-      <b key={shake}>{empty ? '—' : shown}</b>
-      <div className="hq-side">
-        <div className="hq-bar"><i style={{ width: `${empty ? 0 : Math.min(100, shown)}%` }} /><u style={{ left: `${THRESHOLD}%` }} /></div>
-        <small>{empty ? 'Unread' : below ? `Below ${THRESHOLD}` : `Pass ${THRESHOLD}`}<kbd>H</kbd></small>
-      </div>
-    </button>
+      <b>{empty || hq == null ? '—' : hq}</b>
+    </div>
   )
 }
 
@@ -332,67 +318,6 @@ function InstabilityMeter({ hq, shake, empty }) {
         <GlitchNum value={empty ? '' : shown} glitch={shake} />
       </div>
       <div className="inst-sub">{empty ? '미측정' : below ? '기준 미달' : '기준 통과'}</div>
-    </div>
-  )
-}
-
-// HQ를 누르면 열리는 측정 리포트. 항목 값은 HQ와 지금까지의 선택에서 계산한 연출용 수치다.
-function HQReport({ state, onClose }) {
-  // 리포트가 열려 있는 동안에는 진행·선택 키를 막는다
-  useEffect(() => {
-    const block = (e) => {
-      if (e.target.closest?.('input, textarea')) return
-      if (['Escape', 'h', 'H', 'ㅗ'].includes(e.key)) { e.stopImmediatePropagation(); onClose(); return }
-      e.stopImmediatePropagation()
-    }
-    window.addEventListener('keydown', block, true)
-    return () => window.removeEventListener('keydown', block, true)
-  }, [onClose])
-  const empty = state.hq == null
-  const base = state.hq ?? 0
-  const clamp = (v) => Math.max(8, Math.min(99, Math.round(v)))
-  const items = [
-    { label: '표정 안정성', v: clamp(base + 4 + state.std * 2) },
-    { label: '공감 반응', v: clamp(base - 3 + state.ai * 1.2) },
-    { label: '말과 표정의 일치', v: clamp(base + 1 - Math.abs(state.ai) * 0.6) },
-    { label: '망설임 억제', v: clamp(base - 6 + state.std) },
-  ]
-  const below = !empty && base < THRESHOLD
-  return (
-    <div className="report-wrap" onClick={onClose}>
-      <aside className="report" onClick={(e) => e.stopPropagation()}>
-        <div className="rp-head">
-          <span>Humeter Report</span>
-          <button onClick={onClose}>닫기 <kbd>Esc</kbd></button>
-        </div>
-        <div className="rp-now">
-          <b className={below ? 'bad' : 'good'}>{empty ? '미측정' : base}</b>
-          <div>
-            <span className={`rp-pill ${below ? 'bad' : 'good'}`}>{empty ? '측정 불가' : below ? `기준 ${THRESHOLD} 미달` : `기준 ${THRESHOLD} 통과`}</span>
-            <p>곁에 있는 나인 <strong>88</strong></p>
-          </div>
-        </div>
-        <div className="rp-sec">측정 항목</div>
-        {items.map((it) => (
-          <div className="rp-bar" key={it.label}>
-            <span>{it.label}</span>
-            <i><em style={{ width: `${empty ? 0 : it.v}%` }} className={it.v < THRESHOLD ? 'bad' : ''} /><u style={{ left: `${THRESHOLD}%` }} /></i>
-            <b>{empty ? '' : it.v}</b>
-          </div>
-        ))}
-        <div className="rp-sec">변동 기록</div>
-        <ul className="rp-log">
-          {[...state.hqLog].reverse().map((h, i) => (
-            <li key={i}>
-              <span className="rp-at">{h.at}</span>
-              <span className="rp-why">{h.why}</span>
-              <b className={h.from != null && h.to != null ? (h.to < h.from ? 'bad' : 'good') : ''}>
-                {h.from != null && <s>{h.from}</s>}{h.to ?? '—'}
-              </b>
-            </li>
-          ))}
-        </ul>
-      </aside>
     </div>
   )
 }
