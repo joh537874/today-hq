@@ -545,63 +545,65 @@ function Ending({ state, onBack, onRestart }) {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [onBack])
+  const [showPicks, setShowPicks] = useState(false)
   const end = ENDINGS[state.final]
-  const pos = useMemo(() => ({ x: state.ai / 10, y: state.std / 2 }), [state.ai, state.std])
+  const no = String(QUADS_ORDER.indexOf(state.final) + 1).padStart(2, '0')
   return (
-    <div className={`ending tone-${end.tone}`}>
-      <section className="end-hero">
-        <div className="end-photo" style={{ backgroundImage: `url(${import.meta.env.BASE_URL}img/end-${state.final}.jpg)` }} />
-        <div className="end-top">
-          <span className="end-no">{end.no}</span>
-          <span className="end-tag">{end.hq}</span>
-        </div>
-        <div className="end-body">
-          <div className="end-pill">{end.tag}</div>
-          <h1 className="serif">{end.name}</h1>
-          <h2>{end.ko}</h2>
-          <p className="end-desc">{end.desc}</p>
-          <p className="end-letter">{end.letter}</p>
-          <blockquote>"{end.question}"</blockquote>
-        </div>
+    <div className="ending2">
+      <div className="e2-photo" style={{ backgroundImage: `url(${import.meta.env.BASE_URL}img/end-${state.final}.jpg)` }} />
+
+      <section className="e2-name">
+        <span className="e2-eyebrow">Ending<sup>{no}</sup><i />{end.tag}</span>
+        <h1>{end.name}</h1>
+        <h2>{end.ko}</h2>
+        <p>{end.desc}. {end.letter}</p>
       </section>
 
-      <section className="end-side">
-        <div className="end-card">
-          <div className="ec-head"><span>Where I Stand</span>두 개의 질문 위의 나</div>
-          <Quadrant pos={pos} current={state.final} />
-          <div className="axis-sum">
-            <span><i className="dot ai" />AI 축 <b>{fmt(state.ai)}</b></span>
-            <span><i className="dot std" />기준 축 <b>{fmt(state.std)}</b></span>
-            <span>루트 <b>4{state.route}</b></span>
+      <section className="e2-side">
+        <div className="e2-q">
+          <span>The Question</span>
+          <blockquote>{end.question}</blockquote>
+        </div>
+
+        <ul className="e2-list">
+          {QUADS.map((q) => (
+            <li key={q.key} className={q.key === state.final ? 'on' : ''}>
+              <b>{q.name}</b><small>{q.ko}</small>{q.key === state.final && <em>나의 결말</em>}
+            </li>
+          ))}
+        </ul>
+
+        <button className="e2-picks-btn" onClick={() => setShowPicks((v) => !v)}>
+          내가 한 선택 {state.picks.length}개 <span>AI {fmt(state.ai)} · 기준 {fmt(state.std)}</span>
+        </button>
+      </section>
+
+      {showPicks && (
+        <div className="e2-picks" onClick={() => setShowPicks(false)}>
+          <div onClick={(e) => e.stopPropagation()}>
+            <div className="e2-picks-head"><span>My Choices</span><button onClick={() => setShowPicks(false)}>닫기</button></div>
+            <ol>
+              {state.picks.map((p) => (
+                <li key={p.id}>
+                  <span className="pk-t">{p.title}</span>
+                  <span className="pk-x">{p.text}</span>
+                  <b className={p.delta > 0 ? 'plus' : 'minus'}>{p.axis === 'ai' ? 'AI' : '기준'} {fmt(p.delta)}</b>
+                </li>
+              ))}
+            </ol>
           </div>
         </div>
-        <div className="end-card picks-card">
-          <div className="ec-head"><span>My Choices</span>내가 한 선택</div>
-          <ul className="picks2">
-            {state.picks.map((p) => (
-              <li key={p.id}>
-                <span className={`pk-axis ${p.axis}`}>{p.axis === 'ai' ? 'AI' : '기준'}</span>
-                <span className="pk-title">{p.title}</span>
-                <span className="pk-text">{p.text}</span>
-                <b className={p.delta > 0 ? 'plus' : 'minus'}>{fmt(p.delta)}</b>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="end-actions">
-        <button className="back-btn end-back" onClick={onBack}>
-          <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 2 L22 12 L12 22 L2 12 Z" fill="none" stroke="currentColor" strokeWidth="1.5" /><path d="M14 12 L8 12 M10 9 L7 12 L10 15" fill="none" stroke="currentColor" strokeWidth="1.5" /></svg>
-          <span>← Back to the door</span>
-        </button>
-        <button className="btn-restart" onClick={onRestart}>
-          <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 2 L22 12 L12 22 L2 12 Z" fill="none" stroke="currentColor" strokeWidth="1.5" /></svg>
-          Play again
-        </button>
-        </div>
-      </section>
+      )}
+
+      <div className="e2-actions">
+        <button className="e2-back" onClick={onBack}>← Back to the door</button>
+        <button className="cv-btn" onClick={onRestart}>Play again<i>↺</i></button>
+      </div>
     </div>
   )
 }
+
+const QUADS_ORDER = ['insurgent', 'adapter', 'zealot', 'outlier']
 
 const QUADS = [
   { key: 'zealot', name: 'The Zealot', ko: 'AI 적대 · HQ 맹신' },
