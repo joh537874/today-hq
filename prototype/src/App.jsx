@@ -138,6 +138,7 @@ export default function App() {
                 key={chapterShowing}
                 chapter={CHAPTERS[chapterShowing - 1].label}
                 title={CHAPTERS[chapterShowing - 1].title}
+                en={CHAPTERS[chapterShowing - 1].en}
                 place={beat.place}
                 slow={chapterShowing === 1}
                 onDone={() => setChapterShowing(null)}
@@ -250,7 +251,7 @@ function Game({ state, beat, dispatch }) {
             </button>
           )}
           <div className="hud-where">
-            <b>Chapter {chapter.id}</b>
+            <b className="sf">{chapter.en}<sup>0{chapter.id}</sup></b>
             <span>{chapter.title}</span>
             <i />
             <span>{beat.place}</span>
@@ -340,6 +341,9 @@ function ReactionToast({ react }) {
   )
 }
 
+// 말하는 사람 영문 이름 (덱의 세리프 이탤릭 표기)
+const WHO_EN = { 나: 'Me', 나인: 'Nine', 줄리안: 'Julian', 클로이: 'Chloe', 재이: 'Jae', '줄 끝의 남자': 'A man in line', 휴미터: 'Humeter', '뉴스 속보': 'News' }
+
 const WHO_TONE = { 나: 'me', 나인: 'ai', 줄리안: 'violet', 클로이: 'teal', 휴미터: 'std', '뉴스 속보': 'red' }
 
 function Speech({ entry, typing }) {
@@ -353,7 +357,7 @@ function Speech({ entry, typing }) {
           <svg className="who-diamond" viewBox="0 0 12 12" width="10" height="10">
             <path d="M6 1 L11 6 L6 11 L1 6 Z" className={WHO_TONE[who] ?? 'gray'} />
           </svg>
-          {who}{entry.via && <em>{entry.via}</em>}
+          {WHO_EN[who] && <span className="who-en">{WHO_EN[who]}</span>}{who}{entry.via && <em>{entry.via}</em>}
         </div>
       )}
       <p>{text}{typing && !typing.done && <span className="caret" />}</p>
@@ -372,8 +376,7 @@ function DiamondChoice({ beat, onPick }) {
           <span><em className="dc-en">Choice {beat.num}</em>{beat.title}</span>
         </div>
         <div className="dc-who">
-          <svg viewBox="0 0 12 12" width="10" height="10"><path d="M6 1 L11 6 L6 11 L1 6 Z" className={WHO_TONE[beat.who] ?? 'gray'} /></svg>
-          {beat.who}
+          {WHO_EN[beat.who] && <span className="who-en">{WHO_EN[beat.who]}</span>}{beat.who}
         </div>
         <p className="dc-prompt">{beat.prompt}</p>
         <div className={`dc-inner ${hover != null ? 'on' : ''}`}>
@@ -425,8 +428,7 @@ function Final({ beat, onPick }) {
           <span><em className="dc-en">Choice {beat.num}</em>{beat.title}</span>
         </div>
         <div className="dc-who">
-          <svg viewBox="0 0 12 12" width="10" height="10"><path d="M6 1 L11 6 L6 11 L1 6 Z" className={WHO_TONE[beat.who] ?? 'gray'} /></svg>
-          {beat.who}
+          {WHO_EN[beat.who] && <span className="who-en">{WHO_EN[beat.who]}</span>}{beat.who}
         </div>
         <p className="dc-prompt">{beat.prompt}</p>
         <div className="dc-inner on">되돌릴 수 없는 선택입니다</div>

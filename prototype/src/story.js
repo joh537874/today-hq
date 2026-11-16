@@ -2,11 +2,11 @@
 // 비트(beat)를 위에서 아래로 순서대로 재생한다. when이 있으면 조건이 맞을 때만 재생한다.
 
 export const CHAPTERS = [
-  { id: 1, label: '1장', title: '프롤로그' },
-  { id: 2, label: '2장', title: '바뀐 숫자' },
-  { id: 3, label: '3장', title: '클로이에게 가는 길' },
-  { id: 4, label: '4장', title: '클로이의 집 앞' },
-  { id: 5, label: '5장', title: '엔딩' },
+  { id: 1, label: '1장', title: '프롤로그', en: 'Prologue' },
+  { id: 2, label: '2장', title: '바뀐 숫자', en: 'The Shifted Number' },
+  { id: 3, label: '3장', title: '클로이에게 가는 길', en: 'On the Way' },
+  { id: 4, label: '4장', title: '클로이의 집 앞', en: 'At the Door' },
+  { id: 5, label: '5장', title: '엔딩', en: 'Ending' },
 ]
 
 export const THRESHOLD = 75

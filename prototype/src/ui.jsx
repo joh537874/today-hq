@@ -44,7 +44,7 @@ export function Figure({ name, hq, tone = 'gray', ai = false, off = false, style
 }
 
 // 디트로이트식 챕터 타이틀 카드 — 장 전환 시 풀스크린 표시
-export function ChapterCard({ chapter, title, place, onDone, slow }) {
+export function ChapterCard({ chapter, title, en, place, onDone, slow }) {
   const [phase, setPhase] = useState('enter') // enter → hold → exit
   const d = slow ? 1.25 : 1 // 1장만 조금 길게
   useEffect(() => {
@@ -62,9 +62,8 @@ export function ChapterCard({ chapter, title, place, onDone, slow }) {
   return (
     <div className={`chapter-card ${phase}`} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
       <div className="ch-sub">
-        <span className="ch-label">Chapter {parseInt(chapter, 10)}</span>
-        <h2 className="ch-title">{title}</h2>
-        <span className="ch-place">{place}</span>
+        <h2 className="ch-en">{en}<sup>0{parseInt(chapter, 10)}</sup></h2>
+        <span className="ch-ko">{title}<i />{place}</span>
       </div>
     </div>
   )
