@@ -1132,3 +1132,15 @@ svg path.me { fill: var(--violet); } svg path.red { fill: var(--end); }
 @keyframes ch-bar { from { transform: scaleX(0); } }
 .stage:has(.chapter-card) .dialog, .stage:has(.chapter-card) .top-left { opacity: 0; transition: opacity .4s; }
 .dialog, .top-left { transition: opacity .5s; }
+
+/* ═══════════════════════════════════════
+   장 제목: 하단 자막 한 줄 (사진은 가리지 않는다)
+   ═══════════════════════════════════════ */
+.chapter-card { background: none !important; display: block; opacity: 0; transition: opacity .35s ease; }
+.chapter-card.enter, .chapter-card.hold { opacity: 1; }
+.chapter-card.exit { opacity: 0; }
+.ch-sub { position: absolute; left: 112px; right: 112px; bottom: 96px; display: flex; align-items: baseline; gap: 20px; text-shadow: 0 2px 16px rgba(0,0,0,.6); transform: translateY(8px); transition: transform .5s cubic-bezier(.2,.8,.2,1); }
+.chapter-card.hold .ch-sub, .chapter-card.exit .ch-sub { transform: none; }
+.ch-sub .ch-label { font-size: 26px; color: #8fd0ff; animation: none; }
+.ch-sub .ch-title { margin: 0; font-size: 44px; font-weight: 500; letter-spacing: -0.04em; color: #fff; animation: none; overflow: visible; }
+.ch-sub .ch-place { margin-left: auto; font-size: 24px; color: rgba(255,255,255,.7); animation: none; }

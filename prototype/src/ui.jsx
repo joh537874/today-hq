@@ -46,11 +46,11 @@ export function Figure({ name, hq, tone = 'gray', ai = false, off = false, style
 // 디트로이트식 챕터 타이틀 카드 — 장 전환 시 풀스크린 표시
 export function ChapterCard({ chapter, title, place, onDone, slow }) {
   const [phase, setPhase] = useState('enter') // enter → hold → exit
-  const d = slow ? 1.8 : 1 // 1장은 1.8배 느리게
+  const d = slow ? 1.25 : 1 // 1장만 조금 길게
   useEffect(() => {
-    const t1 = setTimeout(() => setPhase('hold'), 800 * d)
-    const t2 = setTimeout(() => setPhase('exit'), 2800 * d)
-    const t3 = setTimeout(() => onDone?.(), 3600 * d)
+    const t1 = setTimeout(() => setPhase('hold'), 300 * d)
+    const t2 = setTimeout(() => setPhase('exit'), 1600 * d)
+    const t3 = setTimeout(() => onDone?.(), 2000 * d)
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
   }, []) // eslint-disable-line
   // 장 제목이 떠 있는 동안에는 키 입력으로 이야기가 넘어가지 않게 막는다
@@ -60,14 +60,11 @@ export function ChapterCard({ chapter, title, place, onDone, slow }) {
     return () => window.removeEventListener('keydown', block, true)
   }, [])
   return (
-    <div className={`chapter-card ${phase}`} style={{ '--hold': `${2.8 * d}s` }} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
-      <div className="ch-block">
-        <div className="ch-num">{String(parseInt(chapter, 10) || 0).padStart(2, '0')}</div>
-        <div className="ch-text">
-          <div className="ch-label"><span>Chapter {parseInt(chapter, 10)}</span><span>{place}</span></div>
-          <h2 className="ch-title"><span>{title}</span></h2>
-          <div className="ch-bar"><i /></div>
-        </div>
+    <div className={`chapter-card ${phase}`} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+      <div className="ch-sub">
+        <span className="ch-label">{chapter}</span>
+        <h2 className="ch-title">{title}</h2>
+        <span className="ch-place">{place}</span>
       </div>
     </div>
   )
