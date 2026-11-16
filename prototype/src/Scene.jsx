@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { THRESHOLD } from './story.js'
-import { Figure, HoldButton } from './ui.jsx'
+import { Figure, HoldButton, ScanMarker } from './ui.jsx'
 
 const TIME = { home: '23:48', cafe: '08:12', street: '08:31', subway: '18:40', door: '19:06' }
 
@@ -9,15 +9,25 @@ export default function Scene({ beat, set, hq, next, dispatch }) {
   return (
     <section className={`scene scene-${beat.scene}`} key={beat.scene}>
       <div className="scene-inner">
-      <div className="scene-meta"><span>{TIME[beat.scene]}</span><span>{beat.place}</span></div>
-      <View beat={beat} set={set} hq={hq} next={next} dispatch={dispatch} />
+        {/* 1인칭 HUD 상단 — 시간, 장소 */}
+        <div className="hud-top-bar">
+          <span className="hud-time">{TIME[beat.scene]}</span>
+          <span className="hud-loc">{beat.place}</span>
+        </div>
 
-      {beat.type === 'notify' && <Notify beat={beat} />}
-      {beat.type === 'message' && <Message key={beat.text} beat={beat} next={next} />}
-      {beat.type === 'gate' && <Gate key={beat.at} beat={beat} hq={hq} next={next} />}
-      {beat.type === 'term' && <Term key={beat.term} beat={beat} />}
-      {beat.type === 'letter' && <Letter beat={beat} next={next} />}
-      <div className="scene-place">{beat.place}</div>
+        <View beat={beat} set={set} hq={hq} next={next} dispatch={dispatch} />
+
+        {beat.type === 'notify' && <Notify beat={beat} />}
+        {beat.type === 'message' && <Message key={beat.text} beat={beat} next={next} />}
+        {beat.type === 'gate' && <Gate key={beat.at} beat={beat} hq={hq} next={next} />}
+        {beat.type === 'term' && <Term key={beat.term} beat={beat} />}
+        {beat.type === 'letter' && <Letter beat={beat} next={next} />}
+
+        {/* 1인칭 HUD — 화면 모서리 장식 */}
+        <div className="hud-corner hud-tl" />
+        <div className="hud-corner hud-tr" />
+        <div className="hud-corner hud-bl" />
+        <div className="hud-corner hud-br" />
       </div>
     </section>
   )
@@ -42,7 +52,7 @@ function Home({ beat, set }) {
         ) : (
           <div className="tv-body idle"><h3>밤 11시 뉴스</h3><p>잠시 후 HQ 관리국의 발표가 이어집니다</p></div>
         )}
-        <div className="tv-ticker"><span>AI 평균 HQ 82 · 인간 평균 81 · 크로스오버 · 관리국 “기준 재검토 착수” · AI 평균 HQ 82 · 인간 평균 81 · 크로스오버 · 관리국 “기준 재검토 착수” ·&nbsp;</span></div>
+        <div className="tv-ticker"><span>AI 평균 HQ 82 · 인간 평균 81 · 크로스오버 · 관리국 "기준 재검토 착수" · AI 평균 HQ 82 · 인간 평균 81 · 크로스오버 · 관리국 "기준 재검토 착수" ·&nbsp;</span></div>
       </div>
       {set.nine && <Figure name="나인" hq="88" tone="ai" ai style={{ left: '78%' }} />}
     </>
@@ -55,7 +65,9 @@ function Cafe({ set }) {
       <div className="shop">
         <div className="shop-sign">CAFÉ ORDINARY</div>
         <div className="shop-door" />
-        {set.gate && <div className="shop-panel"><span>입장 기준</span><b>{THRESHOLD}</b></div>}
+        {set.gate && (
+          <ScanMarker label={`기준 ${THRESHOLD}`} active style={{ position: 'absolute', right: -50, top: 200 }} />
+        )}
       </div>
       {set.coffee && <Figure name="나인" hq="88" tone="ai" ai style={{ left: '78%' }}><div className="cups"><i /><i /></div></Figure>}
       {set.man && <Figure name="줄 끝의 남자" hq="70" tone="gray" style={{ left: '16%' }} />}
@@ -109,6 +121,10 @@ function Subway({ beat, set, hq, next }) {
           className={`passenger ${glancing ? 'lookable' : ''} ${set.julian || set.child ? 'dim' : ''} ${set.child && p.ai ? 'focus' : ''}`}
           style={{ left: `${p.x}%` }} onPointerEnter={() => look(k)}
         >
+          {/* 디트로이트 스캔 마커 — 흘끗보기 모드에서 각 승객에 */}
+          {glancing && !seen.includes(k) && (
+            <ScanMarker active style={{ position: 'absolute', top: -20, left: '50%', transform: 'translateX(-50%)' }} />
+          )}
           {set.child && p.ai && <div className="child" />}
         </Figure>
       ))}
@@ -116,9 +132,10 @@ function Subway({ beat, set, hq, next }) {
       {set.julian && <Figure name="나인" hq="88" tone="ai" ai className="front" style={{ left: '62%' }} />}
       {glancing && (
         <div className="glance-bar">
-          <span>흘끗 본 사람 {seen.length} / {PASSENGERS.length}</span>
+          <svg viewBox="0 0 16 16" width="12" height="12"><path d="M8 2 L14 8 L8 14 L2 8 Z" fill="currentColor" opacity=".5" /></svg>
+          <span>분석 중 — {seen.length} / {PASSENGERS.length}</span>
           <button className="btn light" disabled={!enough} onClick={() => next({ kind: 'narr', text: '창에 비친 내 얼굴 위에도 숫자가 떠 있다. 72.' })}>
-            {enough ? '시선을 거둔다' : `${beat.need}명 이상 보기`}
+            {enough ? '시선을 거둔다' : `${beat.need}명 이상 관찰`}
           </button>
         </div>
       )}
@@ -130,17 +147,27 @@ function Door({ beat, set, next }) {
   return (
     <>
       <div className={`house-door ${set.open ? 'open' : ''}`}><div className="door-leaf" /><div className="door-glow" /></div>
-      {set.panel && <div className={`door-panel ${set.passed ? 'pass' : ''}`}><span>입장 기준</span><b>{THRESHOLD}</b></div>}
+      {set.panel && (
+        <ScanMarker
+          label={`기준 ${THRESHOLD}`}
+          active={!set.passed}
+          style={{ position: 'absolute', left: 'calc(50% + 200px)', top: 300 }}
+        />
+      )}
       <button className={`bell ${beat.type === 'bell' ? 'live' : ''}`} disabled={beat.type !== 'bell'} onClick={() => next({ kind: 'narr', text: '손가락이 초인종 위에서 멈춘다.' })}>
         <i />
+        {beat.type === 'bell' && <ScanMarker active style={{ position: 'absolute', top: -30, left: '50%', transform: 'translateX(-50%)' }} />}
       </button>
       {set.open && !set.passed && <Figure name="클로이" hq="91" tone="teal" className="in-door" style={{ left: '52%' }} />}
       {set.nine && <Figure name="나인" hq={set.nineOff ? '' : '88'} tone="ai" ai off={set.nineOff} style={{ left: '80%' }} />}
-      {set.memory && <div className="memory">“AI 몸 안에 있는 휴미터를 꺼내서 끼우면 돼.”</div>}
+      {set.memory && <div className="memory">"AI 몸 안에 있는 휴미터를 꺼내서 끼우면 돼."</div>}
       {set.hands && (
         <div className="hands">
           <div className="hand flower"><i />꽃</div>
-          <div className={`hand letter ${beat.type === 'letter' ? 'live' : ''}`}><i />편지</div>
+          <div className={`hand letter ${beat.type === 'letter' ? 'live' : ''}`}>
+            <i />편지
+            {beat.type === 'letter' && <ScanMarker active style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)' }} />}
+          </div>
         </div>
       )}
     </>
@@ -152,7 +179,11 @@ function Door({ beat, set, next }) {
 function Notify({ beat }) {
   return (
     <div className="notify">
-      <div className="notify-app"><i className="dot std" />{beat.app}<span>지금</span></div>
+      <div className="notify-head">
+        <svg viewBox="0 0 12 12" width="10" height="10"><path d="M6 1 L11 6 L6 11 L1 6 Z" className="std" /></svg>
+        <span>{beat.app}</span>
+        <em>지금</em>
+      </div>
       <strong>{beat.title}</strong>
       <p>{beat.body}</p>
     </div>
@@ -165,6 +196,7 @@ function Term({ beat }) {
       <small>{beat.en}</small>
       <h3>{beat.term}</h3>
       <p>{beat.text}</p>
+      <div className="term-line" />
     </div>
   )
 }
@@ -172,19 +204,30 @@ function Term({ beat }) {
 function Message({ beat, next }) {
   return (
     <div className="phone">
-      <div className="phone-head"><i className="avatar" />{beat.from}</div>
+      <div className="phone-head">
+        <div className="ph-avatar" />
+        <div className="ph-info"><span className="ph-name">{beat.from}</span><span className="ph-status">온라인</span></div>
+      </div>
       <div className="bubble in">{beat.text}</div>
       <div className="phone-replies">
         {beat.replies.length > 0
-          ? beat.replies.map((r) => <button key={r} className="bubble out" onClick={() => next({ kind: 'me', text: r })}>{r}</button>)
-          : <button className="bubble out ghost" onClick={() => next({ kind: 'narr', text: '답장을 쓰지 못하고 화면을 끈다.' })}>답장하지 않고 화면을 끈다</button>}
+          ? beat.replies.map((r) => (
+            <button key={r} className="bubble out" onClick={() => next({ kind: 'me', text: r })}>
+              <svg viewBox="0 0 12 12" width="8" height="8"><path d="M6 1 L11 6 L6 11 L1 6 Z" fill="currentColor" /></svg>
+              {r}
+            </button>
+          ))
+          : <button className="bubble out ghost" onClick={() => next({ kind: 'narr', text: '답장을 쓰지 못하고 화면을 끈다.' })}>
+            <svg viewBox="0 0 12 12" width="8" height="8"><path d="M6 1 L11 6 L6 11 L1 6 Z" fill="currentColor" opacity=".3" /></svg>
+            답장하지 않고 화면을 끈다
+          </button>}
       </div>
     </div>
   )
 }
 
 function Gate({ beat, hq, next }) {
-  const [phase, setPhase] = useState('idle') // idle → scan → fail
+  const [phase, setPhase] = useState('idle')
   const [n, setN] = useState(0)
   useEffect(() => {
     if (phase !== 'scan') return
@@ -197,19 +240,41 @@ function Gate({ beat, hq, next }) {
     const t = setTimeout(() => next({ kind: 'sys', who: beat.at, text: `입장 기준 ${THRESHOLD}. 측정값 ${hq}. ${beat.fail}. ${beat.after}` }), 1700)
     return () => clearTimeout(t)
   }, [phase]) // eslint-disable-line
+
   return (
     <div className={`gate ${phase}`}>
-      <div className="gate-head"><span>{beat.at}</span><em>입장 기준 {THRESHOLD}</em></div>
+      <div className="gate-head">
+        <span>{beat.at}</span>
+        <em>기준 {THRESHOLD}</em>
+      </div>
+
       {phase === 'idle' && (
         <HoldButton className="gate-pad" ms={1100} onDone={() => setPhase('scan')}>
-          <span className="ring" /><b>길게 눌러 스캔</b>
+          <span className="ring" />
+          <div className="gate-scan-prompt">
+            <svg viewBox="0 0 32 32" width="32" height="32">
+              <path d="M16 4 L28 16 L16 28 L4 16 Z" fill="none" stroke="currentColor" strokeWidth="1.5" />
+            </svg>
+            <span>길게 눌러 스캔</span>
+          </div>
         </HoldButton>
       )}
+
       {phase !== 'idle' && (
         <div className="gate-read">
+          <div className="gate-scanline" />
           <div className="gate-num">{n}</div>
-          <div className="gate-line"><i style={{ width: `${n}%` }} /><b style={{ left: `${THRESHOLD}%` }} /></div>
-          <div className="gate-msg">{phase === 'scan' ? '측정 중' : beat.fail}</div>
+          <div className="gate-line">
+            <i style={{ width: `${n}%` }} />
+            <b style={{ left: `${THRESHOLD}%` }} />
+          </div>
+          <div className="gate-msg">
+            {phase === 'scan' ? (
+              <><span className="gate-dots">측정 중</span></>
+            ) : (
+              <span className="gate-fail-text">{beat.fail}</span>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -222,12 +287,22 @@ function Letter({ beat, next }) {
   const done = n >= beat.lines.length
   return (
     <div className={`letter-view ${open ? 'open' : ''}`}>
-      {!open && <button className="btn light" onClick={() => setN(1)}>편지를 내려다본다</button>}
+      {!open && (
+        <button className="letter-open-btn" onClick={() => setN(1)}>
+          <svg viewBox="0 0 32 32" width="28" height="28">
+            <path d="M16 4 L28 16 L16 28 L4 16 Z" fill="none" stroke="currentColor" strokeWidth="1.5" />
+          </svg>
+          <span>편지를 내려다본다</span>
+        </button>
+      )}
       {open && (
         <div className="paper" onClick={() => (done ? next(beat.lines.map((t) => ({ kind: 'narr', text: t }))) : setN(n + 1))}>
           <small>클로이에게</small>
           {beat.lines.slice(0, n).map((t) => <p key={t}>{t}</p>)}
-          <span className="paper-next">{done ? '편지를 접는다' : '눌러서 계속 읽기'}</span>
+          <span className="paper-next">
+            <svg viewBox="0 0 12 12" width="10" height="10"><path d="M6 1 L11 6 L6 11 L1 6 Z" fill="currentColor" /></svg>
+            {done ? '편지를 접는다' : '계속 읽기'}
+          </span>
         </div>
       )}
     </div>
