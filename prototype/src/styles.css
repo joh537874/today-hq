@@ -1101,3 +1101,4 @@ svg path.me { fill: var(--violet); } svg path.red { fill: var(--end); }
 .notify-more { background: rgba(255,255,255,.07); }
 .notify-tap { color: #8fd0ff; }
 .hud-time, .hud-loc, .tl-chapter, .tl-place, .tl-title, .inst-label, .inst-sub, .inst-num { text-shadow: 0 1px 10px rgba(0,0,0,.7); }
+.glance-bar { bottom: auto !important; top: 150px; }

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { THRESHOLD } from './story.js'
 import { Figure, ScanMarker } from './ui.jsx'
 
-const PHOTO = { home: 'home2', cafe: 'cafe2', street: 'street2', subway: 'subway2', door: 'door' }
+const PHOTO = { home: 'home2', cafe: 'cafe2', street: 'street2', subway: 'subway3', door: 'door' }
 
 const TIME = { home: '23:48', cafe: '08:12', street: '08:31', subway: '18:40', door: '19:06' }
 
@@ -152,9 +152,9 @@ function Street({ set }) {
   )
 }
 
-// subway2.jpg 속 승객 다섯 명의 얼굴 위치(화면 대비 %)
+// subway3.jpg 속 승객 다섯 명의 머리 위치(화면 대비 %)
 const PASSENGERS = [
-  { hq: 84, x: 6.8, y: 30 }, { hq: 77, x: 23.4, y: 29 }, { hq: 68, x: 39.8, y: 32 }, { hq: 90, x: 53, y: 32, ai: true }, { hq: 79, x: 68.6, y: 29 },
+  { hq: 84, x: 24.5, y: 40 }, { hq: 77, x: 37.5, y: 42 }, { hq: 90, x: 50.3, y: 41, ai: true }, { hq: 68, x: 63.4, y: 40 }, { hq: 79, x: 78.1, y: 42 },
 ]
 
 function Subway({ beat, set, hq, next }) {
