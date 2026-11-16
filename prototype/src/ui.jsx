@@ -60,12 +60,15 @@ export function ChapterCard({ chapter, title, place, onDone, slow }) {
     return () => window.removeEventListener('keydown', block, true)
   }, [])
   return (
-    <div className={`chapter-card ${phase}`} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
-      <div className="ch-line" />
-      <div className="ch-label">{chapter}</div>
-      <h2 className="ch-title">{title}</h2>
-      <div className="ch-place">{place}</div>
-      <div className="ch-line" />
+    <div className={`chapter-card ${phase}`} style={{ '--hold': `${2.8 * d}s` }} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+      <div className="ch-block">
+        <div className="ch-num">{String(parseInt(chapter, 10) || 0).padStart(2, '0')}</div>
+        <div className="ch-text">
+          <div className="ch-label"><span>Chapter {parseInt(chapter, 10)}</span><span>{place}</span></div>
+          <h2 className="ch-title"><span>{title}</span></h2>
+          <div className="ch-bar"><i /></div>
+        </div>
+      </div>
     </div>
   )
 }
