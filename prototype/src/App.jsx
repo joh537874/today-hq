@@ -140,9 +140,17 @@ const readTime = (text) => Math.min(6000, Math.max(2200, 1400 + text.length * 60
 
 /* ───────── 화면 공통 요소 */
 
-// 사진 한 장이 화면 전체를 덮는다. 컷이 바뀌면 교차 페이드한다.
+// 사진 한 장이 화면 전체를 덮는다. 컷이 바뀌면 이전 컷 위로 새 컷이 서서히 겹쳐 올라온다.
 function Photo({ name }) {
-  return <div className="photo" key={name} style={{ backgroundImage: `url(${cut(name)})` }} />
+  const [layers, setLayers] = useState([name])
+  useEffect(() => {
+    setLayers((l) => (l[l.length - 1] === name ? l : [...l.slice(-1), name]))
+    const t = setTimeout(() => setLayers((l) => l.slice(-1)), 1000)
+    return () => clearTimeout(t)
+  }, [name])
+  return layers.map((n, i) => (
+    <div key={n} className={`photo ${i === layers.length - 1 && layers.length > 1 ? 'photo-new' : ''}`} style={{ backgroundImage: `url(${cut(n)})` }} />
+  ))
 }
 
 // 좌상단 "01 | Prologue"
@@ -185,18 +193,16 @@ function Caption({ item, typing }) {
   )
 }
 
-// 문장 끝(. ? ! …, 닫는 따옴표 포함) 뒤의 공백에서 끊는다. 조각 길이의 합은 원문 길이와 같다.
+// 자막 줄 나눔. story.js에서 넣은 '\n'을 기준으로 줄을 나눈다. 조각 길이의 합은 원문 길이와 같다.
 function splitSentences(t) {
   const out = []
-  const re = /[.?!…]+["'”’」)]*\s+/g
   let last = 0
-  let m
-  while ((m = re.exec(t))) { out.push(t.slice(last, re.lastIndex)); last = re.lastIndex }
+  for (let i = 0; i < t.length; i++) if (t[i] === '\n') { out.push(t.slice(last, i + 1)); last = i + 1 }
   if (last < t.length) out.push(t.slice(last))
   return out
 }
 
-// 문장마다 한 줄씩 놓는다. 타이핑 중에는 아직 찍히지 않은 글자를 투명하게 남겨 줄 배치가 흔들리지 않게 한다.
+// 줄마다 한 줄씩 놓는다. 타이핑 중에는 아직 찍히지 않은 글자를 투명하게 남겨 줄 배치가 흔들리지 않게 한다.
 function Sentences({ full, shown = full.length }) {
   let offset = 0
   return splitSentences(full).map((s, i) => {
@@ -247,10 +253,10 @@ function Film({ state, beat, dispatch }) {
     if (!typing.done) typing.finish()
     else press('next', () => dispatch({ type: 'NEXT' }))
   }
-  // 각 장의 첫 자막과 선택 직전 자막은 '계속하기'를 눌러야 넘어간다.
-  // 나머지 자막은 글자가 다 찍히면 글 길이만큼 읽을 시간을 준 뒤 스스로 넘어가고, '건너뛰기'로 기다리지 않고 넘길 수 있다.
-  const next = BEATS[state.idx + 1]
-  const hold = passive && (beat.start || next?.type === 'choice' || next?.type === 'final')
+  // 같은 컷 안에서 이어지는 자막은 읽을 시간을 준 뒤 스스로 넘어가고, '건너뛰기'로 바로 넘길 수 있다.
+  // 컷이 바뀌기 직전, 선택 직전, 장이 끝나기 직전의 자막은 '계속하기'를 눌러야 넘어간다.
+  const next = BEATS[enter(state, state.idx + 1).idx]
+  const hold = passive && (!next || next.type !== 'narr' && next.type !== 'line' || next.img !== beat.img || next.chapter !== beat.chapter)
   useEffect(() => {
     if (!passive || hold || !typing.done) return
     const t = setTimeout(() => dispatch({ type: 'NEXT' }), readTime(beat.text))

@@ -25,16 +25,21 @@ button { font: inherit; color: inherit; border: 0; background: none; }
 .viewport { position: fixed; inset: 0; }
 .stage {
   position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px;
-  background: #f5f7fa; transform-origin: center; overflow: hidden;
+  background: var(--page); transform-origin: center; overflow: hidden;
 }
 
 /* ───────── 화면 전체를 덮는 컷 */
 .photo {
   position: absolute; inset: 0;
   background-size: cover; background-position: center;
-  animation: photo-in 0.7s ease both;
 }
-@keyframes photo-in { from { opacity: 0; } to { opacity: 1; } }
+/* 새 컷은 이전 컷 위로 겹쳐 올라오며 살짝 당겨진다 */
+.photo-new { animation: photo-in 0.9s ease both; }
+@keyframes photo-in { from { opacity: 0; scale: 1.03; } to { opacity: 1; scale: 1; } }
+
+/* 화면이 바뀔 때(타이틀 → 장면 → 질문 → 결과 → 카드) 어둠에서 서서히 밝아진다 */
+.film, .after, .result, .cards { animation: screen-in 0.8s ease both; }
+@keyframes screen-in { from { opacity: 0; } to { opacity: 1; } }
 
 .film, .title, .after, .result, .cards { position: absolute; inset: 0; }
 
@@ -61,11 +66,11 @@ button { font: inherit; color: inherit; border: 0; background: none; }
   -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 45%);
 }
 
-.caption { flex: 1 0 0; min-width: 0; display: flex; flex-direction: column; animation: caption-in 0.35s ease both; }
+.caption { flex: 1 0 0; min-width: 0; display: flex; flex-direction: column; animation: caption-in 0.45s ease both; }
 .caption.center { align-items: center; text-align: center; gap: 16px; }
 .caption.left { align-items: flex-start; text-align: left; gap: 16px; }
 .caption.line { gap: 20px; }
-@keyframes caption-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes caption-in { from { opacity: 0; transform: translateY(10px); filter: blur(4px); } to { opacity: 1; transform: none; filter: none; } }
 
 .caption .ko {
   font-family: var(--gothic); font-weight: 400; font-size: 28px; line-height: 1.5; letter-spacing: -1.68px;

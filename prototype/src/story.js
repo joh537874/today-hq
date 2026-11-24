@@ -245,12 +245,89 @@ const raw = [
 ]
 
 // chapter, img를 앞 비트에서 이어받는다. 각 장의 첫 내레이션과 1장 내레이션은 가운데 정렬한다.
+// ───────── 자막 나누기
+// 한 화면의 자막은 2줄을 넘지 않는다. 짧은 문장은 한 줄에 붙이고, 길면 다음 자막으로 넘긴다.
+// 줄 사이는 '\n'으로 표시한다. 한 줄에 들어가는 글자 수는 화면 폭(한글 28px, 영문 20px) 기준의 근사치다.
+const KO_LINE = { left: 42, center: 38 }
+const EN_LINE = 100
+
+const sentencesOf = (t) => t.match(/[^.?!…]+(?:[.?!…]+["'”’」)]*|$)\s*/g)?.map((x) => x.trim()).filter(Boolean) ?? [t]
+const rows = (t, width) => Math.max(1, Math.ceil(t.length / width))
+
+// 문장들을 줄로 묶는다. 이어 붙여도 한 줄에 들어가면 같은 줄에 둔다.
+function toLines(sents, width) {
+  const lines = []
+  for (const x of sents) {
+    const last = lines[lines.length - 1]
+    if (last && (last + ' ' + x).length <= width) lines[lines.length - 1] = last + ' ' + x
+    else lines.push(x)
+  }
+  return lines
+}
+
+// 줄들을 2줄 이하의 화면 단위로 묶는다. 한 문장이 2줄을 넘으면 그 문장만 한 화면에 둔다.
+function toPages(lines, width) {
+  const pages = []
+  let cur = []
+  let used = 0
+  for (const l of lines) {
+    const h = rows(l, width)
+    if (cur.length && used + h > 2) { pages.push(cur); cur = []; used = 0 }
+    cur.push(l)
+    used += h
+  }
+  if (cur.length) pages.push(cur)
+  return pages
+}
+
+// 영문을 한글 화면 수만큼 나눈다. 한글 화면별 글자 비율에 맞춘 위치 근처의 문장 끝·쉼표·띄어쓰기에서 끊는다.
+function splitEn(en, n, weights = null) {
+  if (!en) return Array(n).fill(undefined)
+  const lines = (t) => toLines(sentencesOf(t), EN_LINE).join('\n')
+  if (n === 1) return [lines(en)]
+  const w = weights ?? Array(n).fill(1)
+  const total = w.reduce((a, x) => a + x, 0)
+  const cuts = []
+  let acc = 0
+  for (let p = 0; p < n - 1; p++) {
+    acc += w[p]
+    const target = Math.round((en.length * acc) / total)
+    let best = -1
+    let score = Infinity
+    for (let i = 1; i < en.length - 1; i++) {
+      if (en[i] !== ' ') continue
+      const prev = en[i - 1]
+      const bonus = /[.?!…”"]/.test(prev) ? 0 : prev === ',' ? 12 : 30
+      const d = Math.abs(i - target) + bonus
+      if (d < score && i > (cuts[cuts.length - 1] ?? 0)) { score = d; best = i }
+    }
+    cuts.push(best)
+  }
+  const out = []
+  let last = 0
+  for (const c of [...cuts, en.length]) { out.push(lines(en.slice(last, c).trim())); last = c }
+  return out
+}
+
+function paginate(b) {
+  const width = b.center ? KO_LINE.center : KO_LINE.left
+  const pages = toPages(toLines(sentencesOf(b.text), width), width)
+  const ens = splitEn(b.en, pages.length, pages.map((p) => p.join(' ').length))
+  return pages.map((p, i) => ({ ...b, text: p.join('\n'), en: ens[i], start: b.start && i === 0 }))
+}
+
 let carry = { chapter: 0, img: 'p-fog' }
-export const BEATS = raw.map((b) => {
+export const BEATS = raw.flatMap((b) => {
   const chapterStart = b.chapter != null && b.chapter !== carry.chapter
   carry = { chapter: b.chapter ?? carry.chapter, img: b.img ?? carry.img }
   const center = b.type === 'narr' && (carry.chapter === 1 || (chapterStart && carry.chapter < 5))
-  return { ...b, ...carry, center, start: chapterStart }
+  const beat = { ...b, ...carry, center, start: chapterStart }
+  if (beat.type === 'narr' || beat.type === 'line') return paginate(beat)
+  if (beat.prompt) {
+    const w = KO_LINE.left
+    return [{ ...beat, prompt: { ...beat.prompt, text: toLines(sentencesOf(beat.prompt.text), w).join('\n'), en: splitEn(beat.prompt.en, 1)[0] } }]
+  }
+  return [beat]
 })
 
 // 결말별 정보. last는 엔딩 영상의 마지막 컷, color는 엔딩 카드(3061:1315)의 선택 상태 색이다.
