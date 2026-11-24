@@ -245,12 +245,12 @@ const raw = [
 ]
 
 // chapter, img를 앞 비트에서 이어받는다. 각 장의 첫 내레이션과 1장 내레이션은 가운데 정렬한다.
-let carry = { chapter: 1, img: 'p-fog' }
+let carry = { chapter: 0, img: 'p-fog' }
 export const BEATS = raw.map((b) => {
   const chapterStart = b.chapter != null && b.chapter !== carry.chapter
   carry = { chapter: b.chapter ?? carry.chapter, img: b.img ?? carry.img }
   const center = b.type === 'narr' && (carry.chapter === 1 || (chapterStart && carry.chapter < 5))
-  return { ...b, ...carry, center }
+  return { ...b, ...carry, center, start: chapterStart }
 })
 
 // 결말별 정보. last는 엔딩 영상의 마지막 컷, color는 엔딩 카드(3061:1315)의 선택 상태 색이다.

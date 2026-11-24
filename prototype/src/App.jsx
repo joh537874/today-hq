@@ -135,6 +135,9 @@ function origin(e) {
   setTimeout(() => { el.style.removeProperty('--x'); el.style.removeProperty('--y') }, PRESS_MS + 100)
 }
 
+// 자막을 읽는 데 주는 시간(ms). 한 글자당 60ms에 기본 1.4초, 최소 2.2초 · 최대 6초.
+const readTime = (text) => Math.min(6000, Math.max(2200, 1400 + text.length * 60))
+
 /* ───────── 화면 공통 요소 */
 
 // 사진 한 장이 화면 전체를 덮는다. 컷이 바뀌면 교차 페이드한다.
@@ -244,6 +247,15 @@ function Film({ state, beat, dispatch }) {
     if (!typing.done) typing.finish()
     else press('next', () => dispatch({ type: 'NEXT' }))
   }
+  // 각 장의 첫 자막과 선택 직전 자막은 '계속하기'를 눌러야 넘어간다.
+  // 나머지 자막은 글자가 다 찍히면 글 길이만큼 읽을 시간을 준 뒤 스스로 넘어가고, '건너뛰기'로 기다리지 않고 넘길 수 있다.
+  const next = BEATS[state.idx + 1]
+  const hold = passive && (beat.start || next?.type === 'choice' || next?.type === 'final')
+  useEffect(() => {
+    if (!passive || hold || !typing.done) return
+    const t = setTimeout(() => dispatch({ type: 'NEXT' }), readTime(beat.text))
+    return () => clearTimeout(t)
+  }, [passive, hold, typing.done, state.idx])
   const pick = (index) => press(index, () => dispatch({ type: beat.type === 'final' ? 'FINAL' : 'CHOOSE', index }))
 
   useKeys((e) => {
@@ -264,7 +276,7 @@ function Film({ state, beat, dispatch }) {
       {!isFinal && (
         <footer className="caption-bar">
           <Caption key={state.idx} item={passive ? beat : beat.prompt} typing={passive ? typing : null} />
-          {passive && <ContinueButton on={pressed === 'next'} onClick={advance} />}
+          {passive && <ContinueButton label={hold ? '계속하기' : '건너뛰기'} on={pressed === 'next'} onClick={advance} />}
         </footer>
       )}
     </div>
@@ -291,6 +303,10 @@ function After({ state, dispatch }) {
   const end = ENDINGS[state.final]
   const [pressed, press] = usePress()
   const next = () => press('next', () => dispatch({ type: 'NEXT' }))
+  useEffect(() => {
+    const t = setTimeout(() => dispatch({ type: 'NEXT' }), 4500)
+    return () => clearTimeout(t)
+  }, [])
   useKeys((e) => {
     if (e.code === 'Space' || e.code === 'Enter') next()
     if (e.key === 'ArrowLeft' || e.key === 'Backspace') dispatch({ type: 'BACK' })
