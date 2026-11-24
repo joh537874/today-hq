@@ -4,6 +4,9 @@ import { useTypewriter } from './ui.jsx'
 import { setBgm, setAmb, sfx, stopAll, setMuted } from './sound.js'
 
 const BASE = import.meta.env.BASE_URL
+
+// @property를 JS로 등록 (Vite CSS 처리 우회)
+try { CSS.registerProperty({ name: '--trace-angle', syntax: '<angle>', inherits: false, initialValue: '0deg' }) } catch (e) {}
 const cut = (name) => `${BASE}cut/${name}.jpg`
 const PASSIVE = ['narr', 'line']
 
@@ -192,8 +195,8 @@ function useKeys(handler) {
   })
 }
 
-const PRESS_MS = 500
-// 누르면 동작은 바로 실행하고, 버튼의 흰색 채움만 잠깐 남겼다가 걷어 낸다.
+const PRESS_MS = 1000
+// 누르면 빛 애니메이션을 보여 준 뒤 동작을 실행한다.
 function usePress() {
   const [pressed, setPressed] = useState(null)
   const timer = useRef(null)
@@ -201,8 +204,7 @@ function usePress() {
   const press = (id, fn) => {
     setPressed(id)
     clearTimeout(timer.current)
-    timer.current = setTimeout(() => setPressed(null), PRESS_MS)
-    fn()
+    timer.current = setTimeout(() => { setPressed(null); fn() }, PRESS_MS)
   }
   return [pressed, press]
 }
