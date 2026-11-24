@@ -110,17 +110,17 @@ function useKeys(handler) {
   })
 }
 
-// 버튼을 누르면 흰색이 차오르는 동안 잠시 기다렸다가 동작을 실행한다. 그동안의 중복 입력은 무시한다.
-const PRESS_MS = 650
+const PRESS_MS = 500
+// 누르면 동작은 바로 실행하고, 버튼의 흰색 채움만 잠깐 남겼다가 걷어 낸다.
 function usePress() {
   const [pressed, setPressed] = useState(null)
-  const busy = useRef(false)
-  useEffect(() => () => { busy.current = false }, [])
+  const timer = useRef(null)
+  useEffect(() => () => clearTimeout(timer.current), [])
   const press = (id, fn) => {
-    if (busy.current) return
-    busy.current = true
     setPressed(id)
-    setTimeout(() => { busy.current = false; setPressed(null); fn() }, PRESS_MS)
+    clearTimeout(timer.current)
+    timer.current = setTimeout(() => setPressed(null), PRESS_MS)
+    fn()
   }
   return [pressed, press]
 }
