@@ -268,7 +268,7 @@ function VoiceOver({ beat, dispatch }) {
       let k = 0
       beat.cues.forEach((c, j) => { if (t >= c.at) k = j })
       setI(k)
-      if (blocked && t > beat.cues[beat.cues.length - 1].at + 4.5) { next(); return }
+      if (blocked && t > beat.cues[beat.cues.length - 1].at + 6) { next(); return }
       raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)

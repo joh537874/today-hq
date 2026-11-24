@@ -30,13 +30,10 @@ const raw = [
   { chapter: 1, type: 'video', src: 'opening/prologue.mp4' },
   {
     type: 'voice', audio: 'opening/after.mp3',
-    // 나레이션 음원(38.42초 이후 구간)의 쉼 위치에 맞춘 자막 시점(초)
+    // ElevenLabs Brian(eleven_multilingual_v2) 1.2배속 + 오프닝 배경음. 문장 사이 쉼 위치에 맞춘 자막 시점(초)
     cues: [
-      { at: 0, text: '하지만… 정말 이걸로 충분할까요?', en: 'But… is this really enough?' },
-      { at: 3.05, text: 'AI는 지금도 인간을 닮아가고 있습니다.', en: 'AI continues to become more like humans,' },
-      { at: 6.25, text: '인간만이 할 수 있다고 믿었던 일들마저 하나둘 대신하고 있죠.', en: 'taking over tasks once believed to be uniquely human.' },
-      { at: 12.2, text: '만약 언젠가 AI가 인간다움마저 따라잡는다면…', en: 'What if, one day, AI catches up with humans in HQ scores as well?' },
-      { at: 15.25, text: '그때 인류는 무엇으로 자신을 구분할 수 있을까요?', en: 'What will become of humanity then?' },
+      { at: 0, text: '하지만… 정말 이걸로 충분할까요?', en: 'But is this really enough?' },
+      { at: 1.7, text: '언젠가 AI가 인간다움마저 따라잡는다면, 우리는 무엇으로 구분될까요?', en: 'If AI one day catches up with our humanity, what will set us apart?' },
     ],
   },
 
