@@ -445,7 +445,7 @@ function Result({ state, dispatch }) {
   if (view === 'cards') return <Cards state={state} dispatch={dispatch} />
   return (
     <div className="result" style={{ '--tint': end.tint, '--base': end.base }}>
-      <img className="result-photo" src={`${BASE}ending/${end.portrait}.jpg`} alt="" />
+      <img className="result-photo" src={`${BASE}ending/${end.portrait}.jpg`} alt="" style={end.portraitStyle ? { width: end.portraitStyle.width, height: end.portraitStyle.height, bottom: end.portraitStyle.bottom } : undefined} />
       <div className="result-tint" />
       <div className="result-fade" />
       <ChapterTag chapter={5} />
