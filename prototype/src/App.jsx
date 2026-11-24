@@ -1,7 +1,7 @@
 import React, { useEffect, useReducer, useRef, useState } from 'react'
 import { BEATS, CHAPTERS, ENDINGS, ENDING_ORDER, WHO_EN } from './story.js'
 import { useTypewriter } from './ui.jsx'
-import { setBgm, setAmb, sfx, stopAll } from './sound.js'
+import { setBgm, setAmb, sfx, stopAll, setMuted } from './sound.js'
 
 const BASE = import.meta.env.BASE_URL
 const cut = (name) => `${BASE}cut/${name}.jpg`
@@ -45,6 +45,18 @@ function reducer(state, a) {
     case 'CHOOSE': {
       const beat = BEATS[state.idx]
 
+  // 소리 끄기. 선택은 이 브라우저에 기억한다(저장이 막혀 있어도 동작한다).
+  const [muted, setMutedState] = useState(() => { try { return localStorage.getItem('hq-muted') === '1' } catch { return false } })
+  useEffect(() => {
+    setMuted(muted)
+    try { localStorage.setItem('hq-muted', muted ? '1' : '0') } catch {}
+  }, [muted])
+  useEffect(() => {
+    const onKey = (e) => { if (e.code === 'KeyM') setMutedState((m) => !m) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
   // 장면이 바뀌면 그 장면의 배경음·환경음으로 맞추고, 효과음이 있으면 한 번 낸다.
   // 오프닝 영상·검은 화면 나레이션·엔딩 화면에는 따로 깔지 않는다(컷에 bgm이 없으면 꺼진다).
   useEffect(() => {
@@ -64,6 +76,18 @@ function reducer(state, a) {
     }
     case 'FINAL': {
       const beat = BEATS[state.idx]
+
+  // 소리 끄기. 선택은 이 브라우저에 기억한다(저장이 막혀 있어도 동작한다).
+  const [muted, setMutedState] = useState(() => { try { return localStorage.getItem('hq-muted') === '1' } catch { return false } })
+  useEffect(() => {
+    setMuted(muted)
+    try { localStorage.setItem('hq-muted', muted ? '1' : '0') } catch {}
+  }, [muted])
+  useEffect(() => {
+    const onKey = (e) => { if (e.code === 'KeyM') setMutedState((m) => !m) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   // 장면이 바뀌면 그 장면의 배경음·환경음으로 맞추고, 효과음이 있으면 한 번 낸다.
   // 오프닝 영상·검은 화면 나레이션·엔딩 화면에는 따로 깔지 않는다(컷에 bgm이 없으면 꺼진다).
@@ -98,6 +122,18 @@ export default function App() {
   const { scale, x, y } = useStageScale()
   const beat = BEATS[state.idx]
 
+  // 소리 끄기. 선택은 이 브라우저에 기억한다(저장이 막혀 있어도 동작한다).
+  const [muted, setMutedState] = useState(() => { try { return localStorage.getItem('hq-muted') === '1' } catch { return false } })
+  useEffect(() => {
+    setMuted(muted)
+    try { localStorage.setItem('hq-muted', muted ? '1' : '0') } catch {}
+  }, [muted])
+  useEffect(() => {
+    const onKey = (e) => { if (e.code === 'KeyM') setMutedState((m) => !m) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
   // 장면이 바뀌면 그 장면의 배경음·환경음으로 맞추고, 효과음이 있으면 한 번 낸다.
   // 오프닝 영상·검은 화면 나레이션·엔딩 화면에는 따로 깔지 않는다(컷에 bgm이 없으면 꺼진다).
   useEffect(() => {
@@ -113,8 +149,11 @@ export default function App() {
         {!state.started && <Title onStart={() => dispatch({ type: 'START' })} />}
         {state.started && beat.type === 'after' && <After key={state.final} state={state} dispatch={dispatch} />}
         {state.started && beat.type === 'result' && <Result key={state.final} state={state} dispatch={dispatch} />}
-        {state.started && beat.type === 'video' && <OpeningVideo key={state.idx} beat={beat} dispatch={dispatch} />}
-        {state.started && beat.type === 'voice' && <VoiceOver key={state.idx} beat={beat} dispatch={dispatch} />}
+        {state.started && beat.type === 'video' && <OpeningVideo key={state.idx} beat={beat} dispatch={dispatch} muted={muted} />}
+        {state.started && beat.type === 'voice' && <VoiceOver key={state.idx} beat={beat} dispatch={dispatch} muted={muted} />}
+        <button className={`mute ${muted ? 'off' : ''}`} onClick={(e) => { e.stopPropagation(); setMutedState((m) => !m) }} aria-label={muted ? '소리 켜기' : '소리 끄기'}>
+          <span>{muted ? 'Sound Off' : 'Sound On'}</span><em>M</em>
+        </button>
         {state.started && !['after', 'result', 'video', 'voice'].includes(beat.type) && <Film state={state} beat={beat} dispatch={dispatch} />}
       </div>
       <Cursor scale={scale} />
@@ -277,7 +316,7 @@ function Hud({ hq, delta, note }) {
 
 /* ───────── 오프닝 영상 (자막이 영상에 들어 있어 버튼·자막 없이 재생만 한다) */
 
-function OpeningVideo({ beat, dispatch }) {
+function OpeningVideo({ beat, dispatch, muted }) {
   const ref = useRef(null)
   const next = () => dispatch({ type: 'NEXT' })
   useEffect(() => {
@@ -288,13 +327,13 @@ function OpeningVideo({ beat, dispatch }) {
   useKeys((e) => { if (e.code === 'Space' || e.code === 'Enter') next() })
   return (
     <div className="opening" onClick={next}>
-      <video ref={ref} src={`${BASE}${beat.src}`} playsInline preload="auto" onEnded={next} />
+      <video ref={ref} src={`${BASE}${beat.src}`} playsInline preload="auto" muted={muted} onEnded={next} />
     </div>
   )
 }
 
 // 영상이 끝난 뒤 검은 화면에 나레이션 목소리와 가운데 자막만 이어진다. 배경음은 음원에 섞여 있다.
-function VoiceOver({ beat, dispatch }) {
+function VoiceOver({ beat, dispatch, muted }) {
   const ref = useRef(null)
   const [i, setI] = useState(-1)
   const next = () => dispatch({ type: 'NEXT' })
@@ -320,7 +359,7 @@ function VoiceOver({ beat, dispatch }) {
   const c = i >= 0 ? beat.cues[i] : null
   return (
     <div className="voice" onClick={next}>
-      <audio ref={ref} src={`${BASE}${beat.audio}`} preload="auto" onEnded={() => setTimeout(next, 600)} />
+      <audio ref={ref} src={`${BASE}${beat.audio}`} preload="auto" muted={muted} onEnded={() => setTimeout(next, 600)} />
       {c && (
         <div className="voice-cue" key={i}>
           <p className="ko">{c.text}</p>

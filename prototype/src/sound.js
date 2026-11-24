@@ -3,6 +3,8 @@ const BASE = import.meta.env.BASE_URL
 const src = (name) => `${BASE}sound/${name}.mp3`
 const VOL = { bgm: 0.35, amb: 0.22, sfx: 0.7 }
 const FADE_MS = 1000
+let muted = false
+const loops = [] // 현재 재생 중인 반복 음원 { audio, kind }
 
 // 음량을 ms 동안 to까지 옮긴다. 끝나면 done을 부른다.
 function ramp(audio, to, ms, done) {
@@ -21,7 +23,7 @@ function ramp(audio, to, ms, done) {
 function makeLoop(kind) {
   let name = null
   let audio = null
-  return (next) => {
+  const set = (next) => {
     next = next || null
     if (next === name) return
     name = next
@@ -35,16 +37,18 @@ function makeLoop(kind) {
     a.loop = true
     a.volume = 0
     a.play().catch(() => {})
-    ramp(a, VOL[kind], FADE_MS)
+    ramp(a, muted ? 0 : VOL[kind], FADE_MS)
     audio = a
   }
+  loops.push(() => audio && ramp(audio, muted ? 0 : VOL[kind], 300))
+  return set
 }
 
 export const setBgm = makeLoop('bgm')
 export const setAmb = makeLoop('amb')
 
 export function sfx(name) {
-  if (!name) return
+  if (!name || muted) return
   const a = new Audio(src(name))
   a.volume = VOL.sfx
   a.play().catch(() => {})
@@ -53,4 +57,10 @@ export function sfx(name) {
 export function stopAll() {
   setBgm(null)
   setAmb(null)
+}
+
+// 소리 끄기·켜기. 반복 음원은 0.3초에 걸쳐 줄이거나 되살린다.
+export function setMuted(m) {
+  muted = m
+  loops.forEach((apply) => apply())
 }
