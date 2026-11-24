@@ -152,6 +152,8 @@ function origin(e) {
 
 // 자막이 다 찍힌 뒤 다음으로 넘어가기까지의 여유(ms)
 const AUTO_MS = 500
+// 선택지를 고른 뒤 다음 장면으로 넘어가기까지의 시간(ms)
+const CHOICE_MS = 900
 
 /* ───────── 화면 공통 요소 */
 
@@ -231,6 +233,18 @@ function Sentences({ full, shown = full.length }) {
       </span>
     )
   })
+}
+
+// 휴미터 알림. 대본의 '(▼9) · 관리국 기준 갱신' 같은 화면 표시를 대사 대신 화면 우상단에 띄운다.
+function Hud({ hq, delta, note }) {
+  return (
+    <div className="hud">
+      <span className="hud-label">HQ</span>
+      <b>{hq}</b>
+      {delta ? <span className={`hud-delta ${delta < 0 ? 'down' : 'up'}`}>{delta < 0 ? '▼' : '▲'}{Math.abs(delta)}</span> : null}
+      {note && <em>{note}</em>}
+    </div>
+  )
 }
 
 /* ───────── 오프닝 영상 (자막이 영상에 들어 있어 버튼·자막 없이 재생만 한다) */
@@ -324,18 +338,25 @@ function Film({ state, beat, dispatch }) {
     if (!typing.done) typing.finish()
     else press('next', () => dispatch({ type: 'NEXT' }))
   }
-  // 인물 대사가 이어질 때는 다 찍힌 뒤 0.5초 있다가 스스로 넘어간다.
-  // 내레이션, 그리고 컷·선택·장이 바뀌기 직전의 자막은 '계속하기'를 눌러야 넘어간다.
+  // 같은 컷 안의 자막(대사·내레이션)은 다 찍힌 뒤 0.5초 있다가 스스로 넘어간다.
+  // 컷·선택·장이 바뀌기 직전의 자막만 '계속하기'를 눌러야 넘어간다.
   const next = BEATS[enter(state, state.idx + 1).idx]
   const cutEnds = !next || (next.type !== 'narr' && next.type !== 'line') || next.img !== beat.img || next.chapter !== beat.chapter
-  const hold = passive && (beat.type === 'narr' || cutEnds)
+  const hold = passive && cutEnds
   useEffect(() => {
     if (!passive || hold || !typing.done) return
     const t = setTimeout(() => dispatch({ type: 'NEXT' }), AUTO_MS)
     return () => clearTimeout(t)
   }, [passive, hold, typing.done, state.idx])
   const skip = () => press('skip', () => dispatch({ type: 'SKIP' }))
-  const pick = (index) => press(index, () => dispatch({ type: beat.type === 'final' ? 'FINAL' : 'CHOOSE', index }))
+  // 고른 선택지는 흰색으로 남고 나머지는 흐려진 뒤, 잠깐 머물렀다가 다음으로 넘어간다.
+  const [chosen, setChosen] = useState(null)
+  useEffect(() => setChosen(null), [state.idx])
+  const pick = (index) => {
+    if (chosen !== null) return
+    setChosen(index)
+    setTimeout(() => dispatch({ type: beat.type === 'final' ? 'FINAL' : 'CHOOSE', index }), CHOICE_MS)
+  }
 
   useKeys((e) => {
     if (e.code === 'Space' || e.code === 'Enter') advance()
@@ -351,9 +372,11 @@ function Film({ state, beat, dispatch }) {
       <Photo name={beat.img} />
       {!isFinal && <ChapterTag chapter={beat.chapter} />}
 
-      {(beat.type === 'choice' || isFinal) && <Options final={isFinal} options={beat.options} pressed={pressed} onPick={pick} />}
+      {beat.hud && <Hud {...beat.hud} />}
+      {(beat.type === 'choice' || isFinal) && <Options final={isFinal} options={beat.options} chosen={chosen} onPick={pick} />}
 
-      {!isFinal && (
+      {/* 지시문(내레이션) 형태의 선택 질문은 자막으로 띄우지 않고 화면(컷)으로 보여 준다 */}
+      {!isFinal && (passive || beat.prompt?.type === 'line') && (
         <footer className="caption-bar">
           <Caption key={state.idx} item={passive ? beat : beat.prompt} typing={passive ? typing : null} />
           {passive && (
@@ -369,11 +392,11 @@ function Film({ state, beat, dispatch }) {
 }
 
 // 우측 선택지. 반투명 박스에 번호와 문장을 둔다.
-function Options({ options, onPick, pressed = null, final = false }) {
+function Options({ options, onPick, chosen = null, final = false }) {
   return (
-    <div className={`options ${final ? 'final' : ''}`}>
+    <div className={`options ${final ? 'final' : ''} ${chosen !== null ? 'picked' : ''}`}>
       {options.map((o, i) => (
-        <button key={i} className={`option ${pressed === i ? 'on' : ''}`} onClick={(e) => { e.stopPropagation(); origin(e); onPick(i) }}>
+        <button key={i} className={`option ${chosen === i ? 'on' : ''}`} onClick={(e) => { e.stopPropagation(); origin(e); onPick(i) }}>
           <span className="num">{i + 1}</span>
           <span className="txt">{o.text}</span>
         </button>
