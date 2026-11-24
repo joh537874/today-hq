@@ -30,10 +30,10 @@ const raw = [
   { chapter: 1, type: 'video', src: 'opening/prologue.mp4' },
   {
     type: 'voice', audio: 'opening/after.mp3',
-    // ElevenLabs Brian(eleven_multilingual_v2) 1.2배속 + 오프닝 배경음. 문장 사이 쉼 위치에 맞춘 자막 시점(초)
+    // ElevenLabs Brian(eleven_multilingual_v2) 1.2배속·1.5음 낮춤, 앞 1초 정적, 배경음은 아주 작게. 문장 사이 쉼 위치에 맞춘 자막 시점(초)
     cues: [
-      { at: 0, text: '하지만… 정말 이걸로 충분할까요?', en: 'But is this really enough?' },
-      { at: 1.7, text: '언젠가 AI가 인간다움마저 따라잡는다면, 우리는 무엇으로 구분될까요?', en: 'If AI one day catches up with our humanity, what will set us apart?' },
+      { at: 1.0, text: '하지만… 정말 이걸로 충분할까요?', en: 'But is this really enough?' },
+      { at: 2.3, text: '언젠가 AI가 인간다움마저 따라잡는다면, 우리는 무엇으로 구분될까요?', en: 'If AI one day catches up with our humanity, what will set us apart?' },
     ],
   },
 

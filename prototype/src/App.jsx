@@ -254,7 +254,7 @@ function OpeningVideo({ beat, dispatch }) {
 // 영상이 끝난 뒤 검은 화면에 나레이션 목소리와 가운데 자막만 이어진다. 배경음은 음원에 섞여 있다.
 function VoiceOver({ beat, dispatch }) {
   const ref = useRef(null)
-  const [i, setI] = useState(0)
+  const [i, setI] = useState(-1)
   const next = () => dispatch({ type: 'NEXT' })
   useEffect(() => {
     const a = ref.current
@@ -265,7 +265,7 @@ function VoiceOver({ beat, dispatch }) {
     // 음원 시간에 맞춰 자막을 바꾼다. 재생이 막힌 경우에는 시계로 대신한다.
     const tick = () => {
       const t = blocked ? (performance.now() - start) / 1000 : a.currentTime
-      let k = 0
+      let k = -1
       beat.cues.forEach((c, j) => { if (t >= c.at) k = j })
       setI(k)
       if (blocked && t > beat.cues[beat.cues.length - 1].at + 6) { next(); return }
@@ -275,14 +275,16 @@ function VoiceOver({ beat, dispatch }) {
     return () => { cancelAnimationFrame(raf); a.pause() }
   }, [])
   useKeys((e) => { if (e.code === 'Space' || e.code === 'Enter') next() })
-  const c = beat.cues[i]
+  const c = i >= 0 ? beat.cues[i] : null
   return (
     <div className="voice" onClick={next}>
       <audio ref={ref} src={`${BASE}${beat.audio}`} preload="auto" onEnded={() => setTimeout(next, 600)} />
-      <div className="voice-cue" key={i}>
-        <p className="ko">{c.text}</p>
-        {c.en && <p className="en">{c.en}</p>}
-      </div>
+      {c && (
+        <div className="voice-cue" key={i}>
+          <p className="ko">{c.text}</p>
+          {c.en && <p className="en">{c.en}</p>}
+        </div>
+      )}
     </div>
   )
 }
