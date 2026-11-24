@@ -24,13 +24,13 @@ button { font: inherit; color: inherit; border: 0; background: none; }
 
 .viewport { position: fixed; inset: 0; }
 .stage {
-  position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px;
-  background: var(--page); transform-origin: center; overflow: hidden;
+  position: absolute; width: 1920px; height: 1080px;
+  background: var(--page); transform-origin: 0 0; overflow: hidden;
 }
 
 /* ───────── 화면 전체를 덮는 컷 */
 .photo {
-  position: absolute; inset: 0;
+  position: absolute; inset: -1px;
   background-size: cover; background-position: center;
 }
 /* 새 컷은 이전 컷 위로 겹쳐 올라오며 살짝 당겨진다 */
@@ -38,10 +38,18 @@ button { font: inherit; color: inherit; border: 0; background: none; }
 @keyframes photo-in { from { opacity: 0; scale: 1.03; } to { opacity: 1; scale: 1; } }
 
 /* 화면이 바뀔 때(타이틀 → 장면 → 질문 → 결과 → 카드) 어둠에서 서서히 밝아진다 */
-.film, .after, .result, .cards { animation: screen-in 0.8s ease both; }
+.film, .after, .result, .cards, .opening { animation: screen-in 0.8s ease both; }
+
+/* ───────── 오프닝 영상과 검은 화면 나레이션 */
+.opening { background: #000; }
+.opening video { position: absolute; inset: -1px; width: calc(100% + 2px); height: calc(100% + 2px); object-fit: cover; display: block; }
+.voice { background: #000; display: flex; align-items: center; justify-content: center; }
+.voice-cue { display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; animation: caption-in 0.6s ease both; }
+.voice-cue .ko { font-family: var(--gothic); font-weight: 400; font-size: 32px; line-height: 1.5; letter-spacing: -1.92px; }
+.voice-cue .en { font-family: var(--gothic); font-weight: 200; font-size: 20px; line-height: 1.4; opacity: 0.6; }
 @keyframes screen-in { from { opacity: 0; } to { opacity: 1; } }
 
-.film, .title, .after, .result, .cards { position: absolute; inset: 0; }
+.film, .title, .after, .result, .cards, .opening, .voice { position: absolute; inset: 0; }
 
 /* ───────── 좌상단 장 표시 "01 | Prologue" */
 .chapter-tag {

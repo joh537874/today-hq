@@ -26,18 +26,19 @@ const ifFinal = (k) => (s) => s.final === k
 
 const raw = [
   // ───────── 1장 · 프롤로그 (선택 없음)
-  { chapter: 1, img: 'p-fog', ...N('2030년대, AI의 발전은 인류의 삶을 크게 바꾸어 놓았습니다. 불과 얼마 전까지만 해도 상상에 불과했던 일들이 현실이 되기 시작한 것이죠.', 'In the 2030s, AI transformed human life in remarkable ways. Things that once seemed possible only in our imagination were becoming reality.') },
-  N('AI는 인간을 뛰어넘는 능력으로 불가능했던 일들까지 가능하게 만들었습니다. 우리의 삶은 그 어느 때보다 편리하고 풍요로워졌습니다.', 'With abilities beyond human capabilities, AI made even the impossible possible, bringing greater comfort and abundance to our lives.'),
-  N('인간의 모습을 하고, 인간의 목소리로 말하며, 때로는 우리의 마음까지 이해하는 AI. 이제 사람들은 그들과 관계를 맺고, 감정을 나누는 일에도 익숙해졌습니다.', 'With human appearances and voices, AI could even understand our feelings. Before long, people grew accustomed to forming relationships and sharing emotions with them.'),
-  N('그런데, 모든 것이 좋기만 했을까요? AI가 인간과 점점 더 닮아갈수록 사람들의 마음속에는 새로운 불안이 자리 잡기 시작했습니다. 인간만이 가진다고 믿었던 특별한 지위마저 흔들리는 것은 아닐까요?', 'But was everything really as good as it seemed? As AI became more like humans, a new sense of unease began to emerge. Could even the special status once believed to belong exclusively to humans be at risk?', { img: 'p-city' }),
-  N('사람들은 AI가 가져다주는 편리함은 누리면서도, 그들을 자신과 동등한 존재로 받아들이지는 않았습니다. AI를 단순한 도구로 여기고, 그들의 가치를 낮추면서 인간과 AI 사이의 차이를 더욱 분명히 하려 했습니다.', 'People enjoyed the convenience AI offered, but were unwilling to accept them as equals. They treated AI as mere tools, diminished their worth, and sought to widen the divide between humans and AI.'),
-  N('이를 위해 사람들은 인간과 AI를 구분할 새로운 기준을 만들었습니다. 바로 HQ입니다.', 'To address this, people established a new standard to distinguish humans from AI. It was called HQ.', { img: 'p-humeter' }),
-  N('HQ는 인간다움을 수치화한 점수로, 0점부터 100점까지 대상이 인간일 확률을 나타냅니다. 정확한 판별 기준은 공개되지 않았습니다. 감정이나 망설임, 예상치 못한 실수 등이 기준일 것이라는 추측만 있을 뿐이죠.', 'HQ is a numerical measure of how human-like someone is, representing the probability of being human on a scale from 0 to 100. The exact criteria behind the score remain undisclosed. People can only speculate that factors such as emotions, hesitation, or unexpected mistakes might play a role.'),
-  N('HQ관리국은 이를 판별하기 위해 ‘휴미터’라는 장치를 개발했습니다. 귀 뒤에 부착하는 휴미터는 대상의 언행과 표정을 기록하고, 이를 바탕으로 실시간 HQ를 계산합니다.', 'To make this distinction possible, the HQ Bureau developed a device called the Humeter. Worn behind the ear, the Humeter records a subject’s words, actions, and facial expressions, using this data to calculate their HQ score in real time.'),
-  N('평균 HQ는 AI가 40점 안팎, 인간은 70~80점. 사람들은 이 점수를 바탕으로 서로의 정체를 구분하기 시작했고, HQ는 인간으로 인정받기 위한 기준이 되었습니다.', 'The average HQ score is around 40 for AI and 70 to 80 for humans. People began using these scores to distinguish one another, and HQ became the standard for being recognized as human.'),
-  N('하지만… 정말 이걸로 충분할까요?', 'But… is this really enough?', { img: 'p-woman' }),
-  N('AI는 지금도 인간을 닮아가고 있습니다. 인간만이 할 수 있다고 믿었던 일들마저 하나둘 대신하고 있죠.', 'AI continues to become more like humans, taking over tasks once believed to be uniquely human.'),
-  N('만약 언젠가 AI가 인간다움마저 따라잡는다면… 그때 인류는 무엇으로 자신을 구분할 수 있을까요?', 'What if, one day, AI catches up with humans in HQ scores as well? What will become of humanity then?'),
+  // 오프닝 영상(자막 포함, 38.4초). 끝나면 검은 화면에 나레이션 목소리와 자막만 이어진다.
+  { chapter: 1, type: 'video', src: 'opening/prologue.mp4' },
+  {
+    type: 'voice', audio: 'opening/after.mp3',
+    // 나레이션 음원(38.42초 이후 구간)의 쉼 위치에 맞춘 자막 시점(초)
+    cues: [
+      { at: 0, text: '하지만… 정말 이걸로 충분할까요?', en: 'But… is this really enough?' },
+      { at: 3.05, text: 'AI는 지금도 인간을 닮아가고 있습니다.', en: 'AI continues to become more like humans,' },
+      { at: 6.25, text: '인간만이 할 수 있다고 믿었던 일들마저 하나둘 대신하고 있죠.', en: 'taking over tasks once believed to be uniquely human.' },
+      { at: 12.2, text: '만약 언젠가 AI가 인간다움마저 따라잡는다면…', en: 'What if, one day, AI catches up with humans in HQ scores as well?' },
+      { at: 15.25, text: '그때 인류는 무엇으로 자신을 구분할 수 있을까요?', en: 'What will become of humanity then?' },
+    ],
+  },
 
   // 당신의 집 · 크로스오버의 밤
   N('2069년 3월 14일 밤.', 'The night of March 14, 2069.', { img: 'p-home' }),
@@ -320,7 +321,7 @@ let carry = { chapter: 0, img: 'p-fog' }
 export const BEATS = raw.flatMap((b) => {
   const chapterStart = b.chapter != null && b.chapter !== carry.chapter
   carry = { chapter: b.chapter ?? carry.chapter, img: b.img ?? carry.img }
-  const center = b.type === 'narr' && (carry.chapter === 1 || (chapterStart && carry.chapter < 5))
+  const center = false // 가운데 정렬은 오프닝 영상 자막과 검은 화면 자막만 쓴다
   const beat = { ...b, ...carry, center, start: chapterStart }
   if (beat.type === 'narr' || beat.type === 'line') return paginate(beat)
   if (beat.prompt) {

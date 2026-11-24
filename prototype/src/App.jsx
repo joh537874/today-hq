@@ -76,31 +76,40 @@ function reducer(state, a) {
 
 export default function App() {
   const [state, dispatch] = useReducer(reducer, initial)
-  const scale = useStageScale()
+  const { scale, x, y } = useStageScale()
   const beat = BEATS[state.idx]
 
   return (
     <div className="viewport">
-      <div className="stage" style={{ transform: `translate(-50%, -50%) scale(${scale})` }}>
+      <div className="stage" style={{ left: x, top: y, transform: `scale(${scale})` }}>
         {!state.started && <Title onStart={() => dispatch({ type: 'START' })} />}
         {state.started && beat.type === 'after' && <After key={state.final} state={state} dispatch={dispatch} />}
         {state.started && beat.type === 'result' && <Result key={state.final} state={state} dispatch={dispatch} />}
-        {state.started && beat.type !== 'after' && beat.type !== 'result' && <Film state={state} beat={beat} dispatch={dispatch} />}
+        {state.started && beat.type === 'video' && <OpeningVideo key={state.idx} beat={beat} dispatch={dispatch} />}
+        {state.started && beat.type === 'voice' && <VoiceOver key={state.idx} beat={beat} dispatch={dispatch} />}
+        {state.started && !['after', 'result', 'video', 'voice'].includes(beat.type) && <Film state={state} beat={beat} dispatch={dispatch} />}
       </div>
       <Cursor scale={scale} />
     </div>
   )
 }
 
+// 1920×1080 무대를 창에 맞춘다. 무대 높이와 위치를 정수 픽셀에 맞춰 가장자리에 반 픽셀짜리 줄이 생기지 않게 한다.
 function useStageScale() {
-  const [scale, setScale] = useState(1)
+  const [fit, setFit] = useState({ scale: 1, x: 0, y: 0 })
   useEffect(() => {
-    const fit = () => setScale(Math.min(window.innerWidth / 1920, window.innerHeight / 1080))
-    fit()
-    window.addEventListener('resize', fit)
-    return () => window.removeEventListener('resize', fit)
+    const update = () => {
+      const W = window.innerWidth
+      const H = window.innerHeight
+      const h = Math.floor(Math.min(W / 1920, H / 1080) * 1080)
+      const scale = h / 1080
+      setFit({ scale, x: Math.round((W - 1920 * scale) / 2), y: Math.round((H - h) / 2) })
+    }
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
   }, [])
-  return scale
+  return fit
 }
 
 // 키보드 공통 처리. Space·Enter로 진행, 숫자로 선택, ←·Backspace로 되돌리기.
@@ -222,6 +231,60 @@ function Sentences({ full, shown = full.length }) {
       </span>
     )
   })
+}
+
+/* ───────── 오프닝 영상 (자막이 영상에 들어 있어 버튼·자막 없이 재생만 한다) */
+
+function OpeningVideo({ beat, dispatch }) {
+  const ref = useRef(null)
+  const next = () => dispatch({ type: 'NEXT' })
+  useEffect(() => {
+    const v = ref.current
+    // 소리 재생이 막히면 음소거로라도 재생한다.
+    v.play().catch(() => { v.muted = true; v.play().catch(() => {}) })
+  }, [])
+  useKeys((e) => { if (e.code === 'Space' || e.code === 'Enter') next() })
+  return (
+    <div className="opening" onClick={next}>
+      <video ref={ref} src={`${BASE}${beat.src}`} playsInline preload="auto" onEnded={next} />
+    </div>
+  )
+}
+
+// 영상이 끝난 뒤 검은 화면에 나레이션 목소리와 가운데 자막만 이어진다. 배경음은 음원에 섞여 있다.
+function VoiceOver({ beat, dispatch }) {
+  const ref = useRef(null)
+  const [i, setI] = useState(0)
+  const next = () => dispatch({ type: 'NEXT' })
+  useEffect(() => {
+    const a = ref.current
+    let raf = 0
+    let start = performance.now()
+    let blocked = false
+    a.play().catch(() => { blocked = true; start = performance.now() })
+    // 음원 시간에 맞춰 자막을 바꾼다. 재생이 막힌 경우에는 시계로 대신한다.
+    const tick = () => {
+      const t = blocked ? (performance.now() - start) / 1000 : a.currentTime
+      let k = 0
+      beat.cues.forEach((c, j) => { if (t >= c.at) k = j })
+      setI(k)
+      if (blocked && t > beat.cues[beat.cues.length - 1].at + 4.5) { next(); return }
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => { cancelAnimationFrame(raf); a.pause() }
+  }, [])
+  useKeys((e) => { if (e.code === 'Space' || e.code === 'Enter') next() })
+  const c = beat.cues[i]
+  return (
+    <div className="voice" onClick={next}>
+      <audio ref={ref} src={`${BASE}${beat.audio}`} preload="auto" onEnded={() => setTimeout(next, 600)} />
+      <div className="voice-cue" key={i}>
+        <p className="ko">{c.text}</p>
+        {c.en && <p className="en">{c.en}</p>}
+      </div>
+    </div>
+  )
 }
 
 /* ───────── 타이틀 (Figma 2227) */
