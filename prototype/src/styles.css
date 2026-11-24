@@ -59,7 +59,7 @@ button { font: inherit; color: inherit; border: 0; background: none; }
   padding: 120px 80px 60px;
 }
 .caption-bar::before {
-  content: ''; position: absolute; inset: 0; z-index: -1;
+  content: ''; position: absolute; inset: 0 -40px -40px; z-index: -1; /* 블러 가장자리가 화면 안에 보이지 않게 바깥으로 넓힌다 */
   background: url('/ui/bottom-fade.png') center / 100% 100% no-repeat;
   backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   mask-image: linear-gradient(to bottom, transparent 0, #000 45%);
