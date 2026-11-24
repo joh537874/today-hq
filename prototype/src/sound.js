@@ -7,12 +7,15 @@ let muted = false
 const loops = [] // 현재 재생 중인 반복 음원 { audio, kind }
 
 // 음량을 ms 동안 to까지 옮긴다. 끝나면 done을 부른다.
+// 같은 음원에 새 변화가 시작되면 이전 변화는 멈춘다. 음량은 0~1 범위로 자른다.
 function ramp(audio, to, ms, done) {
   const from = audio.volume
   const t0 = performance.now()
+  const id = (audio._ramp = (audio._ramp || 0) + 1)
   const step = (t) => {
+    if (audio._ramp !== id) return
     const k = Math.min(1, (t - t0) / ms)
-    audio.volume = from + (to - from) * k
+    audio.volume = Math.min(1, Math.max(0, from + (to - from) * k))
     if (k < 1) requestAnimationFrame(step)
     else done?.()
   }

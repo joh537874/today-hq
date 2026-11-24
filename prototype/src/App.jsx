@@ -154,7 +154,8 @@ function useKeys(handler) {
 }
 
 const PRESS_MS = 1000
-// 누르면 빛 애니메이션을 보여 준 뒤 동작을 실행한다.
+// 누르면 동작은 바로 실행하고, 버튼의 빛 효과(테두리 트레이스·플래시)만 1초 동안 남긴다.
+// 효과가 끝나기를 기다렸다가 실행하면 빠르게 연달아 누를 때 앞 입력이 취소되어 넘어가지 않는다.
 function usePress() {
   const [pressed, setPressed] = useState(null)
   const timer = useRef(null)
@@ -162,7 +163,8 @@ function usePress() {
   const press = (id, fn) => {
     setPressed(id)
     clearTimeout(timer.current)
-    timer.current = setTimeout(() => { setPressed(null); fn() }, PRESS_MS)
+    timer.current = setTimeout(() => setPressed(null), PRESS_MS)
+    fn()
   }
   return [pressed, press]
 }
@@ -382,7 +384,7 @@ function Film({ state, beat, dispatch }) {
   const pick = (index) => {
     if (chosen !== null) return
     setChosen(index)
-    sfx('confirm')
+    sfx('dong')
     setTimeout(() => dispatch({ type: beat.type === 'final' ? 'FINAL' : 'CHOOSE', index }), CHOICE_MS)
   }
 
