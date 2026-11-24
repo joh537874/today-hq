@@ -99,6 +99,10 @@ button { font: inherit; color: inherit; border: 0; background: none; }
 .continue span { font-family: var(--pretendard); font-weight: 400; font-size: 24px; line-height: 1.4; letter-spacing: -1.2px; }
 .continue em { font-style: normal; font-family: var(--helvetica); font-weight: 300; font-size: 20px; letter-spacing: -0.4px; opacity: 0.5; }
 .continue:hover { background-color: rgba(255, 255, 255, 0.08); }
+.caption-actions { flex: none; display: flex; gap: 12px; align-items: center; }
+/* 건너뛰기: 계속하기보다 한 단계 약하게 */
+.continue.ghost { border-color: rgba(255, 255, 255, 0.4); }
+.continue.ghost:not(.on) span { opacity: 0.7; }
 
 /* ───────── 우측 선택지 */
 .options {

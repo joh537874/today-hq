@@ -63,6 +63,12 @@ function reducer(state, a) {
         picks: [...state.picks, { id: 'final', num: '최종', axis: 'final', prompt: null, text: opt.text }],
       }, state.idx + 1)
     }
+    case 'SKIP': {
+      // 남은 자막을 건너뛰고 다음 선택지(또는 엔딩 질문 화면)까지 간다.
+      let s = { ...state, history: [...state.history, snap(state)] }
+      do { s = enter(s, s.idx + 1) } while (s.idx < BEATS.length && PASSIVE.includes(BEATS[s.idx].type))
+      return s
+    }
     case 'REPLAY': return enter({ ...state, history: [...state.history, snap(state)], final: a.key }, ENDING_START)
     default: return state
   }
@@ -135,8 +141,8 @@ function origin(e) {
   setTimeout(() => { el.style.removeProperty('--x'); el.style.removeProperty('--y') }, PRESS_MS + 100)
 }
 
-// 자막을 읽는 데 주는 시간(ms). 한 글자당 60ms에 기본 1.4초, 최소 2.2초 · 최대 6초.
-const readTime = (text) => Math.min(6000, Math.max(2200, 1400 + text.length * 60))
+// 자막이 다 찍힌 뒤 다음으로 넘어가기까지의 여유(ms)
+const AUTO_MS = 500
 
 /* ───────── 화면 공통 요소 */
 
@@ -165,10 +171,10 @@ function ChapterTag({ chapter }) {
   )
 }
 
-function ContinueButton({ label = '계속하기', onClick, on = false }) {
+function ContinueButton({ label = '계속하기', hint = 'Space', ghost = false, onClick, on = false }) {
   return (
-    <button className={`continue ${on ? 'on' : ''}`} onClick={(e) => { e.stopPropagation(); origin(e); onClick() }}>
-      <span>{label}</span><em>Space</em>
+    <button className={`continue ${ghost ? 'ghost' : ''} ${on ? 'on' : ''}`} onClick={(e) => { e.stopPropagation(); origin(e); onClick() }}>
+      <span>{label}</span><em>{hint}</em>
     </button>
   )
 }
@@ -253,19 +259,22 @@ function Film({ state, beat, dispatch }) {
     if (!typing.done) typing.finish()
     else press('next', () => dispatch({ type: 'NEXT' }))
   }
-  // 같은 컷 안에서 이어지는 자막은 읽을 시간을 준 뒤 스스로 넘어가고, '건너뛰기'로 바로 넘길 수 있다.
-  // 컷이 바뀌기 직전, 선택 직전, 장이 끝나기 직전의 자막은 '계속하기'를 눌러야 넘어간다.
+  // 인물 대사가 이어질 때는 다 찍힌 뒤 0.5초 있다가 스스로 넘어간다.
+  // 내레이션, 그리고 컷·선택·장이 바뀌기 직전의 자막은 '계속하기'를 눌러야 넘어간다.
   const next = BEATS[enter(state, state.idx + 1).idx]
-  const hold = passive && (!next || next.type !== 'narr' && next.type !== 'line' || next.img !== beat.img || next.chapter !== beat.chapter)
+  const cutEnds = !next || (next.type !== 'narr' && next.type !== 'line') || next.img !== beat.img || next.chapter !== beat.chapter
+  const hold = passive && (beat.type === 'narr' || cutEnds)
   useEffect(() => {
     if (!passive || hold || !typing.done) return
-    const t = setTimeout(() => dispatch({ type: 'NEXT' }), readTime(beat.text))
+    const t = setTimeout(() => dispatch({ type: 'NEXT' }), AUTO_MS)
     return () => clearTimeout(t)
   }, [passive, hold, typing.done, state.idx])
+  const skip = () => press('skip', () => dispatch({ type: 'SKIP' }))
   const pick = (index) => press(index, () => dispatch({ type: beat.type === 'final' ? 'FINAL' : 'CHOOSE', index }))
 
   useKeys((e) => {
     if (e.code === 'Space' || e.code === 'Enter') advance()
+    if (e.code === 'KeyS' && passive) skip()
     if ((e.key === 'ArrowLeft' || e.key === 'Backspace') && state.history.length) dispatch({ type: 'BACK' })
     const i = Number(e.key) - 1
     if ((beat.type === 'choice' || beat.type === 'final') && beat.options[i]) pick(i)
@@ -282,7 +291,12 @@ function Film({ state, beat, dispatch }) {
       {!isFinal && (
         <footer className="caption-bar">
           <Caption key={state.idx} item={passive ? beat : beat.prompt} typing={passive ? typing : null} />
-          {passive && <ContinueButton label={hold ? '계속하기' : '건너뛰기'} on={pressed === 'next'} onClick={advance} />}
+          {passive && (
+            <div className="caption-actions">
+              <ContinueButton label="건너뛰기" hint="S" ghost on={pressed === 'skip'} onClick={skip} />
+              {hold && <ContinueButton on={pressed === 'next'} onClick={advance} />}
+            </div>
+          )}
         </footer>
       )}
     </div>
