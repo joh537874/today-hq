@@ -1,6 +1,7 @@
 import React, { useEffect, useReducer, useRef, useState } from 'react'
 import { BEATS, CHAPTERS, ENDINGS, ENDING_ORDER, WHO_EN } from './story.js'
 import { useTypewriter } from './ui.jsx'
+import { setBgm, setAmb, sfx, stopAll } from './sound.js'
 
 const BASE = import.meta.env.BASE_URL
 const cut = (name) => `${BASE}cut/${name}.jpg`
@@ -43,6 +44,15 @@ function reducer(state, a) {
     case 'NEXT': return enter({ ...state, history: [...state.history, snap(state)] }, state.idx + 1)
     case 'CHOOSE': {
       const beat = BEATS[state.idx]
+
+  // 장면이 바뀌면 그 장면의 배경음·환경음으로 맞추고, 효과음이 있으면 한 번 낸다.
+  // 오프닝 영상·검은 화면 나레이션·엔딩 화면에는 따로 깔지 않는다(컷에 bgm이 없으면 꺼진다).
+  useEffect(() => {
+    if (!state.started) { stopAll(); return }
+    setBgm(beat.bgm)
+    setAmb(beat.amb)
+    sfx(beat.sfx)
+  }, [state.started, state.idx])
       const opt = beat.options[a.index]
       return enter({
         ...state,
@@ -54,6 +64,15 @@ function reducer(state, a) {
     }
     case 'FINAL': {
       const beat = BEATS[state.idx]
+
+  // 장면이 바뀌면 그 장면의 배경음·환경음으로 맞추고, 효과음이 있으면 한 번 낸다.
+  // 오프닝 영상·검은 화면 나레이션·엔딩 화면에는 따로 깔지 않는다(컷에 bgm이 없으면 꺼진다).
+  useEffect(() => {
+    if (!state.started) { stopAll(); return }
+    setBgm(beat.bgm)
+    setAmb(beat.amb)
+    sfx(beat.sfx)
+  }, [state.started, state.idx])
       const opt = beat.options[a.index]
       return enter({
         ...state,
@@ -78,6 +97,15 @@ export default function App() {
   const [state, dispatch] = useReducer(reducer, initial)
   const { scale, x, y } = useStageScale()
   const beat = BEATS[state.idx]
+
+  // 장면이 바뀌면 그 장면의 배경음·환경음으로 맞추고, 효과음이 있으면 한 번 낸다.
+  // 오프닝 영상·검은 화면 나레이션·엔딩 화면에는 따로 깔지 않는다(컷에 bgm이 없으면 꺼진다).
+  useEffect(() => {
+    if (!state.started) { stopAll(); return }
+    setBgm(beat.bgm)
+    setAmb(beat.amb)
+    sfx(beat.sfx)
+  }, [state.started, state.idx])
 
   return (
     <div className="viewport">
@@ -355,6 +383,7 @@ function Film({ state, beat, dispatch }) {
   const pick = (index) => {
     if (chosen !== null) return
     setChosen(index)
+    sfx('confirm')
     setTimeout(() => dispatch({ type: beat.type === 'final' ? 'FINAL' : 'CHOOSE', index }), CHOICE_MS)
   }
 

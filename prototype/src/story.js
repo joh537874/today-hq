@@ -38,9 +38,9 @@ const raw = [
   },
 
   // 당신의 집 · 크로스오버의 밤
-  N('2069년 3월 14일 밤.', 'The night of March 14, 2069.', { img: 'p-home' }),
-  L('뉴스', '“속보입니다. HQ관리국이 발표한 이번 분기 평균 HQ 점수에서 AI가 처음으로 인간을 넘어섰습니다. 판별 시스템이 인간보다 AI를 더 높은 인간 점수로 평가한 것은 이번이 처음인데요. 인간과 AI의 경계에 또 한 번 큰 파장이 예상됩니다.”', '“Breaking news. According to the HQ Bureau’s latest quarterly report, AI has surpassed humans in average HQ scores for the first time. This marks the first time the identification system has rated AI as more human than humans themselves. The news is expected to send shockwaves through society, once again blurring the line between humans and AI.”', { img: 'p-news-sketch' }),
-  N('진은 소파에 앉아 뉴스를 보고 있다. 그때, 휴대폰이 울린다.', 'Jin is watching the news on the sofa. Then the phone rings.', { img: 'p-home' }),
+  N('2069년 3월 14일 밤.', 'The night of March 14, 2069.', { img: 'p-home', bgm: 'night', amb: 'street' }),
+  L('뉴스', '“속보입니다. HQ관리국이 발표한 이번 분기 평균 HQ 점수에서 AI가 처음으로 인간을 넘어섰습니다. 판별 시스템이 인간보다 AI를 더 높은 인간 점수로 평가한 것은 이번이 처음인데요. 인간과 AI의 경계에 또 한 번 큰 파장이 예상됩니다.”', '“Breaking news. According to the HQ Bureau’s latest quarterly report, AI has surpassed humans in average HQ scores for the first time. This marks the first time the identification system has rated AI as more human than humans themselves. The news is expected to send shockwaves through society, once again blurring the line between humans and AI.”', { img: 'p-news-sketch', sfx: 'news' }),
+  N('진은 소파에 앉아 뉴스를 보고 있다. 그때, 휴대폰이 울린다.', 'Jin is watching the news on the sofa. Then the phone rings.', { img: 'p-home', sfx: 'phone' }),
   L('클로이', '“여보세요, 진? 아직 안 자고 있었네? 별건 아니고, 내일 있을 내 생일 파티 말이야. 한 7시쯤 볼까 하는데 시간 괜찮지?”', '“Hello? Jin? You’re still up? Oh, it’s nothing important. I just wanted to talk about my birthday party tomorrow. I was thinking around seven. Does that work for you?”', { img: 'p-phone-sketch', via: '전화' }),
   L('클로이', '“…그래 알겠어. 그럼 그때 보자.”', '“...Alright, got it. I’ll see you then.”', { via: '전화' }),
   L('클로이', '“참, 방금 뉴스를 보니까 HQ가 난리더라. 너희 집 AI는 어때? 이름이… 나인이랬지?”', '“By the way, I just saw the news. HQ is causing quite a stir. How’s the AI at your place? Its name was... Nine, right?”', { via: '전화' }),
@@ -49,7 +49,7 @@ const raw = [
   N('창밖 전광판의 숫자가 자정을 알린다. 늦은 밤에도 도시는 여전히 환하게 빛나고, 사람들은 저마다의 밤을 보낸다.', 'The billboard outside marks midnight. Even this late, the city still glows, and everyone spends their own night.', { img: 'p-city' }),
 
   // ───────── 2장 · 집 · 다음 날 아침
-  { chapter: 2, img: 's2-morning', hq: 72, hud: { hq: 72, delta: -9, note: '관리국 기준 갱신' }, ...L('휴미터', '“좋은 아침입니다, 진 님. 오늘의 HQ는 72입니다.”', '“Good morning, Jin. Your HQ is 72 today.”') },
+  { chapter: 2, img: 's2-morning', bgm: 'morning', amb: null, sfx: 'humeter', hq: 72, hud: { hq: 72, delta: -9, note: '관리국 기준 갱신' }, ...L('휴미터', '“좋은 아침입니다, 진 님. 오늘의 HQ는 72입니다.”', '“Good morning, Jin. Your HQ is 72 today.”') },
   N('다음 날 아침, 진의 HQ가 81에서 72로 떨어졌다. 밤사이 관리국 기준이 갱신된 것이다.', 'The next morning, Jin’s HQ dropped from 81 to 72. The Bureau updated its standard overnight.'),
   L('진', '“젠장. 하룻밤 새 9점이나 떨어졌네.”', '“Damn. It dropped nine points overnight.”'),
   L('나인', '“오… 괜찮습니다, 진. HQ는 매일 갱신되는 것이니까요. 오늘 하루는 제가 동행할 테니 큰 문제는 없을 겁니다.”', '“Oh... that’s alright, Jin. HQ is updated daily, after all. I’ll be accompanying you today, so there shouldn’t be any major problems.”'),
@@ -62,7 +62,7 @@ const raw = [
   L('진', '“이런, 그러고 보니 어제 뉴스를 보다 늦게 잠들어 선물을 준비하지 못했네.”', '“Oh no. I stayed up late watching the news and never got her a gift.”'),
   L('나인', '“그렇다면 손편지는 어떤가요? 최근 아날로그한 축하 방식이 유행을 하고 있다고 해요.”', '“How about a handwritten letter? I’ve heard that handwritten congratulations are becoming quite popular lately.”'),
   L('진', '“좋은 아이디어야, 나인.”', '“Good idea, Nyin.”'),
-  N('진은 책상에 앉아 클로이에게 줄 편지를 쓸 준비를 한다.', 'Jin sits at the desk and gets ready to write a letter to Chloe.'),
+  N('진은 책상에 앉아 클로이에게 줄 편지를 쓸 준비를 한다.', 'Jin sits at the desk and gets ready to write a letter to Chloe.', { sfx: 'pen' }),
   L('진', '“…실수로 잘못 적었어. 오늘은 되는 일이 없군.”', '“…I wrote it wrong. Nothing goes right today.”', { img: 's2-letter-close' }),
   L('나인', '“오타가 나쁘지만은 않아요. 듣자 하니 소문에 의하면, ‘실수’를 많이 할수록 HQ가 높아진다고도 하더라고요. AI는 실수를 하지 않으니까 그런 걸까요?”', '“Oh, mistakes aren’t necessarily a bad thing. According to rumors, the more mistakes you make, the higher your HQ score gets. Maybe it’s because AIs never make mistakes?”'),
   L('나인', '“어떤 사람들은 그래서 일부러 오타투성이 편지를 주고받기도 해요.”', '“Some people even deliberately give and receive letters with typos for that very reason.”'),
@@ -82,7 +82,7 @@ const raw = [
   L('진', '“고마워, 나인. 바로 나가자.”', '“Thanks, Nyin. Let’s head out.”'),
 
   // 백화점 입구 · 낮
-  N('백화점으로 향한다. 입구에는 기준선이 적혀 있다. HQ 75.', 'They head to the department store. The entrance posts a threshold: HQ 75.', { img: 's2-store' }),
+  N('백화점으로 향한다. 입구에는 기준선이 적혀 있다. HQ 75.', 'They head to the department store. The entrance posts a threshold: HQ 75.', { img: 's2-store', bgm: null }),
   N('나인이 먼저 게이트를 지난다. 88, 초록 불. 뒤따르던 진 앞에서 짧은 경고음과 함께 빨간 불이 켜진다.', 'Nyin passes the gate first. 88, green light. As Jin follows, a short beep sounds and the light turns red.'),
   L('게이트 안내', '“죄송합니다. 현재 HQ로는 입장하실 수 없습니다.”', '“We’re sorry. Your current HQ score does not meet the entry requirements.”'),
   N('안으로 들어갔던 나인이 발길을 돌려, 들어오지 못한 진에게 돌아온다.', 'Nyin turns back from inside and returns to Jin, who couldn’t get in.', { img: 's2-nine-back' }),
@@ -312,13 +312,18 @@ function paginate(b) {
   const width = b.center ? KO_LINE.center : KO_LINE.left
   const pages = toPages(toLines(sentencesOf(b.text), width), width)
   const ens = splitEn(b.en, pages.length, pages.map((p) => p.join(' ').length))
-  return pages.map((p, i) => ({ ...b, text: p.join('\n'), en: ens[i], start: b.start && i === 0 }))
+  return pages.map((p, i) => ({ ...b, text: p.join('\n'), en: ens[i], start: b.start && i === 0, sfx: i === 0 ? b.sfx : undefined }))
 }
 
-let carry = { chapter: 0, img: 'p-fog' }
+let carry = { chapter: 0, img: 'p-fog', bgm: null, amb: null }
 export const BEATS = raw.flatMap((b) => {
   const chapterStart = b.chapter != null && b.chapter !== carry.chapter
-  carry = { chapter: b.chapter ?? carry.chapter, img: b.img ?? carry.img }
+  carry = {
+    chapter: b.chapter ?? carry.chapter,
+    img: b.img ?? carry.img,
+    bgm: 'bgm' in b ? b.bgm : carry.bgm,
+    amb: 'amb' in b ? b.amb : carry.amb,
+  }
   const center = false // 가운데 정렬은 오프닝 영상 자막과 검은 화면 자막만 쓴다
   const beat = { ...b, ...carry, center, start: chapterStart }
   if (beat.type === 'narr' || beat.type === 'line') return paginate(beat)
