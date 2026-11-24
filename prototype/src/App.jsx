@@ -47,27 +47,6 @@ function reducer(state, a) {
     case 'NEXT': return enter({ ...state, history: [...state.history, snap(state)] }, state.idx + 1)
     case 'CHOOSE': {
       const beat = BEATS[state.idx]
-
-  // 소리 끄기. 선택은 이 브라우저에 기억한다(저장이 막혀 있어도 동작한다).
-  const [muted, setMutedState] = useState(() => { try { return localStorage.getItem('hq-muted') === '1' } catch { return false } })
-  useEffect(() => {
-    setMuted(muted)
-    try { localStorage.setItem('hq-muted', muted ? '1' : '0') } catch {}
-  }, [muted])
-  useEffect(() => {
-    const onKey = (e) => { if (e.code === 'KeyM') setMutedState((m) => !m) }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [])
-
-  // 장면이 바뀌면 그 장면의 배경음·환경음으로 맞추고, 효과음이 있으면 한 번 낸다.
-  // 오프닝 영상·검은 화면 나레이션·엔딩 화면에는 따로 깔지 않는다(컷에 bgm이 없으면 꺼진다).
-  useEffect(() => {
-    if (!state.started) { stopAll(); return }
-    setBgm(beat.bgm)
-    setAmb(beat.amb)
-    sfx(beat.sfx)
-  }, [state.started, state.idx])
       const opt = beat.options[a.index]
       return enter({
         ...state,
@@ -79,27 +58,6 @@ function reducer(state, a) {
     }
     case 'FINAL': {
       const beat = BEATS[state.idx]
-
-  // 소리 끄기. 선택은 이 브라우저에 기억한다(저장이 막혀 있어도 동작한다).
-  const [muted, setMutedState] = useState(() => { try { return localStorage.getItem('hq-muted') === '1' } catch { return false } })
-  useEffect(() => {
-    setMuted(muted)
-    try { localStorage.setItem('hq-muted', muted ? '1' : '0') } catch {}
-  }, [muted])
-  useEffect(() => {
-    const onKey = (e) => { if (e.code === 'KeyM') setMutedState((m) => !m) }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [])
-
-  // 장면이 바뀌면 그 장면의 배경음·환경음으로 맞추고, 효과음이 있으면 한 번 낸다.
-  // 오프닝 영상·검은 화면 나레이션·엔딩 화면에는 따로 깔지 않는다(컷에 bgm이 없으면 꺼진다).
-  useEffect(() => {
-    if (!state.started) { stopAll(); return }
-    setBgm(beat.bgm)
-    setAmb(beat.amb)
-    sfx(beat.sfx)
-  }, [state.started, state.idx])
       const opt = beat.options[a.index]
       return enter({
         ...state,
