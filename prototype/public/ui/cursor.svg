@@ -1,0 +1,12 @@
+<svg width="82" height="82" viewBox="0 0 82 82" fill="none" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<filter id="soft" x="0" y="0" width="82" height="82" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feGaussianBlur stdDeviation="1.5"/>
+</filter>
+<linearGradient id="g" x1="41" y1="12" x2="41" y2="70" gradientUnits="userSpaceOnUse">
+<stop stop-color="#fff"/>
+<stop offset="1" stop-color="#fff" stop-opacity="0.05"/>
+</linearGradient>
+</defs>
+<circle cx="41" cy="41" r="29" fill="url(#g)" filter="url(#soft)"/>
+</svg>

@@ -1,154 +1,87 @@
-import React, { useEffect, useMemo, useReducer, useState, useRef } from 'react'
-import { BEATS, CHAPTERS, ENDINGS, THRESHOLD } from './story.js'
-import Scene, { TIME } from './Scene.jsx'
-import { ActButton, useTypewriter, ChapterCard, GlitchNum } from './ui.jsx'
+import React, { useEffect, useReducer, useRef, useState } from 'react'
+import { BEATS, CHAPTERS, ENDINGS, ENDING_ORDER, WHO_EN } from './story.js'
+import { useTypewriter } from './ui.jsx'
 
-const PASSIVE = ['narr', 'line', 'term', 'news', 'notify']
+const BASE = import.meta.env.BASE_URL
+const cut = (name) => `${BASE}cut/${name}.jpg`
+const PASSIVE = ['narr', 'line']
 
-const initial = {
-  started: false, idx: 0, log: [], hq: 81, ai: 0, std: 0,
-  picks: [], route: null, final: null, set: {}, shake: 0,
-  lastRelation: null,
-  lastReact: null, // { who, text, sign } 선택 직후 상대의 반응
-  history: [], // 뒤로가기용 스냅샷
-  hqLog: [], // HQ 변동 기록 { at, from, to, why }
-}
+const initial = { started: false, idx: 0, ai: 0, hq: 0, picks: [], route: null, final: null, mine: null, history: [] }
+// 엔딩 영상의 첫 비트. 다른 결말을 고르면 여기서부터 그 결말을 재생한다.
+const ENDING_START = BEATS.findIndex((b) => b.chapter === 5)
 
-function logOf(beat) {
-  switch (beat.type) {
-    case 'narr': return { kind: 'narr', text: beat.text }
-    case 'line': return { kind: 'line', who: beat.who, text: beat.text }
-    case 'term': return { kind: 'term', who: beat.term, text: beat.text }
-    case 'news': return { kind: 'sys', who: '뉴스 속보', text: `"${beat.headline}." ${beat.sub}.` }
-    case 'notify': return { kind: 'sys', who: beat.app, text: `${beat.title}. ${beat.body}.` }
-    case 'message': return { kind: 'line', who: beat.from, text: `"${beat.text}"`, via: '메시지' }
-    default: return null
-  }
-}
-
+// from 위치부터 조건(when)이 맞는 첫 비트로 이동한다. route 비트에서 4장 루트를 정한다.
 function enter(state, from) {
-  let s = { ...state }
+  const s = { ...state }
   let i = from
   while (i < BEATS.length) {
     const b = BEATS[i]
     if (b.type === 'route') {
-      const lastAi = [...s.picks].reverse().find((p) => p.axis === 'ai')
-      const sign = s.ai !== 0 ? Math.sign(s.ai) : (lastAi?.sign ?? 1)
-      s.route = sign > 0 ? 'A' : 'B'
+      // AI축 합계의 부호. 합계가 0이면 마지막 AI축 선택 ⑧을 따른다.
+      const last = [...s.picks].reverse().find((p) => p.axis === 'ai')
+      s.route = (s.ai !== 0 ? Math.sign(s.ai) : last?.sign ?? 1) > 0 ? 'A' : 'B'
       i += 1
       continue
     }
     if (b.when && !b.when(s)) { i += 1; continue }
     break
   }
-  const beat = BEATS[i]
-  if (!beat) return s
   s.idx = i
-  if (beat.hq != null && beat.hq !== s.hq) s.hqLog = [...s.hqLog, { at: beat.place, from: s.hq, to: beat.hq, why: beat.hqWhy ?? '' }]
-  if (beat.hq != null) s.hq = beat.hq
-  if (beat.sceneChanged) s.set = beat.set ?? {}
-  else if (beat.set) s.set = beat.set
-  const entry = logOf(beat)
-  if (beat.sceneChanged) s.log = [...s.log, { kind: 'place', text: `${CHAPTERS[beat.chapter - 1].label} · ${beat.place}` }]
-  if (entry) s.log = [...s.log, entry]
   return s
 }
 
-// 선택 후 누구와의 관계가 변했는지 결정
-const CHOICE_RELATION = {
-  c1: 'ai', c3: 'ai', c6: 'ai', c7a: 'ai', c7b: 'ai',
-  c2: 'std', c4: 'std',
-}
-const RELATION_NAMES = { ai: '나인', std: '기준 태도' }
-
-function snap(state) {
-  const { history, ...rest } = state
-  return rest
-}
+const snap = ({ history, ...rest }) => rest
 
 function reducer(state, a) {
   switch (a.type) {
-    case 'START': return enter({ ...initial, started: true, history: [], hqLog: [{ at: '어제', from: null, to: 81, why: '마지막 정기 측정' }], log: [{ kind: 'place', text: '1장 · 집' }] }, 0)
+    case 'START': return enter({ ...initial, started: true }, 0)
     case 'RESTART': return initial
     case 'BACK': {
-      if (state.history.length === 0) return state
-      const prev = state.history[state.history.length - 1]
-      return { ...prev, history: state.history.slice(0, -1) }
+      if (!state.history.length) return state
+      return { ...state.history[state.history.length - 1], history: state.history.slice(0, -1) }
     }
-    case 'NEXT': {
-      let s = { ...state, lastRelation: null, history: [...state.history, snap(state)] }
-      if (a.log) s = { ...s, log: [...s.log, ...[].concat(a.log)] }
-      return enter(s, state.idx + 1)
-    }
+    case 'NEXT': return enter({ ...state, history: [...state.history, snap(state)] }, state.idx + 1)
     case 'CHOOSE': {
       const beat = BEATS[state.idx]
       const opt = beat.options[a.index]
-      const delta = opt.sign * beat.amount
-      const relAxis = CHOICE_RELATION[beat.id]
-      const s = {
+      return enter({
         ...state,
         history: [...state.history, snap(state)],
-        ai: state.ai + (beat.axis === 'ai' ? delta : 0),
-        std: state.std + (beat.axis === 'std' ? delta : 0),
-        picks: [...state.picks, { id: beat.id, num: beat.num, title: beat.title, axis: beat.axis, sign: opt.sign, delta, text: opt.text }],
-        log: [...state.log, beat.who === '나' ? { kind: 'narr', text: beat.prompt } : { kind: 'line', who: beat.who, text: beat.prompt }, { kind: 'me', text: opt.text }],
-        shake: state.shake + 1,
-        lastRelation: relAxis ? { who: RELATION_NAMES[relAxis] || relAxis, direction: opt.sign } : null,
-        lastReact: opt.react ? { ...opt.react, sign: opt.sign } : null,
-      }
-      return enter(s, state.idx + 1)
+        ai: state.ai + (beat.axis === 'ai' ? opt.sign : 0),
+        hq: state.hq + (beat.axis === 'hq' ? opt.sign : 0),
+        picks: [...state.picks, { id: beat.id, num: beat.num, axis: beat.axis, sign: opt.sign, prompt: beat.prompt, text: opt.text }],
+      }, state.idx + 1)
     }
     case 'FINAL': {
       const beat = BEATS[state.idx]
-      const opt = beat.options.find((o) => o.key === a.key)
-      const s = { ...state, history: [...state.history, snap(state)], final: a.key, log: [...state.log, { kind: 'me', text: opt.text }], shake: state.shake + 1, lastRelation: null }
-      return enter(s, state.idx + 1)
+      const opt = beat.options[a.index]
+      return enter({
+        ...state,
+        history: [...state.history, snap(state)],
+        final: opt.key,
+        mine: opt.key,
+        picks: [...state.picks, { id: 'final', num: '최종', axis: 'final', prompt: null, text: opt.text }],
+      }, state.idx + 1)
     }
-    case 'LOG': return { ...state, log: [...state.log, ...[].concat(a.log)] }
-    case 'HQ': return { ...state, hq: a.hq, shake: state.shake + 1, hqLog: a.hq === state.hq ? state.hqLog : [...state.hqLog, { at: BEATS[state.idx]?.place ?? '', from: state.hq, to: a.hq, why: a.why ?? '' }] }
-    case 'SET': return { ...state, set: { ...state.set, ...a.set } }
+    case 'REPLAY': return enter({ ...state, history: [...state.history, snap(state)], final: a.key }, ENDING_START)
     default: return state
   }
 }
 
 export default function App() {
   const [state, dispatch] = useReducer(reducer, initial)
-  const beat = BEATS[state.idx]
   const scale = useStageScale()
-  const [chapterShowing, setChapterShowing] = useState(null)
-  const prevChapter = useRef(0)
-
-  // 장 전환 감지 → 챕터 카드 표시
-  useEffect(() => {
-    if (!state.started || !beat) return
-    if (beat.chapter !== prevChapter.current && beat.chapter <= 4) {
-      setChapterShowing(beat.chapter)
-    }
-    prevChapter.current = beat.chapter
-  }, [beat?.chapter, state.started])
+  const beat = BEATS[state.idx]
 
   return (
     <div className="viewport">
       <div className="stage" style={{ transform: `translate(-50%, -50%) scale(${scale})` }}>
         {!state.started && <Title onStart={() => dispatch({ type: 'START' })} />}
-        {state.started && beat.type !== 'ending' && (
-          <>
-            {chapterShowing && (
-              <ChapterCard
-                key={chapterShowing}
-                chapter={CHAPTERS[chapterShowing - 1].label}
-                title={CHAPTERS[chapterShowing - 1].title}
-                en={CHAPTERS[chapterShowing - 1].en}
-                place={beat.place}
-                slow={chapterShowing === 1}
-                onDone={() => setChapterShowing(null)}
-              />
-            )}
-            <Game state={state} beat={beat} dispatch={dispatch} />
-          </>
-        )}
-        {state.started && beat.type === 'ending' && <Ending state={state} onBack={() => dispatch({ type: 'BACK' })} onRestart={() => dispatch({ type: 'RESTART' })} />}
+        {state.started && beat.type === 'after' && <After key={state.final} state={state} dispatch={dispatch} />}
+        {state.started && beat.type === 'result' && <Result key={state.final} state={state} dispatch={dispatch} />}
+        {state.started && beat.type !== 'after' && beat.type !== 'result' && <Film state={state} beat={beat} dispatch={dispatch} />}
       </div>
+      <Cursor scale={scale} />
     </div>
   )
 }
@@ -164,494 +97,336 @@ function useStageScale() {
   return scale
 }
 
-function Title({ onStart }) {
-  const [phase, setPhase] = useState('idle')
-  useEffect(() => { const t = setTimeout(() => setPhase('reveal'), 300); return () => clearTimeout(t) }, [])
+// 키보드 공통 처리. Space·Enter로 진행, 숫자로 선택, ←·Backspace로 되돌리기.
+function useKeys(handler) {
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.repeat) return
+      if (e.code === 'Space' || e.code === 'Enter') e.preventDefault()
+      handler(e)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
+}
+
+// 버튼을 누르면 흰색이 차오르는 동안 잠시 기다렸다가 동작을 실행한다. 그동안의 중복 입력은 무시한다.
+const PRESS_MS = 650
+function usePress() {
+  const [pressed, setPressed] = useState(null)
+  const busy = useRef(false)
+  useEffect(() => () => { busy.current = false }, [])
+  const press = (id, fn) => {
+    if (busy.current) return
+    busy.current = true
+    setPressed(id)
+    setTimeout(() => { busy.current = false; setPressed(null); fn() }, PRESS_MS)
+  }
+  return [pressed, press]
+}
+
+// 마우스로 누른 경우 그 자리를 원이 퍼지는 중심으로 정한다. 키보드로 누르면 버튼 가운데에서 퍼진다.
+function origin(e) {
+  const el = e.currentTarget
+  const r = el.getBoundingClientRect()
+  if (!e.clientX && !e.clientY) return
+  el.style.setProperty('--x', `${((e.clientX - r.left) / r.width) * 100}%`)
+  el.style.setProperty('--y', `${((e.clientY - r.top) / r.height) * 100}%`)
+  setTimeout(() => { el.style.removeProperty('--x'); el.style.removeProperty('--y') }, PRESS_MS + 100)
+}
+
+/* ───────── 화면 공통 요소 */
+
+// 사진 한 장이 화면 전체를 덮는다. 컷이 바뀌면 교차 페이드한다.
+function Photo({ name }) {
+  return <div className="photo" key={name} style={{ backgroundImage: `url(${cut(name)})` }} />
+}
+
+// 좌상단 "01 | Prologue"
+function ChapterTag({ chapter }) {
+  const c = CHAPTERS[chapter - 1]
   return (
-    <div className={`title cover ${phase}`}>
-      <div className="title-photo" style={{ backgroundImage: `url(${import.meta.env.BASE_URL}img/ref-city1.jpg)` }} />
+    <div className="chapter-tag">
+      <span>{String(c.id).padStart(2, '0')}</span>
+      <img src={`${BASE}ui/divider.svg`} alt="" width="1" height="18" />
+      <span>{c.en}</span>
+    </div>
+  )
+}
 
-      <div className="cv-top">
-        <span>Seoul, 2069</span>
-        <span>An Interactive Story</span>
-      </div>
+function ContinueButton({ label = '계속하기', onClick, on = false }) {
+  return (
+    <button className={`continue ${on ? 'on' : ''}`} onClick={(e) => { e.stopPropagation(); origin(e); onClick() }}>
+      <span>{label}</span><em>Space</em>
+    </button>
+  )
+}
 
-      <div className="cv-bottom">
-        <div className="cv-logo">
-          <span className="cv-hq">HQ</span>
-          <div className="cv-hq-side">
-            <b>Human quotient</b>
-            <p>인간다움에 점수가 매겨지는 도시</p>
+// 하단 자막. 내레이션은 가운데 또는 좌측, 대사는 화자 이름과 함께 좌측에 놓인다.
+function Caption({ item, typing }) {
+  if (!item) return null
+  const text = typing ? typing.text : item.text
+  const center = item.type === 'narr' && item.center
+  return (
+    <div className={`caption ${center ? 'center' : 'left'} ${item.type}`}>
+      {item.type === 'line' && (
+        <div className="who">
+          <span>{item.who}</span>
+          {WHO_EN[item.who] && <em>{WHO_EN[item.who]}</em>}
+          {item.via && <em>· {item.via}</em>}
+        </div>
+      )}
+      <p className="ko"><Sentences full={item.text} shown={text.length} /></p>
+      {item.en && <p className="en"><Sentences full={item.en} shown={typing ? Math.round((item.en.length * text.length) / Math.max(1, item.text.length)) : undefined} /></p>}
+    </div>
+  )
+}
+
+// 문장 끝(. ? ! …, 닫는 따옴표 포함) 뒤의 공백에서 끊는다. 조각 길이의 합은 원문 길이와 같다.
+function splitSentences(t) {
+  const out = []
+  const re = /[.?!…]+["'”’」)]*\s+/g
+  let last = 0
+  let m
+  while ((m = re.exec(t))) { out.push(t.slice(last, re.lastIndex)); last = re.lastIndex }
+  if (last < t.length) out.push(t.slice(last))
+  return out
+}
+
+// 문장마다 한 줄씩 놓는다. 타이핑 중에는 아직 찍히지 않은 글자를 투명하게 남겨 줄 배치가 흔들리지 않게 한다.
+function Sentences({ full, shown = full.length }) {
+  let offset = 0
+  return splitSentences(full).map((s, i) => {
+    const seg = s.trimEnd()
+    const v = Math.max(0, Math.min(seg.length, shown - offset))
+    offset += s.length
+    return (
+      <span className="sent" key={i}>
+        {seg.slice(0, v)}
+        {v < seg.length && <span className="ghost">{seg.slice(v)}</span>}
+      </span>
+    )
+  })
+}
+
+/* ───────── 타이틀 (Figma 2227) */
+
+function Title({ onStart }) {
+  const [pressed, press] = usePress()
+  const start = () => press('start', onStart)
+  useKeys((e) => { if (e.code === 'Space' || e.code === 'Enter') start() })
+  return (
+    <div className="title">
+      <div className="photo" style={{ backgroundImage: `url(${BASE}ui/title.jpg)` }} />
+      <div className="title-bottom">
+        <div className="title-text">
+          <span className="eyebrow">Interactive Story Film</span>
+          <div className="title-stack">
+            <h1>Human Quotient</h1>
+            <p>우리는 얼마나 인간다운가요?</p>
           </div>
         </div>
-        <div className="cv-start">
-          <small>5 min · 7 choices · 4 endings</small>
-          <button className="cv-btn" onClick={onStart}>시작하기<i>→</i></button>
-        </div>
+        <button className={`pill ${pressed === 'start' ? 'on' : ''}`} onClick={(e) => { origin(e); start() }}>시작하기</button>
       </div>
     </div>
   )
 }
 
-function Game({ state, beat, dispatch }) {
-  const next = (log) => dispatch({ type: 'NEXT', log })
-  // 휴대폰 답장. 고른 답장이 화면에 전송된 뒤 다음으로 넘어간다.
-  const [reply, setReply] = useState(null)
-  useEffect(() => { setReply(null) }, [state.idx])
-  const sendReply = (text) => {
-    if (reply) return
-    setReply(text ?? '__none')
-    setTimeout(() => next(text ? { kind: 'me', text } : { kind: 'narr', text: '답장을 쓰지 못하고 화면을 끈다.' }), 1200)
-  }
+/* ───────── 장면 (Figma 2245 · 2249 · 2251) */
+
+function Film({ state, beat, dispatch }) {
   const passive = PASSIVE.includes(beat.type)
-  const logLast = [...state.log].reverse().find((e) => e.kind !== 'place')
-  // 화면 패널에 이미 같은 문장이 떠 있는 비트는 대화창에 짧은 서술만 둔다
-  const CAPTION = {
-    news: '밤 11시, 뉴스 속보가 뜬다.',
-    term: `앵커가 ‘${beat.term}’를 짚어 준다.`,
-    notify: '아침, 휴미터 알림이 울린다.',
-    message: `${beat.from}에게서 메시지가 왔다.`,
-  }[beat.type]
-  const last = CAPTION ? { kind: 'narr', text: CAPTION } : logLast
-  const typing = useTypewriter(passive ? last?.text ?? '' : '', state.log.length)
+  const typing = useTypewriter(passive ? beat.text : '', state.idx)
+  const [pressed, press] = usePress()
 
   const advance = () => {
     if (!passive) return
     if (!typing.done) typing.finish()
-    else next()
+    else press('next', () => dispatch({ type: 'NEXT' }))
   }
+  const pick = (index) => press(index, () => dispatch({ type: beat.type === 'final' ? 'FINAL' : 'CHOOSE', index }))
 
-  useEffect(() => {
-    const onKey = (e) => {
-      if (e.repeat || e.target.closest?.('input, textarea')) return
-      if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); advance() }
-      if ((e.key === 'ArrowLeft' || e.key === 'Backspace') && state.history.length > 0) { e.preventDefault(); dispatch({ type: 'BACK' }) }
-      if (beat.type === 'choice' && (e.key === '1' || e.key === '2')) dispatch({ type: 'CHOOSE', index: Number(e.key) - 1 })
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+  useKeys((e) => {
+    if (e.code === 'Space' || e.code === 'Enter') advance()
+    if ((e.key === 'ArrowLeft' || e.key === 'Backspace') && state.history.length) dispatch({ type: 'BACK' })
+    const i = Number(e.key) - 1
+    if ((beat.type === 'choice' || beat.type === 'final') && beat.options[i]) pick(i)
   })
 
-  const chapter = CHAPTERS[beat.chapter - 1]
-  const interactive = ['gate', 'glance', 'bell', 'letter'].includes(beat.type)
-
+  const isFinal = beat.type === 'final'
   return (
-    <div className="game">
-      <Scene beat={beat} set={state.set} hq={state.hq} next={next} dispatch={dispatch} reply={reply} onReply={sendReply} picks={state.picks} />
+    <div className="film" onClick={advance}>
+      <Photo name={beat.img} />
+      {!isFinal && <ChapterTag chapter={beat.chapter} />}
 
-      {/* 관계 변화 플래시 */}
-      {state.lastReact && <ReactionToast key={state.shake} react={state.lastReact} />}
+      {(beat.type === 'choice' || isFinal) && <Options final={isFinal} options={beat.options} pressed={pressed} onPick={pick} />}
 
-      {/* 상단 HUD: 왼쪽 위치 정보 한 줄, 오른쪽 HQ */}
-      <header className="top2">
-        <div className="hud-l">
-          {state.history.length > 0 && (
-            <button className="back-btn" onClick={() => dispatch({ type: 'BACK' })}>
-              <span>← 뒤로</span>
-            </button>
-          )}
-          <div className="hud-where">
-            <b className="sf">{chapter.en}<sup>0{chapter.id}</sup></b>
-            <span>{chapter.title}</span>
-            <i />
-            <span>{beat.place}</span>
-            <em>{TIME[beat.scene]}</em>
-          </div>
-        </div>
-        <HQChip hq={state.hq} empty={state.set.tagEmpty} />
-      </header>
+      {!isFinal && (
+        <footer className="caption-bar">
+          <Caption key={state.idx} item={passive ? beat : beat.prompt} typing={passive ? typing : null} />
+          {passive && <ContinueButton on={pressed === 'next'} onClick={advance} />}
+        </footer>
+      )}
+    </div>
+  )
+}
 
+// 우측 선택지. 반투명 박스에 번호와 문장을 둔다.
+function Options({ options, onPick, pressed = null, final = false }) {
+  return (
+    <div className={`options ${final ? 'final' : ''}`}>
+      {options.map((o, i) => (
+        <button key={i} className={`option ${pressed === i ? 'on' : ''}`} onClick={(e) => { e.stopPropagation(); origin(e); onPick(i) }}>
+          <span className="num">{i + 1}</span>
+          <span className="txt">{o.text}</span>
+        </button>
+      ))}
+    </div>
+  )
+}
 
-      {/* 하단 대화 영역 */}
-      <footer className={`dialog ${passive ? 'passive' : ''}`} onClick={passive ? advance : undefined}>
-        {beat.type !== 'choice' && beat.type !== 'final' && (
-          <Speech entry={last} typing={passive ? typing : null} />
-        )}
-        {passive && (
-          <div className="continue">
-            <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 2 L22 12 L12 22 L2 12 Z" fill="none" stroke="currentColor" strokeWidth="1.5" /></svg>
-            <span>{typing.done ? '계속' : '건너뛰기'}</span>
-            <kbd>Space</kbd>
-          </div>
-        )}
-        {beat.type === 'choice' && <DiamondChoice beat={beat} onPick={(index) => dispatch({ type: 'CHOOSE', index })} />}
-        {beat.type === 'final' && <Final beat={beat} onPick={(key) => dispatch({ type: 'FINAL', key })} />}
-        {beat.type === 'epilogue' && <Epilogue state={state} dispatch={dispatch} />}
-        {beat.type === 'message' && <div className="hint"><i className="hint-dot" />{beat.replies.length ? '폰에서 답장을 고르거나 직접 입력하세요' : '폰 화면을 확인하세요'}</div>}
-        {interactive && <Hint type={beat.type} />}
+/* ───────── 엔딩 영상이 끝난 뒤의 질문 (Figma 2255) */
+
+function After({ state, dispatch }) {
+  const end = ENDINGS[state.final]
+  const [pressed, press] = usePress()
+  const next = () => press('next', () => dispatch({ type: 'NEXT' }))
+  useKeys((e) => {
+    if (e.code === 'Space' || e.code === 'Enter') next()
+    if (e.key === 'ArrowLeft' || e.key === 'Backspace') dispatch({ type: 'BACK' })
+  })
+  return (
+    <div className="after" onClick={next}>
+      <Photo name={end.last} />
+      <ChapterTag chapter={5} />
+      <footer className="caption-bar after-bar">
+        <p className="after-q">{end.question}</p>
       </footer>
     </div>
   )
 }
 
-// 오른쪽 위 HQ. 숫자만 떠 있고, 선택에 반응해 흔들리지 않는다.
-function HQChip({ hq, empty }) {
-  const below = hq != null && hq < THRESHOLD
+/* ───────── 결과 화면 (Figma 2262) → 다른 결말 보기 (2263~2266) */
+
+function Result({ state, dispatch }) {
+  const [view, setView] = useState('result')
+  const [pressed, press] = usePress()
+  const end = ENDINGS[state.final]
+  useKeys((e) => {
+    if (e.key === 'Escape' || e.key === 'ArrowLeft' || e.key === 'Backspace') {
+      if (view === 'cards') setView('result')
+      else dispatch({ type: 'BACK' })
+    }
+  })
+  if (view === 'cards') return <Cards state={state} dispatch={dispatch} />
   return (
-    <div className={`hq-chip ${empty ? 'empty' : below ? 'bad' : 'good'}`}>
-      <span className="hq-k">HQ</span>
-      <b>{empty || hq == null ? '—' : hq}</b>
-    </div>
-  )
-}
-
-// 디트로이트식 세로 불안정성 미터
-function InstabilityMeter({ hq, shake, empty }) {
-  const [shown, setShown] = useState(hq)
-  useEffect(() => {
-    if (hq == null || shown === hq) return
-    const t = setTimeout(() => setShown((v) => v + Math.sign(hq - v)), 45)
-    return () => clearTimeout(t)
-  }, [hq, shown])
-  const below = hq != null && shown < THRESHOLD
-  const pct = empty ? 0 : Math.min(100, shown)
-
-  return (
-    <div className={`instability ${below ? 'unstable' : 'stable'} ${empty ? 'empty' : ''}`}>
-      <div className="inst-label">HQ</div>
-      <div className="inst-track">
-        <div className="inst-fill" style={{ height: `${pct}%` }} />
-        <div className="inst-threshold" style={{ bottom: `${THRESHOLD}%` }} />
-        {/* 눈금 표시 */}
-        {[25, 50, 75].map(v => <div key={v} className="inst-tick" style={{ bottom: `${v}%` }} />)}
-      </div>
-      <div className="inst-num" key={shake}>
-        <GlitchNum value={empty ? '' : shown} glitch={shake} />
-      </div>
-      <div className="inst-sub">{empty ? '미측정' : below ? '기준 미달' : '기준 통과'}</div>
-    </div>
-  )
-}
-
-// 선택 직후 상대의 반응 한 줄. 몇 초 뒤 스스로 사라진다.
-function ReactionToast({ react }) {
-  const [out, setOut] = useState(false)
-  const [gone, setGone] = useState(false)
-  useEffect(() => {
-    const a = setTimeout(() => setOut(true), 3200)
-    const b = setTimeout(() => setGone(true), 3700)
-    return () => { clearTimeout(a); clearTimeout(b) }
-  }, [])
-  if (gone) return null
-  return (
-    <div className={`react-toast ${out ? 'out' : ''} ${react.sign > 0 ? 'warm' : 'cool'}`}>
-      <span className="rt-avatar">{react.who.slice(0, 1)}</span>
-      <div><small>{react.who}</small><p>{react.text}</p></div>
-    </div>
-  )
-}
-
-// 말하는 사람 영문 이름 (덱의 세리프 이탤릭 표기)
-const WHO_EN = { 나: 'Me', 나인: 'Nine', 줄리안: 'Julian', 클로이: 'Chloe', 재이: 'Jae', '줄 끝의 남자': 'A man in line', 휴미터: 'Humeter', '뉴스 속보': 'News' }
-
-const WHO_TONE = { 나: 'me', 나인: 'ai', 줄리안: 'violet', 클로이: 'teal', 휴미터: 'std', '뉴스 속보': 'red' }
-
-function Speech({ entry, typing }) {
-  if (!entry) return <div className="speech" />
-  const text = typing ? typing.text : entry.text
-  const who = entry.kind === 'me' ? '나' : entry.who
-  return (
-    <div className={`speech ${entry.kind}`}>
-      {who && (
-        <div className="who">
-          <svg className="who-diamond" viewBox="0 0 12 12" width="10" height="10">
-            <path d="M6 1 L11 6 L6 11 L1 6 Z" className={WHO_TONE[who] ?? 'gray'} />
-          </svg>
-          {WHO_EN[who] && <span className="who-en">{WHO_EN[who]}</span>}{who}{entry.via && <em>{entry.via}</em>}
+    <div className="result" style={{ '--tint': end.tint, '--base': end.base }}>
+      <img className="result-photo" src={`${BASE}ending/${end.portrait}.jpg`} alt="" />
+      <div className="result-tint" />
+      <div className="result-fade" />
+      <ChapterTag chapter={5} />
+      <div className="result-quote">{end.quote}</div>
+      <footer className="caption-bar result-bar">
+        <div className="result-text">
+          <h1>{end.name}</h1>
+          <p>{end.desc}</p>
         </div>
-      )}
-      <p>{text}{typing && !typing.done && <span className="caret" />}</p>
-    </div>
-  )
-}
-
-function DiamondChoice({ beat, onPick }) {
-  const [hover, setHover] = useState(null)
-
-  return (
-    <div className="diamond-choice">
-      <div className="dc-center">
-        <div className="dc-meta">
-          <svg viewBox="0 0 20 20" width="14" height="14"><path d="M10 2 L18 10 L10 18 L2 10 Z" className={beat.axis} /></svg>
-          <span><em className="dc-en">Choice {beat.num}</em>{beat.title}</span>
-        </div>
-        <div className="dc-who">
-          {WHO_EN[beat.who] && <span className="who-en">{WHO_EN[beat.who]}</span>}{beat.who}
-        </div>
-        <p className="dc-prompt">{beat.prompt}</p>
-        <div className={`dc-inner ${hover != null ? 'on' : ''}`}>
-          {hover != null ? beat.options[hover].inner : ''}
-        </div>
-      </div>
-
-      <div className="dc-opts">
-        {beat.options.map((o, i) => (
-          <button
-            key={i}
-            className={`dc-opt dc-opt-${i}`}
-            onClick={() => onPick(i)}
-            onPointerEnter={() => setHover(i)}
-            onPointerLeave={() => setHover(null)}
-          >
-            <div className="dc-opt-diamond">
-              <svg viewBox="0 0 32 32" width="28" height="28">
-                <path d="M16 2 L30 16 L16 30 L2 16 Z" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                <text x="16" y="20" textAnchor="middle" fontSize="14" fill="currentColor">{i + 1}</text>
-              </svg>
-            </div>
-            <span className="dc-opt-text">{o.text}</span>
+        <div className="result-actions">
+          <button className={`continue ${pressed === 'restart' ? 'on' : ''}`} onClick={(e) => origin(e) || press('restart', () => dispatch({ type: 'RESTART' }))}>
+            <span>다시 시작하기</span>
           </button>
-        ))}
-      </div>
+          <button className={`continue ${pressed === 'cards' ? 'on' : ''}`} onClick={(e) => origin(e) || press('cards', () => setView('cards'))}>
+            <span>다른 결말 보기</span>
+          </button>
+        </div>
+      </footer>
     </div>
   )
 }
 
-function Final({ beat, onPick }) {
-  // 한 번 누르면 고른 카드가 빛나고 나머지가 흐려진 뒤 넘어간다
-  const [picked, setPicked] = useState(null)
-  const choose = (i) => {
-    if (picked != null) return
-    setPicked(i)
-    setTimeout(() => onPick(beat.options[i].key), 900)
-  }
-  useEffect(() => {
-    const onKey = (e) => { const i = Number(e.key) - 1; if (beat.options[i]) choose(i) }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+// 네 결말 카드. 누른 카드가 넓게 펼쳐지고, 내가 고른 결말에는 '내가 선택한 엔딩'이 붙는다.
+// 다른 결말을 펼친 상태에서 '이 엔딩 보기'를 누르면 그 결말 영상부터 재생한다.
+function Cards({ state, dispatch }) {
+  const [open, setOpen] = useState(state.final)
+  const [pressed, press] = usePress()
+  useKeys((e) => {
+    const k = ENDING_ORDER[Number(e.key) - 1]
+    if (k) setOpen(k)
   })
   return (
-    <div className="diamond-choice final">
-      <div className="dc-center">
-        <div className="dc-meta">
-          <svg viewBox="0 0 20 20" width="14" height="14"><path d="M10 2 L18 10 L10 18 L2 10 Z" className="end" /></svg>
-          <span><em className="dc-en">Choice {beat.num}</em>{beat.title}</span>
-        </div>
-        <div className="dc-who">
-          {WHO_EN[beat.who] && <span className="who-en">{WHO_EN[beat.who]}</span>}{beat.who}
-        </div>
-        <p className="dc-prompt">{beat.prompt}</p>
-        <div className="dc-inner on">되돌릴 수 없는 선택입니다</div>
-      </div>
-      <div className="dc-opts final-opts">
-        {beat.options.map((o, i) => (
-          <button key={o.key} className={`dc-final-hold ${picked === i ? 'picked' : ''} ${picked != null && picked !== i ? 'faded' : ''}`} onClick={() => choose(i)}>
-            <div className="dc-opt-diamond">
-              <svg viewBox="0 0 32 32" width="28" height="28">
-                <path d="M16 2 L30 16 L16 30 L2 16 Z" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                <text x="16" y="20" textAnchor="middle" fontSize="14" fill="currentColor">{i + 1}</text>
-              </svg>
-            </div>
-            <div className="dc-final-content">
-              <strong>{o.text}</strong>
-              <p>{o.desc}</p>
-            </div>
-          </button>
-        ))}
-      </div>
+    <div className="cards">
+      {ENDING_ORDER.map((k) => {
+        const end = ENDINGS[k]
+        const on = open === k
+        const fade = `linear-gradient(180deg, ${end.fade[0]} ${end.fade[3]}, ${end.fade[1]}, ${end.fade[2]})`
+        return (
+          <div
+            key={k}
+            className={`card ${on ? 'open' : ''}`}
+            style={{ background: on ? end.card : end.dim }}
+            onClick={() => setOpen(k)}
+          >
+            <img className="card-photo" src={`${BASE}ending/${end.portrait}.jpg`} alt="" />
+            <div className="card-fade" style={{ backgroundImage: on ? fade : end.dimFade }} />
+            {on ? (
+              <div className="card-head">
+                {k === state.mine ? (
+                  <span className="continue static"><span>내가 선택한 엔딩</span></span>
+                ) : (
+                  <button
+                    className={`continue ${pressed === k ? 'on' : ''}`}
+                    onClick={(e) => { e.stopPropagation(); origin(e); press(k, () => dispatch({ type: 'REPLAY', key: k })) }}
+                  >
+                    <span>이 엔딩 보기</span>
+                  </button>
+                )}
+                <h2>{end.name}</h2>
+                <p>{end.desc}</p>
+              </div>
+            ) : (
+              <div className="card-label">
+                <h3>{end.name}</h3>
+                <i />
+              </div>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }
 
-function Epilogue({ state, dispatch }) {
-  const end = ENDINGS[state.final]
-  const [done, setDone] = useState(0)
-  const [acted, setActed] = useState(!end.tasks && !end.hold)
-  const [step, setStep] = useState(-1)
+/* ───────── 커서: 흰 원, 아래 화면의 색을 반전한다 (Figma Ellipse 6, mix-blend-mode: difference) */
 
-  const nextStep = () => {
-    const n = step + 1
-    if (n >= end.steps.length) return dispatch({ type: 'NEXT' })
-    const s = end.steps[n]
-    dispatch({ type: 'LOG', log: { kind: 'narr', text: s.text } })
-    if (s.hq != null && s.hq !== state.hq) dispatch({ type: 'HQ', hq: s.hq, why: s.text.split('.')[0] })
-    if (n === 0 && (state.final === 'adapter' || state.final === 'zealot')) dispatch({ type: 'SET', set: { open: true, passed: true } })
-    setStep(n)
-  }
-
-  useEffect(() => { if (acted && step === -1) nextStep() }, [acted]) // eslint-disable-line
-
-  if (!acted && end.tasks) {
-    const t = end.tasks[done]
-    return (
-      <div className="act">
-        <div className="act-head">
-          <svg viewBox="0 0 16 16" width="12" height="12"><path d="M8 1 L15 8 L8 15 L1 8 Z" className="ai" /></svg>
-          <span>나인의 제안</span>
-          <em>{done + 1} / {end.tasks.length}</em>
-        </div>
-        <ActButton key={done} className="final-opt task" onDone={() => {
-          dispatch({ type: 'LOG', log: [{ kind: 'me', text: t.label }, { kind: 'narr', text: t.result }] })
-          dispatch({ type: 'HQ', hq: t.hq, why: t.label })
-          if (done + 1 >= end.tasks.length) setActed(true)
-          else setDone(done + 1)
-        }}>
-          <b className="final-num">{done + 1}</b>
-          <div><strong>{t.label}</strong><p>눌러서 실행</p></div>
-        </ActButton>
-      </div>
-    )
-  }
-
-  if (!acted && end.hold) {
-    return (
-      <div className="act">
-        <div className="act-head">
-          <svg viewBox="0 0 16 16" width="12" height="12"><path d="M8 1 L15 8 L8 15 L1 8 Z" className="end" /></svg>
-          <span>되돌릴 수 없는 행동</span>
-        </div>
-        <ActButton className="final-opt danger" onDone={() => {
-          dispatch({ type: 'LOG', log: { kind: 'narr', text: end.hold.result } })
-          dispatch({ type: 'SET', set: state.final === 'zealot' ? { nineOff: true } : { tagEmpty: true } })
-          if (state.final === 'outlier') dispatch({ type: 'HQ', hq: null, why: '휴미터 분리' })
-          setActed(true)
-        }}>
-          <b className="final-num">!</b>
-          <div><strong>{end.hold.label}</strong><p>되돌릴 수 없습니다</p></div>
-        </ActButton>
-      </div>
-    )
-  }
-
-  return (
-    <button className="continue live" onClick={nextStep}>
-      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 2 L22 12 L12 22 L2 12 Z" fill="none" stroke="currentColor" strokeWidth="1.5" /></svg>
-      <span>{step + 1 >= end.steps.length ? '결말 보기' : '계속'}</span>
-    </button>
-  )
-}
-
-const HINTS = {
-  gate: 'Scan Face를 눌러 측정하세요',
-  glance: '승객 위에 마우스를 올려보세요',
-  bell: '초인종을 누르세요',
-  letter: '편지를 눌러 읽으세요',
-  message: '메시지를 확인하세요',
-}
-function Hint({ type }) {
-  return (
-    <div className="hint">
-      <svg className="hint-diamond" viewBox="0 0 16 16" width="12" height="12">
-        <path d="M8 2 L14 8 L8 14 L2 8 Z" fill="currentColor" />
-      </svg>
-      {HINTS[type]}
-    </div>
-  )
-}
-
-function Ending({ state, onBack, onRestart }) {
+function Cursor({ scale }) {
+  const [pos, setPos] = useState(null)
+  const [down, setDown] = useState(false)
   useEffect(() => {
-    const onKey = (e) => { if (e.key === 'ArrowLeft' || e.key === 'Backspace') { e.preventDefault(); onBack() } }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onBack])
-  const [showPicks, setShowPicks] = useState(false)
-  const end = ENDINGS[state.final]
-  const no = String(QUADS_ORDER.indexOf(state.final) + 1).padStart(2, '0')
+    const move = (e) => setPos({ x: e.clientX, y: e.clientY })
+    const leave = () => setPos(null)
+    const press = () => setDown(true)
+    const release = () => setDown(false)
+    window.addEventListener('pointermove', move)
+    document.documentElement.addEventListener('pointerleave', leave)
+    window.addEventListener('pointerdown', press)
+    window.addEventListener('pointerup', release)
+    return () => {
+      window.removeEventListener('pointermove', move)
+      document.documentElement.removeEventListener('pointerleave', leave)
+      window.removeEventListener('pointerdown', press)
+      window.removeEventListener('pointerup', release)
+    }
+  }, [])
+  if (!pos) return null
+  const size = 58 * scale // SVG 82px 기준 원 58px → 표시 원 약 41px
   return (
-    <div className="ending2">
-      <div className="e2-photo" style={{ backgroundImage: `url(${import.meta.env.BASE_URL}img/end-${state.final}.jpg)` }} />
-
-      <section className="e2-name">
-        <span className="e2-eyebrow">Ending<sup>{no}</sup><i />{end.tag}</span>
-        <h1>{end.name}</h1>
-        <h2>{end.ko}</h2>
-        <p>{end.desc}. {end.letter}</p>
-      </section>
-
-      <section className="e2-side">
-        <div className="e2-q">
-          <span>The Question</span>
-          <blockquote>{end.question}</blockquote>
-        </div>
-
-        <ul className="e2-list">
-          {QUADS.map((q) => (
-            <li key={q.key} className={q.key === state.final ? 'on' : ''}>
-              <b>{q.name}</b><small>{q.ko}</small>{q.key === state.final && <em>나의 결말</em>}
-            </li>
-          ))}
-        </ul>
-
-        <button className="e2-picks-btn" onClick={() => setShowPicks((v) => !v)}>
-          내가 한 선택 {state.picks.length}개 <span>AI {fmt(state.ai)} · 기준 {fmt(state.std)}</span>
-        </button>
-      </section>
-
-      {showPicks && (
-        <div className="e2-picks" onClick={() => setShowPicks(false)}>
-          <div onClick={(e) => e.stopPropagation()}>
-            <div className="e2-picks-head"><span>My Choices</span><button onClick={() => setShowPicks(false)}>닫기</button></div>
-            <ol>
-              {state.picks.map((p) => (
-                <li key={p.id}>
-                  <span className="pk-t">{p.title}</span>
-                  <span className="pk-x">{p.text}</span>
-                  <b className={p.delta > 0 ? 'plus' : 'minus'}>{p.axis === 'ai' ? 'AI' : '기준'} {fmt(p.delta)}</b>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </div>
-      )}
-
-      <div className="e2-actions">
-        <button className="e2-back" onClick={onBack}>← Back to the door</button>
-        <button className="cv-btn" onClick={onRestart}>Play again<i>↺</i></button>
-      </div>
-    </div>
-  )
-}
-
-const QUADS_ORDER = ['insurgent', 'adapter', 'zealot', 'outlier']
-
-const QUADS = [
-  { key: 'zealot', name: 'The Zealot', ko: 'AI 적대 · HQ 맹신' },
-  { key: 'adapter', name: 'The Adapter', ko: 'AI 인정 · HQ 인정' },
-  { key: 'outlier', name: 'The Outlier', ko: 'AI 적대 · HQ 거부' },
-  { key: 'insurgent', name: 'The Insurgent', ko: 'AI 인정 · HQ 거부' },
-]
-function Quadrant({ pos, current }) {
-  const x = 50 + Math.max(-1, Math.min(1, pos.x)) * 42
-  const y = 50 - Math.max(-1, Math.min(1, pos.y)) * 42
-  return (
-    <div className="quad">
-      <span className="qa top">수긍</span><span className="qa bottom">반대</span>
-      <span className="qa left">배척</span><span className="qa right">포용</span>
-      <div className="quad-grid">
-        {QUADS.map((q) => (
-          <div key={q.key} className={`quad-cell ${q.key === current ? 'on' : ''}`}>
-            <b>{q.name}</b><small>{q.ko}</small>
-          </div>
-        ))}
-        <i className="quad-me" style={{ left: `${x}%`, top: `${y}%` }}><em>나</em></i>
-      </div>
-    </div>
-  )
-}
-
-const fmt = (n) => (n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : '0')
-
-function AxisChart({ pos }) {
-  const S = 300, c = S / 2, r = 112
-  const x = c + Math.max(-1, Math.min(1, pos.x)) * r
-  const y = c - Math.max(-1, Math.min(1, pos.y)) * r
-  return (
-    <svg className="axis" viewBox={`0 0 ${S} ${S}`}>
-      {/* 다이아몬드 배경 */}
-      <path d={`M${c} 20 L${S-20} ${c} L${c} ${S-20} L20 ${c} Z`} fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-      <line x1="20" y1={c} x2={S - 20} y2={c} stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
-      <line x1={c} y1="20" x2={c} y2={S - 20} stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
-      <text x={c - 68} y="52" textAnchor="middle" className="q">Zealot</text>
-      <text x={c + 68} y="52" textAnchor="middle" className="q">Adapter</text>
-      <text x={c - 68} y={S - 40} textAnchor="middle" className="q">Outlier</text>
-      <text x={c + 68} y={S - 40} textAnchor="middle" className="q">Insurgent</text>
-      <text x="26" y={c - 8} className="a">배척</text>
-      <text x={S - 26} y={c - 8} textAnchor="end" className="a">포용</text>
-      <text x={c + 8} y="32" className="a">수긍</text>
-      <text x={c + 8} y={S - 22} className="a">반대</text>
-      <circle cx={x} cy={y} r="18" className="halo" />
-      <circle cx={x} cy={y} r="8" className="me" />
-    </svg>
+    <img
+      className={`cursor ${down ? 'down' : ''}`}
+      src={`${BASE}ui/cursor.svg`}
+      alt=""
+      width="82"
+      height="82"
+      style={{ width: size, height: size, left: pos.x - size / 2, top: pos.y - size / 2 }}
+    />
   )
 }
