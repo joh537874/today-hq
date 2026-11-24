@@ -372,11 +372,7 @@ function Film({ state, beat, dispatch }) {
   const next = BEATS[enter(state, state.idx + 1).idx]
   const cutEnds = !next || (next.type !== 'narr' && next.type !== 'line') || next.img !== beat.img || next.chapter !== beat.chapter
   const hold = passive && cutEnds
-  useEffect(() => {
-    if (!passive || hold || !typing.done) return
-    const t = setTimeout(() => dispatch({ type: 'NEXT' }), AUTO_MS)
-    return () => clearTimeout(t)
-  }, [passive, hold, typing.done, state.idx])
+  // 자동 넘김 제거 — 항상 계속하기를 눌러야 다음으로 넘어간다
   const skip = () => press('skip', () => dispatch({ type: 'SKIP' }))
   // 고른 선택지는 흰색으로 남고 나머지는 흐려진 뒤, 잠깐 머물렀다가 다음으로 넘어간다.
   const [chosen, setChosen] = useState(null)
@@ -398,7 +394,7 @@ function Film({ state, beat, dispatch }) {
 
   const isFinal = beat.type === 'final'
   return (
-    <div className="film" onClick={advance}>
+    <div className="film">
       <Photo name={beat.img} />
       {!isFinal && <ChapterTag chapter={beat.chapter} />}
 
@@ -412,7 +408,7 @@ function Film({ state, beat, dispatch }) {
           {passive && (
             <div className="caption-actions">
               <ContinueButton label="건너뛰기" hint="S" ghost on={pressed === 'skip'} onClick={skip} />
-              {hold && <ContinueButton on={pressed === 'next'} onClick={advance} />}
+              <ContinueButton on={pressed === 'next'} onClick={advance} />
             </div>
           )}
         </footer>
