@@ -78,10 +78,24 @@ function reducer(state, a) {
   }
 }
 
+class ErrorBoundary extends React.Component {
+  state = { error: null }
+  static getDerivedStateFromError(e) { return { error: e } }
+  render() {
+    if (this.state.error) return <div style={{ color: 'red', padding: 40, fontSize: 24 }}>ERROR: {this.state.error.message}<br /><pre style={{ fontSize: 14 }}>{this.state.error.stack}</pre></div>
+    return this.props.children
+  }
+}
+
 export default function App() {
+  return <ErrorBoundary><AppInner /></ErrorBoundary>
+}
+
+function AppInner() {
   const [state, dispatch] = useReducer(reducer, initial)
   const { scale, x, y } = useStageScale()
   const beat = BEATS[state.idx]
+  if (state.started && !beat) return <div className="viewport"><p style={{ color: 'red', padding: 40 }}>beat {state.idx} not found (총 {BEATS.length}개)</p></div>
 
   // 소리 끄기. 선택은 이 브라우저에 기억한다(저장이 막혀 있어도 동작한다).
   const [muted, setMutedState] = useState(() => { try { return localStorage.getItem('hq-muted') === '1' } catch { return false } })
@@ -373,7 +387,6 @@ function Film({ state, beat, dispatch }) {
   const cutEnds = !next || (next.type !== 'narr' && next.type !== 'line') || next.img !== beat.img || next.chapter !== beat.chapter
   const hold = passive && cutEnds
   // 자동 넘김 제거 — 항상 계속하기를 눌러야 다음으로 넘어간다
-  const skip = () => press('skip', () => dispatch({ type: 'SKIP' }))
   // 고른 선택지는 흰색으로 남고 나머지는 흐려진 뒤, 잠깐 머물렀다가 다음으로 넘어간다.
   const [chosen, setChosen] = useState(null)
   useEffect(() => setChosen(null), [state.idx])
@@ -386,7 +399,6 @@ function Film({ state, beat, dispatch }) {
 
   useKeys((e) => {
     if (e.code === 'Space' || e.code === 'Enter') advance()
-    if (e.code === 'KeyS' && passive) skip()
     if ((e.key === 'ArrowLeft' || e.key === 'Backspace') && state.history.length) dispatch({ type: 'BACK' })
     const i = Number(e.key) - 1
     if ((beat.type === 'choice' || beat.type === 'final') && beat.options[i]) pick(i)
@@ -407,7 +419,6 @@ function Film({ state, beat, dispatch }) {
           <Caption key={state.idx} item={passive ? beat : beat.prompt} typing={passive ? typing : null} />
           {passive && (
             <div className="caption-actions">
-              <ContinueButton label="건너뛰기" hint="S" ghost on={pressed === 'skip'} onClick={skip} />
               <ContinueButton on={pressed === 'next'} onClick={advance} />
             </div>
           )}
