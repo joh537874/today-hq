@@ -295,3 +295,36 @@ button { font: inherit; color: inherit; border: 0; background: none; }
   mix-blend-mode: difference; transition: scale 0.15s ease;
 }
 .cursor.down { scale: 0.85; }
+
+/* ───────── 관리자 뷰어 (#/admin) */
+.admin, .admin * { cursor: default !important; user-select: text; }
+.admin {
+  position: fixed; left: 0; top: 0; bottom: 0; z-index: 10000;
+  display: flex; flex-direction: column;
+  background: #0e1014; border-right: 1px solid #262a31; color: #c9ced6;
+  font-size: 13px; line-height: 1.45;
+}
+.admin button { cursor: pointer !important; }
+.admin-head { display: flex; justify-content: space-between; align-items: baseline; padding: 14px 16px 10px; border-bottom: 1px solid #1d2026; }
+.admin-head strong { color: #fff; font-size: 15px; }
+.admin-head span { color: #7d8590; font-variant-numeric: tabular-nums; }
+.admin-cfg { padding: 10px 16px; border-bottom: 1px solid #1d2026; display: grid; gap: 7px; }
+.admin-cfg .row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.admin-cfg label { width: 34px; color: #7d8590; }
+.admin-cfg button { padding: 3px 8px; border-radius: 5px; background: #1a1d23; color: #9aa2ad; font-size: 12px; }
+.admin-cfg button.on { background: #d5f6ff; color: #0e1014; }
+.admin-cfg button.neg { background: #3a2a2e; color: #f1b9c3; }
+.admin-cfg em { margin-left: auto; color: #5d6570; font-style: normal; font-size: 12px; }
+.admin-list { list-style: none; margin: 0; padding: 0 0 40px; overflow-y: auto; flex: 1; }
+.admin-list li { display: grid; grid-template-columns: 34px 1fr; column-gap: 6px; padding: 7px 16px 7px 10px; border-left: 3px solid transparent; cursor: pointer !important; }
+.admin-list li * { cursor: pointer !important; }
+.admin-list li:hover { background: #161920; }
+.admin-list li.on { background: #1b2330; border-left-color: #d5f6ff; }
+.admin-list li.off { opacity: 0.35; }
+.admin-list .n { grid-row: span 2; color: #5d6570; font-variant-numeric: tabular-nums; text-align: right; }
+.admin-list .t { color: #7d8590; font-size: 11.5px; }
+.admin-list .t i { margin-left: 6px; padding: 0 5px; border-radius: 3px; background: #2a2f38; color: #c9ced6; font-style: normal; }
+.admin-list .p { color: #dfe3e8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-list li.on .p { white-space: normal; }
+li.admin-chapter { display: block; position: sticky; top: 0; z-index: 1; padding: 10px 16px 6px; background: #0e1014; color: #fff; font-weight: 600; cursor: default !important; border-bottom: 1px solid #1d2026; }
+li.admin-chapter:hover { background: #0e1014; }

@@ -2,6 +2,10 @@ import React, { useEffect, useReducer, useRef, useState } from 'react'
 import { BEATS, CHAPTERS, ENDINGS, ENDING_ORDER, WHO_EN } from './story.js'
 import { useTypewriter } from './ui.jsx'
 import { setBgm, setAmb, sfx, stopAll, setMuted } from './sound.js'
+import { isAdmin, PANEL_W, AdminPanel, buildState, defaultCfg, loadAdmin, saveAdmin } from './Admin.jsx'
+import { setInstant as setTypeInstant } from './ui.jsx'
+
+const ADMIN = isAdmin()
 
 const BASE = import.meta.env.BASE_URL
 
@@ -23,7 +27,8 @@ function enter(state, from) {
     if (b.type === 'route') {
       // AI축 합계의 부호. 합계가 0이면 마지막 AI축 선택 ⑧을 따른다.
       const last = [...s.picks].reverse().find((p) => p.axis === 'ai')
-      s.route = (s.ai !== 0 ? Math.sign(s.ai) : last?.sign ?? 1) > 0 ? 'A' : 'B'
+      // 관리자 화면에서 루트를 정해 두었으면 그 루트를 쓴다.
+      s.route = s.forceRoute ?? ((s.ai !== 0 ? Math.sign(s.ai) : last?.sign ?? 1) > 0 ? 'A' : 'B')
       i += 1
       continue
     }
@@ -73,6 +78,7 @@ function reducer(state, a) {
       do { s = enter(s, s.idx + 1) } while (s.idx < BEATS.length && PASSIVE.includes(BEATS[s.idx].type))
       return s
     }
+    case 'JUMP': return a.state
     case 'REPLAY': return enter({ ...state, history: [...state.history, snap(state)], final: a.key }, ENDING_START)
     default: return state
   }
@@ -92,8 +98,19 @@ export default function App() {
 }
 
 function AppInner() {
-  const [state, dispatch] = useReducer(reducer, initial)
-  const { scale, x, y } = useStageScale()
+  // 관리자 화면에서는 마지막으로 보던 비트에서 다시 시작한다.
+  const boot = ADMIN ? loadAdmin() : null
+  const [cfg, setCfg] = useState(() => boot?.cfg ?? defaultCfg())
+  const [state, dispatch] = useReducer(reducer, initial, () => (boot ? buildState(boot.idx, boot.cfg) : initial))
+  const [instant, setInstant] = useState(false)
+  setTypeInstant(ADMIN && instant)
+  useEffect(() => { if (ADMIN && state.started) saveAdmin(state.idx, cfg) }, [state.idx, cfg])
+  useEffect(() => {
+    const onHash = () => { if (isAdmin() !== ADMIN) location.reload() }
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
+  const { scale, x, y } = useStageScale(ADMIN ? PANEL_W : 0)
   const beat = BEATS[state.idx]
   if (state.started && !beat) return <div className="viewport"><p style={{ color: 'red', padding: 40 }}>beat {state.idx} not found (총 {BEATS.length}개)</p></div>
 
@@ -119,7 +136,9 @@ function AppInner() {
   }, [state.started, state.idx])
 
   return (
-    <div className="viewport">
+    <>
+    {ADMIN && <AdminPanel state={state} cfg={cfg} setCfg={setCfg} dispatch={dispatch} instant={instant} setInstant={setInstant} />}
+    <div className="viewport" style={ADMIN ? { left: PANEL_W } : undefined}>
       <div className="stage" style={{ left: x, top: y, transform: `scale(${scale})` }}>
         {!state.started && <Title onStart={() => dispatch({ type: 'START' })} />}
         {state.started && beat.type === 'after' && <After key={state.final} state={state} dispatch={dispatch} />}
@@ -131,17 +150,18 @@ function AppInner() {
         </button>
         {state.started && !['after', 'result', 'video', 'voice'].includes(beat.type) && <Film state={state} beat={beat} dispatch={dispatch} />}
       </div>
-      <Cursor scale={scale} />
+      <Cursor scale={scale} minX={ADMIN ? PANEL_W : 0} />
     </div>
+    </>
   )
 }
 
 // 1920×1080 무대를 창에 맞춘다. 무대 높이와 위치를 정수 픽셀에 맞춰 가장자리에 반 픽셀짜리 줄이 생기지 않게 한다.
-function useStageScale() {
+function useStageScale(offset = 0) {
   const [fit, setFit] = useState({ scale: 1, x: 0, y: 0 })
   useEffect(() => {
     const update = () => {
-      const W = window.innerWidth
+      const W = window.innerWidth - offset
       const H = window.innerHeight
       const h = Math.floor(Math.min(W / 1920, H / 1080) * 1080)
       const scale = h / 1080
@@ -559,7 +579,7 @@ function Cards({ state, dispatch }) {
 
 /* ───────── 커서: 흰 원, 아래 화면의 색을 반전한다 (Figma Ellipse 6, mix-blend-mode: difference) */
 
-function Cursor({ scale }) {
+function Cursor({ scale, minX = 0 }) {
   const [pos, setPos] = useState(null)
   const [down, setDown] = useState(false)
   useEffect(() => {
@@ -578,7 +598,7 @@ function Cursor({ scale }) {
       window.removeEventListener('pointerup', release)
     }
   }, [])
-  if (!pos) return null
+  if (!pos || pos.x < minX) return null
   const size = 58 * scale // SVG 82px 기준 원 58px → 표시 원 약 41px
   return (
     <img
