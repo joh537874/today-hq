@@ -771,7 +771,6 @@ function Cards({ state, dispatch }) {
             </div>
             </div>
             <div className="card-fade" style={{ backgroundImage: on ? fade : end.dimFade }} />
-            {!on && <div className="card-dim" />}
             {on ? (
               <div className="card-head">
                 {k === state.mine ? (
@@ -784,8 +783,10 @@ function Cards({ state, dispatch }) {
                     <span>이 엔딩 보기</span>
                   </button>
                 )}
-                <h2>{end.name}</h2>
-                <p>{end.desc}</p>
+                <div className="card-text">
+                  <h2>{end.name}</h2>
+                  <p>{end.desc}</p>
+                </div>
               </div>
             ) : (
               <div className="card-label">

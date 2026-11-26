@@ -268,8 +268,8 @@ button { font: inherit; color: inherit; border: 0; background: none; }
 .mychoices-overlay::after {
   content: ''; position: absolute; inset: 0; pointer-events: none;
   background:
-    linear-gradient(90deg, #0b0f10 0%, transparent 2%, transparent 98%, #0b0f10 100%),
-    linear-gradient(180deg, #0b0f10 0%, transparent 2%, transparent 98%, #0b0f10 100%);
+    linear-gradient(90deg, #0b0f10 0%, #0b0f10 1%, transparent 6%, transparent 94%, #0b0f10 99%, #0b0f10 100%),
+    linear-gradient(180deg, #0b0f10 0%, #0b0f10 1%, transparent 6%, transparent 94%, #0b0f10 99%, #0b0f10 100%);
 }
 .mychoices .chapter-tag { z-index: 3; }
 .mychoices-slider {
@@ -412,9 +412,11 @@ button { font: inherit; color: inherit; border: 0; background: none; }
 .card.open { flex-basis: 724px; }
 .card-photo-wrap {
   position: absolute; overflow: hidden;
-  -webkit-mask-image: linear-gradient(to bottom, black 72%, transparent 96%);
-  mask-image: linear-gradient(to bottom, black 72%, transparent 96%);
   transition: width 0.6s cubic-bezier(0.25, 0.6, 0.2, 1), height 0.6s cubic-bezier(0.25, 0.6, 0.2, 1), left 0.6s cubic-bezier(0.25, 0.6, 0.2, 1), top 0.6s cubic-bezier(0.25, 0.6, 0.2, 1);
+}
+.card-photo img {
+  -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
 }
 .card-photo {
   position: absolute; inset: 0; overflow: hidden; pointer-events: none;
@@ -423,24 +425,23 @@ button { font: inherit; color: inherit; border: 0; background: none; }
   position: absolute; max-width: none;
   transition: width 0.6s cubic-bezier(0.25, 0.6, 0.2, 1), height 0.6s cubic-bezier(0.25, 0.6, 0.2, 1), left 0.6s cubic-bezier(0.25, 0.6, 0.2, 1), top 0.6s cubic-bezier(0.25, 0.6, 0.2, 1);
 }
-.card-dim { position: absolute; inset: -55px 0 0; background: rgba(0,0,0,0.3); z-index: 1; }
-.card-fade { position: absolute; inset: -55px 0 0; transition: opacity 0.4s ease; }
+.card-fade { position: absolute; inset: 0; transition: opacity 0.4s ease; }
 .card-head {
   position: absolute; left: 48px; right: 48px; bottom: 48px; z-index: 2;
   display: flex; flex-direction: column; align-items: flex-start; gap: 12px;
   animation: caption-in 0.5s ease 0.2s both;
 }
 .card-head .continue.static { pointer-events: none; }
-.card-head h2 { margin-top: 0; font-family: var(--hedvig); font-weight: 400; font-size: 100px; line-height: 1.2; letter-spacing: -5px; white-space: nowrap; }
-.card-head p { margin-top: 2px; font-family: var(--gothic); font-weight: 400; font-size: 24px; letter-spacing: -1.44px; }
+.card-text { display: flex; flex-direction: column; gap: 14px; }
+.card-text h2 { font-family: var(--hedvig); font-weight: 400; font-size: 100px; line-height: 1.2; letter-spacing: -5px; white-space: nowrap; }
+.card-text p { font-family: var(--gothic); font-weight: 400; font-size: 24px; letter-spacing: -1.44px; }
 .card-label {
-  position: absolute; left: 0; right: 0; bottom: 60px;
+  position: absolute; left: 0; right: 0; bottom: 60px; z-index: 2;
   display: flex; flex-direction: column; align-items: center; gap: 16px;
   animation: caption-in 0.4s ease both;
 }
 .card-label h3 { font-family: var(--hedvig); font-weight: 400; font-size: 48px; line-height: 1.2; letter-spacing: -2.4px; white-space: nowrap; }
 .card-label i { width: 16px; height: 16px; border-radius: 50%; background: var(--white); }
-.card:not(.open):hover .card-fade { opacity: 0.75; }
 
 /* ───────── 커서 */
 .cursor {
