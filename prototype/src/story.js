@@ -118,7 +118,7 @@ const raw = [
 
   // 길거리
   N('커피를 받아 카페를 나와 걷는데, 길 건너에서 누군가 홀로 피켓을 들고 서 있다.', 'Leaving the café with coffee in hand, Jin sees someone standing alone across the street with a picket sign.', { img: 's2-jae' }),
-  N('재이다. 피켓에는 ‘HQ 폐지’. 숫자가 없는 재이의 머리 위를 흘끗 본 사람들은, 못 본 척 지나간다.', 'It’s Jae. The sign reads ‘Abolish HQ.’ People glance at the empty space above Jae’s head and walk past as if they saw nothing.'),
+  N('피켓에는 ‘HQ 폐지’. 숫자가 없는 재이의 머리 위를 흘끗 본 사람들은, 못 본 척 지나간다.', 'The sign reads ‘Abolish HQ.’ People glance at the empty space above Jae’s head and walk past as if they saw nothing.'),
   // 재이 시위 영상(22초, 1·2 이어 붙임). 대사·자막·거리 소리가 영상에 들어 있다.
   { type: 'video', src: 'scene/jae-protest.mp4' },
   {
@@ -160,12 +160,8 @@ const raw = [
   // 지하철 · 다음 역
   N('잠시 뒤 열차의 문이 열리고, 오랜 친구이자 Born Human Society 회원인 줄리안과 마주친다.', 'Soon the doors open, and Jin runs into Julian, an old friend and a member of the Born Human Society.', { img: 's3-julian-door' }),
   N('줄리안은 진과 나인의 HQ를 보며 말을 꺼낸다.', 'Julian looks at Jin’s and Nyin’s HQ and speaks up.'),
-  L('줄리안', '“진! 오랜만이야. 근데 옆에 있는….”', '“Jin! Long time no see. But who’s that beside you...?”', { img: 's3-julian' }),
-  L('나인', '“안녕하세요, 줄리안. 오랜만이군요. 기억하실지 모르겠지만, 저는 진의 AI 비서 나인입니다.”', '“Hello, Julian. It’s been a while. You may not remember me, but I’m Nyin, Jin’s AI assistant.”', { img: 's3-nine' }),
-  L('줄리안', '“…기억하지. 근데 HQ가 이렇게 높진 않았던 걸로 기억해서.”', '“...I remember. But I don’t recall your HQ being this high.”', { img: 's3-julian' }),
-  L('나인', '“아시다시피, 저는 매일 업데이트를 하거든요. 점점 더 인간다워지는 것이 놀라운 일은 아니죠.”', '“As you know, I receive updates every day. It’s only natural that I’m becoming more human-like.”', { img: 's3-nine' }),
-  N('줄리안은 시선을 나인에게서 돌려 진을 바라본다.', 'Julian turns his gaze from Nyin to Jin.', { img: 's3-julian' }),
-  L('줄리안', '“진, 진심이야? 인간을 모방한 고철 덩어리가 주제도 모르고 기어오르는데 넌 불쾌하지도 않아?”', '“Jin, are you serious? You’re not even uncomfortable with this pile of scrap metal pretending to be human and getting above its station?”'),
+  // 줄리안 지하철 영상(40초). 줄리안·나인 대사, 자막, 지하철 소리가 영상에 들어 있다.
+  { type: 'video', src: 'scene/julian-subway.mp4' },
   {
     type: 'choice', id: 'c7', num: '⑦', axis: 'ai',
     prompt: L('줄리안', '“AI의 발전은 축복이 아니라 위협일 뿐이야. 인간을 닮아 갈수록 그 위험성은 커지는 법이지.”', '“AI’s progress isn’t a blessing. It’s a threat. The more it resembles us, the more dangerous it gets.”'),
