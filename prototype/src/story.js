@@ -118,9 +118,8 @@ const raw = [
   // 길거리
   N('커피를 받아 카페를 나와 걷는데, 길 건너에서 누군가 홀로 피켓을 들고 서 있다.', 'Leaving the café with coffee in hand, Jin sees someone standing alone across the street with a picket sign.', { img: 's2-jae' }),
   N('재이다. 피켓에는 ‘HQ 폐지’. 숫자가 없는 재이의 머리 위를 흘끗 본 사람들은, 못 본 척 지나간다.', 'It’s Jae. The sign reads ‘Abolish HQ.’ People glance at the empty space above Jae’s head and walk past as if they saw nothing.'),
-  // 재이 시위 영상 1(12초). 대사·자막·거리 소리가 영상에 들어 있다.
-  { type: 'video', src: 'scene/jae-protest-1.mp4' },
-  L('재이', '“실수를 하면 인간이라고? 감정을 많이 느끼면 인간이라고? 그런 건 인간다움이라고 할 수 없어요. 인간다움은 고정된 개념이 아닙니다. 인간다움은 우리 스스로 찾아 나가는 거죠!”', '“Making mistakes makes you human? Feeling emotions makes you human? You can’t define humanity that way. Humanity isn’t a fixed concept. It’s something we have to discover for ourselves!”'),
+  // 재이 시위 영상(22초, 1·2 이어 붙임). 대사·자막·거리 소리가 영상에 들어 있다.
+  { type: 'video', src: 'scene/jae-protest.mp4' },
   {
     type: 'choice', id: 'c4', num: '④', axis: 'hq',
     prompt: N('재이가 HQ 폐지 시위를 하고 있다.', 'Jae is protesting to abolish HQ.'),
