@@ -8,6 +8,7 @@ export const CHAPTERS = [
   { id: 3, title: '클로이에게 가는 길', en: 'On the Way' },
   { id: 4, title: '클로이의 집 앞', en: 'At the Door' },
   { id: 5, title: '엔딩', en: 'Ending' },
+  { id: 6, title: '나의 선택', en: 'My Choices' },
 ]
 
 // 화자 영문 표기 (Figma UI 2251 기준 '나인 Nyin')
@@ -315,6 +316,24 @@ function paginate(b) {
   return pages.map((p, i) => ({ ...b, text: p.join('\n'), en: ens[i], start: b.start && i === 0, sfx: i === 0 ? b.sfx : undefined }))
 }
 
+// 선택 비트를 id로 찾을 수 있게 맵으로 내보낸다 (My Choices 화면용).
+// label은 Figma 3098-2322 기준.
+export const CHOICE_LABELS = {
+  c1: '편지 쓰기', c2: '백화점 입장 거부 후 돌아온 나인에게',
+  c3: '카페에서 AI 바리스타와 대화', c4: '재이 시위 에피소드',
+  c5: '나인의 제안', c6: 'AI 승객에 대한 반응',
+  c7: '줄리안의 말·1', c8: '줄리안의 말·2',
+}
+export const CHOICE_MAP = (() => {
+  const map = {}
+  let img = 'p-fog'
+  for (const b of raw) {
+    if (b.img) img = b.img
+    if (b.type === 'choice') map[b.id] = { ...b, img: b.img || img }
+  }
+  return map
+})()
+
 let carry = { chapter: 0, img: 'p-fog', bgm: null, amb: null }
 export const BEATS = raw.flatMap((b) => {
   const chapterStart = b.chapter != null && b.chapter !== carry.chapter
@@ -339,40 +358,85 @@ export const BEATS = raw.flatMap((b) => {
 // dim: 기본(좁은) 카드 배경과 그라데이션
 export const ENDING_ORDER = ['adapter', 'insurgent', 'zealot', 'outlier']
 export const ENDINGS = {
+  // ── Figma 3122:2544 (결과) · 3122:2616 (카드) ──
   adapter: {
     name: 'The Adapter', last: 'e-adapter-party', portrait: 'adapter',
+    // 결과 화면 (Figma 3122:2544)
+    portraitStyle: { width: 3026, height: 1704, left: -792, top: -279 },
+    quotePos: { left: 1218, top: 299 },
+    tint: 'rgba(174,234,237,0.25)', base: 'rgb(100,152,174)',
     desc: 'AI와 함께 살며 기준에 맞춰 나를 바꿔 가는 사람',
-    quote: '새 HQ 기준이 발표됐네요, 인간다움 또한 공부 대상입니다.',
+    quote: '"새 HQ 기준이 발표됐네요.\n인간다움 또한 공부 대상입니다."',
     question: '이제 당신은 인간다움을 되찾은 것 같나요?',
-    card: '#d5f6ff', fade: ['rgba(149,185,195,0)', '#6d939d 72.14%', '#314c54 97.6%', '34.3%'],
-    tint: 'rgba(174,234,237,0.25)', base: 'rgb(100,152,174)',
-    dim: '#13171c', dimFade: 'linear-gradient(180deg, rgba(53,58,66,0) 31.85%, #838c98 71%, #d1d5da)',
+    // 카드 화면 (Figma 3122:2616)
+    card: '#d5f6ff',
+    fade: ['rgba(149,185,195,0)', '#6d939d 72.14%', '#314c54 97.6%', '34.3%'],
+    dim: '#13171c',
+    dimFade: 'linear-gradient(180deg, rgba(53,58,66,0) 31.85%, #838c98 71.03%, #d1d5da)',
+    cardOpen: { width: 820, height: 880, left: -40, top: 0 },
+    cardClosed: { width: 726, height: 799, left: -155, top: 0 },
+    cardImg: { width: '195.41%', height: '108.85%', left: '-49.49%', top: '0.02%' },
   },
+  // ── Figma 3122:2562 (결과) · 3122:2621 (카드) ──
   insurgent: {
-    name: 'The Insurgent', last: 'e-mail', portrait: 'insurgent', portraitStyle: { width: 2126, height: 1580, bottom: -200 },
+    name: 'The Insurgent', last: 'e-mail', portrait: 'insurgent',
+    // 결과 화면 (Figma 3122:2562)
+    portraitStyle: { width: 2381, height: 1402, left: -287, top: -190 },
+    quotePos: { left: 1195, top: 389 },
+    tint: 'rgba(174,234,237,0.25)', base: 'rgb(100,152,174)',
     desc: '나를 규정하는 기준 자체를 무너뜨리려는 사람',
-    quote: 'AI는 유능하지만, 인간성을 비교하진 마. HQ로 사람을 규정하는 건 잘못됐어.',
+    quote: '"AI는 유능하지만, 인간성을 비교하진 마.\nHQ로 사람을 규정하는 건 잘못됐어."',
     question: '당신이 지키고 싶었던 인간다움은 무엇이었나요?',
-    card: '#d5f6ff', fade: ['rgba(149,185,195,0)', '#6d939d 72.14%', '#314c54 97.6%', '34.3%'],
-    tint: 'rgba(174,234,237,0.25)', base: 'rgb(100,152,174)',
-    dim: '#181b20', dimFade: 'linear-gradient(180deg, rgba(53,58,66,0) 0%, rgba(53,58,66,0.014) 21.9%, rgb(53,58,66) 69.67%, rgb(20,23,28))',
+    // 카드 화면 (Figma 3122:2621)
+    card: '#d5f6ff',
+    fade: ['rgba(149,185,195,0)', 'rgba(109,147,157,0.5) 56.19%, rgb(83,117,126) 71.86%', 'rgb(49,76,84) 97.6%', '36.2%'],
+    dim: '#181b20',
+    dimFade: 'linear-gradient(180deg, rgba(53,58,66,0) 0%, rgba(53,58,66,0.014) 21.9%, rgb(53,58,66) 63.47%, rgb(20,23,28))',
+    cardOpen: { width: 887, height: 837, left: -64, top: 0 },
+    cardClosed: { width: 548, height: 731, left: -75, top: 0 },
+    cardImgOpen: { width: '123.14%', height: '97.09%', left: '-7.24%', top: '-3.65%' },
+    cardImgClosed: { width: '173.98%', height: '97.09%', left: '-26.84%', top: '-3.65%' },
   },
+  // ── Figma 3122:2580 (결과) · 3122:2631 (카드) ──
   zealot: {
-    name: 'The Zealot', last: 'e-zealot-chloe', portrait: 'zealot',
-    desc: 'HQ를 신앙처럼 따르고, AI를 없애려는 사람',
-    quote: 'HQ 높은 AI는 다 죽이면 되지 않나?',
-    question: '인간다워지려다 오히려 인간에게서 멀어졌다면, 어떻게 보이나요?',
-    card: '#d5f6ff', fade: ['rgba(149,185,195,0)', '#6d939d 72.14%', '#314c54 97.6%', '34.3%'],
+    name: 'The Zealot', last: 'e-zealot-chloe', portrait: 'zealot', cardPortrait: 'zealot-card',
+    // 결과 화면 (Figma 3122:2580) — 174.9deg
+    portraitStyle: { width: 2009, height: 1615, left: -57, top: -276 },
+    photoGradient: 'linear-gradient(174.9deg, rgb(204,204,204) 36.15%, rgb(102,102,102) 96.92%, rgb(81,81,81) 109.64%)',
+    quotePos: { left: 1218, top: 349 },
     tint: 'rgba(174,234,237,0.25)', base: 'rgb(100,152,174)',
-    dim: '#13171c', dimFade: 'linear-gradient(180deg, rgba(53,58,66,0) 31.85%, #bfc4c9 71.15%, #838c98)',
+    desc: 'HQ를 신앙처럼 따르고, AI를 없애려는 사람',
+    quote: '"HQ 높은 AI는\n다 죽이면 되지 않나?"',
+    question: '인간다워지려다 오히려 인간에게서 멀어졌다면, 어떻게 보이나요?',
+    // 카드 화면 (Figma 3122:2631) — open 159.42deg · closed 160.83deg
+    card: '#d5f6ff',
+    fade: ['rgba(149,185,195,0)', '#6d939d 72.14%', '#314c54 97.6%', '34.3%'],
+    dim: '#13171c',
+    dimFade: 'linear-gradient(180deg, rgba(53,58,66,0) 31.85%, #bfc4c9 71.15%, #838c98)',
+    photoGradientOpen: 'linear-gradient(159.42deg, rgb(204,204,204) 35.82%, rgb(102,102,102) 88.87%, rgb(81,81,81) 99.97%)',
+    photoGradientClosed: 'linear-gradient(160.83deg, rgb(204,204,204) 10.89%, rgb(102,102,102) 68.44%, rgb(81,81,81) 80.48%)',
+    cardOpen: { width: 780, height: 850, left: -20, top: 0 },
+    cardClosed: { width: 680, height: 780, left: -140, top: 0 },
+    cardImg: { objectFit: 'cover', objectPosition: 'bottom' },
   },
+  // ── Figma 3122:2598 (결과) · 3122:2626 (카드) ──
   outlier: {
     name: 'The Outlier', last: 'e-outlier-up', portrait: 'outlier',
-    desc: '기준 밖으로 밀려나 점수 없이 사는 사람',
-    quote: 'AI? 웃기고 있네, HQ 같은 소리 하지 마. 세상이 미쳤군.',
-    question: '숫자가 없어도, 충분히 인간적으로 보이나요?',
-    card: '#d5f6ff', fade: ['rgba(149,185,195,0)', '#6d939d 72.14%', '#314c54 97.6%', '34.3%'],
+    // 결과 화면 (Figma 3122:2598)
+    portraitStyle: { width: 3217, height: 1644, left: -910, top: -236 },
+    quotePos: { left: 1207, top: 409 },
     tint: 'rgba(174,234,237,0.25)', base: 'rgb(100,152,174)',
-    dim: '#181b20', dimFade: 'linear-gradient(180deg, rgba(53,58,66,0) 34.13%, #353a42 69.67%, #14171c)',
+    desc: '기준 밖으로 밀려나 점수 없이 사는 사람',
+    quote: '"AI? 웃기고 있네.\nHQ 같은 소리 하지 마. 세상이 미쳤군."',
+    question: '숫자가 없어도, 충분히 인간적으로 보이나요?',
+    // 카드 화면 (Figma 3122:2626)
+    card: '#d5f6ff',
+    fade: ['rgba(149,185,195,0)', '#6d939d 72.14%', '#314c54 97.6%', '34.3%'],
+    dim: '#181b20',
+    dimFade: 'linear-gradient(180deg, rgba(53,58,66,0) 34.13%, #353a42 69.67%, #14171c)',
+    cardOpen: { width: 820, height: 961, left: -50, top: -33 },
+    cardClosed: { width: 663, height: 884, left: -130, top: 0 },
+    cardImgOpen: { width: '217.67%', height: '108.81%', left: '-64.65%', top: '0.01%' },
+    cardImgClosed: { width: '247.6%', height: '108.81%', left: '-80.75%', top: '0.01%' },
   },
 }

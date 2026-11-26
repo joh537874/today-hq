@@ -38,7 +38,7 @@ button { font: inherit; color: inherit; border: 0; background: none; }
 @keyframes photo-in { from { opacity: 0; scale: 1.03; } to { opacity: 1; scale: 1; } }
 
 /* 화면이 바뀔 때(타이틀 → 장면 → 질문 → 결과 → 카드) 어둠에서 서서히 밝아진다 */
-.film, .after, .result, .cards, .opening { animation: screen-in 0.8s ease both; }
+.film, .after, .result, .cards, .choices, .opening { animation: screen-in 0.8s ease both; }
 
 /* ───────── 소리 끄기 (우상단, 작게) */
 .mute {
@@ -75,7 +75,7 @@ button { font: inherit; color: inherit; border: 0; background: none; }
 .voice-cue .en { font-family: var(--gothic); font-weight: 200; font-size: 20px; line-height: 1.4; opacity: 0.6; }
 @keyframes screen-in { from { opacity: 0; } to { opacity: 1; } }
 
-.film, .title, .after, .result, .cards, .opening, .voice { position: absolute; inset: 0; }
+.film, .title, .after, .result, .cards, .choices, .opening, .voice { position: absolute; inset: 0; }
 
 /* ───────── 좌상단 장 표시 "01 | Prologue" */
 .chapter-tag {
@@ -236,27 +236,172 @@ button { font: inherit; color: inherit; border: 0; background: none; }
 .after-q { font-family: var(--gothic); font-weight: 400; font-size: 40px; letter-spacing: -2.4px; animation: caption-in 0.6s ease both; }
 
 /* ───────── 결과 화면 (2262) */
-.result { background: #f5f7fa; }
-.result-photo {
-  position: absolute; left: 50%; bottom: -99px; translate: -50% 0; width: 2126px; height: 1197px;
-  object-fit: cover; object-position: center top; mix-blend-mode: luminosity;
+.result { background: #000; }
+.result-photo-wrap {
+  position: absolute; overflow: hidden;
   animation: photo-in 0.9s ease both;
 }
+.result-photo {
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: center top; mix-blend-mode: luminosity;
+}
 .result-tint { position: absolute; inset: -15px -31px; background: var(--tint); mix-blend-mode: color; }
-.result-fade { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 0%, transparent 42%, var(--base) 88%, var(--base) 100%); }
+.result-fade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0) 0%, var(--base-t) 42%, var(--base) 88%, var(--base) 100%); }
 .result-quote {
-  position: absolute; right: 129px; top: 169px; z-index: 3; max-width: 760px;
-  padding: 16px 24px; background: var(--panel); box-shadow: var(--shadow);
-  backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
-  font-family: var(--pretendard); font-weight: 300; font-size: 24px; line-height: 1.4; letter-spacing: -1.2px;
+  position: absolute; z-index: 3; white-space: pre-line;
+  font-family: var(--gothic); font-weight: 400; font-size: 40px; line-height: 1.45; letter-spacing: -2.4px;
+  color: #263840;
   animation: caption-in 0.6s ease 0.4s both;
 }
 .result-bar { justify-content: space-between; }
 .result-text { display: flex; flex-direction: column; gap: 20px; animation: caption-in 0.6s ease 0.2s both; }
 .result-text h1 { font-family: var(--hedvig); font-weight: 400; font-size: 140px; line-height: 1.2; letter-spacing: -7px; }
 .result-text p { font-family: var(--gothic); font-weight: 400; font-size: 32px; letter-spacing: -1.92px; }
-.result-actions { display: flex; gap: 20px; }
-.result-actions .continue, .card-head .continue { justify-content: center; overflow: visible; }
+.card-head .continue { justify-content: center; overflow: visible; }
+
+/* ───────── 나의 선택: 공유 슬라이더 */
+.mychoices { position: absolute; inset: 0; z-index: 4; overflow: hidden; animation: screen-in 0.6s ease both; }
+.mychoices-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.88); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+}
+.mychoices-overlay::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background:
+    linear-gradient(90deg, #0b0f10 0%, #0b0f10 1%, transparent 6%, transparent 94%, #0b0f10 99%, #0b0f10 100%),
+    linear-gradient(180deg, #0b0f10 0%, #0b0f10 1%, transparent 6%, transparent 94%, #0b0f10 99%, #0b0f10 100%);
+}
+.mychoices .chapter-tag { z-index: 3; }
+.mychoices-slider {
+  position: absolute; top: 0; left: 0; width: 3840px; height: 1080px;
+  transition: transform 0.7s cubic-bezier(0.25, 0.6, 0.2, 1);
+}
+.mychoices-page { position: absolute; top: 0; width: 1920px; height: 1080px; }
+.mychoices-page:nth-child(1) { left: 0; }
+.mychoices-page:nth-child(2) { left: 1920px; }
+
+/* ───────── 나의 선택 STEP1 (Figma 471:180) */
+.choices { position: absolute; inset: 0; }
+.choices-step {
+  position: absolute; left: 56px; top: 108px; z-index: 2;
+  font-family: var(--pretendard); font-weight: 300; font-size: 20px;
+  letter-spacing: -0.6px; color: rgba(255,255,255,0.5); white-space: pre;
+}
+.choices-grid {
+  position: absolute; z-index: 2;
+  top: 160px; left: 56px; width: 1808px;
+  display: grid; grid-template-columns: repeat(4, 422px); grid-template-rows: repeat(2, auto);
+  column-gap: 40px; row-gap: 40px;
+}
+.choice-card {
+  width: 422px; overflow: hidden;
+  display: flex; flex-direction: column; gap: 20px;
+  animation: caption-in 0.5s ease both;
+}
+.choice-card:nth-child(2) { animation-delay: 0.05s; }
+.choice-card:nth-child(3) { animation-delay: 0.1s; }
+.choice-card:nth-child(4) { animation-delay: 0.15s; }
+.choice-card:nth-child(5) { animation-delay: 0.2s; }
+.choice-card:nth-child(6) { animation-delay: 0.25s; }
+.choice-card:nth-child(7) { animation-delay: 0.3s; }
+.choice-card:nth-child(8) { animation-delay: 0.35s; }
+.choice-media {
+  position: relative; width: 422px; height: 220px; overflow: hidden; background: #262b30;
+}
+.choice-media img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.choice-shade {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0) 35%, rgba(0,0,0,0.78) 100%);
+}
+.choice-label {
+  position: absolute; left: 16px; bottom: 13px;
+  display: flex; gap: 10px; align-items: baseline; white-space: nowrap; overflow: hidden;
+  font-size: 18px; line-height: 1.4;
+}
+.choice-label-num {
+  font-family: var(--pretendard); font-weight: 400; letter-spacing: -0.36px;
+  color: rgba(255,255,255,0.7);
+}
+.choice-label-name {
+  font-family: var(--pretendard); font-weight: 500; letter-spacing: -0.72px;
+  color: #fff;
+}
+.choice-options {
+  display: flex; flex-direction: column; gap: 6px;
+}
+.choice-opt {
+  display: flex; align-items: center; gap: 12px;
+  height: 52px; padding: 10px 16px;
+  background: rgba(255,255,255,0.05);
+  font-family: var(--pretendard); font-weight: 300; font-size: 18px;
+  line-height: 1.4; letter-spacing: -0.9px; color: rgba(255,255,255,0.38);
+  border: 1px solid transparent;
+}
+.choice-opt.selected {
+  background: rgba(255,255,255,0.2);
+  border-color: rgba(255,255,255,0.3);
+  color: #fff; font-weight: 400;
+}
+.choice-opt-text { flex: 1; min-width: 0; }
+.choice-opt-sign {
+  flex-shrink: 0; font-family: var(--pretendard); font-weight: 400;
+  font-size: 18px; letter-spacing: -0.36px;
+}
+.choice-opt:not(.selected) .choice-opt-sign { font-weight: 400; }
+.choices-bar { justify-content: flex-end; z-index: 2; }
+
+/* ───────── STEP 2+3 결말 분기 트리 (Figma 471:206) */
+.branches { position: absolute; inset: 0; }
+.branches-content { position: absolute; inset: 0; }
+.branches-step {
+  position: absolute; z-index: 2;
+  font-family: var(--pretendard); font-weight: 300; font-size: 20px;
+  color: rgba(255,255,255,0.5); letter-spacing: -0.6px; white-space: pre;
+}
+.branches-paths { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.branch-group {
+  position: absolute; left: 395px; z-index: 2; width: 422px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+.branch-label {
+  display: flex; gap: 10px; align-items: baseline; white-space: nowrap; overflow: hidden;
+}
+.branch-axis { font-family: var(--pretendard); font-weight: 300; font-size: 20px; letter-spacing: -0.6px; }
+.branch-name { font-family: var(--pretendard); font-weight: 500; font-size: 24px; color: #fff; letter-spacing: -0.96px; }
+.branch-scene { width: 422px; height: 238px; overflow: hidden; border-radius: 2px; }
+.branch-scene img { width: 100%; height: 100%; object-fit: cover; }
+.branch-choice {
+  position: absolute; left: 1017px; z-index: 2; width: 340px; height: 56px;
+  display: flex; align-items: center; padding: 10px 16px; overflow: hidden;
+  background: rgba(255,255,255,0.05);
+  font-family: var(--pretendard); font-weight: 300; font-size: 18px;
+  color: rgba(255,255,255,0.45); letter-spacing: -0.9px; white-space: nowrap;
+}
+.branch-choice.mine {
+  background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);
+  font-weight: 400; color: #fff;
+}
+.branch-ending {
+  position: absolute; left: 1477px; z-index: 2;
+  display: flex; gap: 16px; align-items: center;
+}
+.branch-portrait {
+  position: relative; width: 120px; height: 120px; overflow: hidden; background: #fff;
+}
+.branch-portrait img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+.branch-ending-name {
+  font-family: var(--hedvig); font-weight: 400; font-size: 24px;
+  letter-spacing: -1.2px; white-space: nowrap;
+}
+.branch-result-line {
+  display: flex; gap: 10px; align-items: baseline; white-space: nowrap; overflow: hidden;
+}
+.branch-result-line > span { font-family: var(--pretendard); font-weight: 300; font-size: 24px; color: rgba(255,255,255,0.75); letter-spacing: -0.96px; }
+.branch-result-name { font-family: var(--hedvig); font-weight: 400; font-size: 52px; color: #fff; letter-spacing: -1.56px; line-height: 1.2; }
+.branches-bar { justify-content: space-between; z-index: 2; padding-top: 40px; }
+.branch-buttons { display: flex; gap: 20px; align-items: center; }
 
 /* ───────── 다른 결말 보기: 네 장의 카드 (2263~2266) */
 .cards { display: flex; background: #13171c; }
@@ -265,29 +410,38 @@ button { font: inherit; color: inherit; border: 0; background: none; }
   transition: flex-basis 0.6s cubic-bezier(0.25, 0.6, 0.2, 1), background-color 0.6s ease;
 }
 .card.open { flex-basis: 724px; }
-.card-photo {
-  position: absolute; left: 50%; top: 0; translate: -50% 0; width: 750px; height: 826px;
-  object-fit: cover; object-position: center top; mix-blend-mode: luminosity;
-  mask-image: linear-gradient(to bottom, #000 60%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to bottom, #000 60%, transparent 100%);
+.card-photo-wrap {
+  position: absolute; overflow: hidden;
+  transition: width 0.6s cubic-bezier(0.25, 0.6, 0.2, 1), height 0.6s cubic-bezier(0.25, 0.6, 0.2, 1), left 0.6s cubic-bezier(0.25, 0.6, 0.2, 1), top 0.6s cubic-bezier(0.25, 0.6, 0.2, 1);
 }
-.card-fade { position: absolute; inset: -55px 0 0; transition: opacity 0.4s ease; }
+.card-photo img {
+  -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+}
+.card-photo {
+  position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+}
+.card-photo img {
+  position: absolute; max-width: none;
+  transition: width 0.6s cubic-bezier(0.25, 0.6, 0.2, 1), height 0.6s cubic-bezier(0.25, 0.6, 0.2, 1), left 0.6s cubic-bezier(0.25, 0.6, 0.2, 1), top 0.6s cubic-bezier(0.25, 0.6, 0.2, 1);
+}
+.card-fade { position: absolute; inset: 0; transition: opacity 0.4s ease; }
 .card-head {
   position: absolute; left: 48px; right: 48px; bottom: 48px; z-index: 2;
   display: flex; flex-direction: column; align-items: flex-start; gap: 12px;
   animation: caption-in 0.5s ease 0.2s both;
 }
 .card-head .continue.static { pointer-events: none; }
-.card-head h2 { margin-top: 0; font-family: var(--hedvig); font-weight: 400; font-size: 100px; line-height: 1.2; letter-spacing: -5px; white-space: nowrap; }
-.card-head p { margin-top: 2px; font-family: var(--gothic); font-weight: 400; font-size: 24px; letter-spacing: -1.44px; }
+.card-text { display: flex; flex-direction: column; gap: 14px; }
+.card-text h2 { font-family: var(--hedvig); font-weight: 400; font-size: 100px; line-height: 1.2; letter-spacing: -5px; white-space: nowrap; }
+.card-text p { font-family: var(--gothic); font-weight: 400; font-size: 24px; letter-spacing: -1.44px; }
 .card-label {
-  position: absolute; left: 0; right: 0; bottom: 60px;
+  position: absolute; left: 0; right: 0; bottom: 60px; z-index: 2;
   display: flex; flex-direction: column; align-items: center; gap: 16px;
   animation: caption-in 0.4s ease both;
 }
 .card-label h3 { font-family: var(--hedvig); font-weight: 400; font-size: 48px; line-height: 1.2; letter-spacing: -2.4px; white-space: nowrap; }
 .card-label i { width: 16px; height: 16px; border-radius: 50%; background: var(--white); }
-.card:not(.open):hover .card-fade { opacity: 0.75; }
 
 /* ───────── 커서 */
 .cursor {
