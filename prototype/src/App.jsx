@@ -1,5 +1,5 @@
 import React, { useEffect, useReducer, useRef, useState } from 'react'
-import { BEATS, CHAPTERS, ENDINGS, ENDING_ORDER, WHO_EN } from './story.js'
+import { BEATS, CHAPTERS, ENDINGS, ENDING_ORDER, WHO_EN, CHOICE_LABELS, CHOICE_MAP } from './story.js'
 import { useTypewriter } from './ui.jsx'
 import { setBgm, setAmb, sfx, stopAll, setMuted } from './sound.js'
 import { isAdmin, PANEL_W, AdminPanel, buildState, defaultCfg, loadAdmin, saveAdmin } from './Admin.jsx'
@@ -80,6 +80,15 @@ function reducer(state, a) {
     }
     case 'JUMP': return a.state
     case 'REPLAY': return enter({ ...state, history: [...state.history, snap(state)], final: a.key }, ENDING_START)
+    case 'JUMP_ENDING': {
+      // S키 어드민 전용: 선택 8개를 첫 번째 옵션으로 채우고 지정된 엔딩 결과 화면으로 바로 간다.
+      const mockPicks = Object.entries(CHOICE_MAP).map(([id, b]) => ({
+        id, num: b.num, axis: b.axis, sign: b.options[0].sign, prompt: b.prompt, text: b.options[0].text,
+      }))
+      mockPicks.push({ id: 'final', num: '최종', axis: 'final', prompt: null, text: '' })
+      const resultIdx = BEATS.findIndex((b) => b.type === 'result')
+      return { ...initial, started: true, idx: resultIdx, final: a.key, mine: a.key, picks: mockPicks, route: 'A', history: [] }
+    }
     default: return state
   }
 }
@@ -140,7 +149,7 @@ function AppInner() {
     {ADMIN && <AdminPanel state={state} cfg={cfg} setCfg={setCfg} dispatch={dispatch} instant={instant} setInstant={setInstant} />}
     <div className="viewport" style={ADMIN ? { left: PANEL_W } : undefined}>
       <div className="stage" style={{ left: x, top: y, transform: `scale(${scale})` }}>
-        {!state.started && <Title onStart={() => dispatch({ type: 'START' })} />}
+        {!state.started && <Title onStart={() => dispatch({ type: 'START' })} onSkip={() => dispatch({ type: 'JUMP_ENDING', key: 'adapter' })} />}
         {state.started && beat.type === 'after' && <After key={state.final} state={state} dispatch={dispatch} />}
         {state.started && beat.type === 'result' && <Result key={state.final} state={state} dispatch={dispatch} />}
         {state.started && beat.type === 'video' && <OpeningVideo key={state.idx} beat={beat} dispatch={dispatch} muted={muted} />}
@@ -320,7 +329,10 @@ function OpeningVideo({ beat, dispatch, muted }) {
     // 소리 재생이 막히면 음소거로라도 재생한다.
     v.play().catch(() => { v.muted = true; v.play().catch(() => {}) })
   }, [])
-  useKeys((e) => { if (e.code === 'Space' || e.code === 'Enter') next() })
+  useKeys((e) => {
+    if (e.code === 'Space' || e.code === 'Enter') next()
+    if (e.code === 'KeyS') dispatch({ type: 'JUMP_ENDING', key: 'adapter' })
+  })
   return (
     <div className="opening" onClick={next}>
       <video ref={ref} src={`${BASE}${beat.src}`} playsInline preload="auto" muted={muted} onEnded={next} />
@@ -351,7 +363,10 @@ function VoiceOver({ beat, dispatch, muted }) {
     raf = requestAnimationFrame(tick)
     return () => { cancelAnimationFrame(raf); a.pause() }
   }, [])
-  useKeys((e) => { if (e.code === 'Space' || e.code === 'Enter') next() })
+  useKeys((e) => {
+    if (e.code === 'Space' || e.code === 'Enter') next()
+    if (e.code === 'KeyS') dispatch({ type: 'JUMP_ENDING', key: 'adapter' })
+  })
   const c = i >= 0 ? beat.cues[i] : null
   return (
     <div className="voice" onClick={next}>
@@ -368,10 +383,13 @@ function VoiceOver({ beat, dispatch, muted }) {
 
 /* ───────── 타이틀 (Figma 2227) */
 
-function Title({ onStart }) {
+function Title({ onStart, onSkip }) {
   const [pressed, press] = usePress()
   const start = () => press('start', onStart)
-  useKeys((e) => { if (e.code === 'Space' || e.code === 'Enter') start() })
+  useKeys((e) => {
+    if (e.code === 'Space' || e.code === 'Enter') start()
+    if (e.code === 'KeyS') onSkip()
+  })
   return (
     <div className="title">
       <div className="photo" style={{ backgroundImage: `url(${BASE}ui/title.jpg)` }} />
@@ -420,6 +438,10 @@ function Film({ state, beat, dispatch }) {
   useKeys((e) => {
     if (e.code === 'Space' || e.code === 'Enter') advance()
     if ((e.key === 'ArrowLeft' || e.key === 'Backspace') && state.history.length) dispatch({ type: 'BACK' })
+    // S키: 어드민용 — adapter 엔딩으로 바로 이동
+    if (e.code === 'KeyS') {
+      dispatch({ type: 'JUMP_ENDING', key: 'adapter' })
+    }
     const i = Number(e.key) - 1
     if ((beat.type === 'choice' || beat.type === 'final') && beat.options[i]) pick(i)
   })
@@ -493,34 +515,213 @@ function Result({ state, dispatch }) {
   const [view, setView] = useState('result')
   const [pressed, press] = usePress()
   const end = ENDINGS[state.final]
+  const toChoices = () => press('next', () => setView('choices'))
   useKeys((e) => {
     if (e.key === 'Escape' || e.key === 'ArrowLeft' || e.key === 'Backspace') {
-      if (view === 'cards') setView('result')
+      if (view === 'cards') setView('branches')
+      else if (view === 'branches') setView('choices')
+      else if (view === 'choices') setView('result')
       else dispatch({ type: 'BACK' })
     }
+    if (view === 'result' && (e.code === 'Space' || e.code === 'Enter')) toChoices()
   })
   if (view === 'cards') return <Cards state={state} dispatch={dispatch} />
+  const ps = end.portraitStyle
   return (
-    <div className="result" style={{ '--tint': end.tint, '--base': end.base }}>
-      <img className="result-photo" src={`${BASE}ending/${end.portrait}.jpg`} alt="" style={end.portraitStyle ? { width: end.portraitStyle.width, height: end.portraitStyle.height, bottom: end.portraitStyle.bottom } : undefined} />
+    <div className="result" style={{ '--tint': end.tint, '--base': end.base, '--base-t': end.base.replace('rgb(', 'rgba(').replace(')', ',0)') }}>
+      <div className="result-photo-wrap" style={ps ? { width: ps.width, height: ps.height, left: ps.left, top: ps.top } : undefined}>
+        {end.photoGradient && <div style={{ position: 'absolute', inset: 0, mixBlendMode: 'luminosity', backgroundImage: end.photoGradient }} />}
+        <img className="result-photo" src={`${BASE}ending/${end.portrait}.jpg`} alt="" />
+      </div>
       <div className="result-tint" />
       <div className="result-fade" />
-      <ChapterTag chapter={5} />
-      <div className="result-quote">{end.quote}</div>
-      <footer className="caption-bar result-bar">
+      {view === 'result' && <ChapterTag chapter={5} />}
+      {view === 'result' && <div className="result-quote" style={end.quotePos ? { left: end.quotePos.left, top: end.quotePos.top } : undefined}>{end.quote}</div>}
+      {view === 'result' && <footer className="caption-bar result-bar">
         <div className="result-text">
           <h1>{end.name}</h1>
           <p>{end.desc}</p>
         </div>
-        <div className="result-actions">
-          <button className={`continue ${pressed === 'restart' ? 'on' : ''}`} onClick={(e) => origin(e) || press('restart', () => dispatch({ type: 'RESTART' }))}>
-            <span>다시 시작하기</span>
-          </button>
-          <button className={`continue ${pressed === 'cards' ? 'on' : ''}`} onClick={(e) => origin(e) || press('cards', () => setView('cards'))}>
-            <span>다른 결말 보기</span>
-          </button>
+        <ContinueButton on={pressed === 'next'} onClick={toChoices} />
+      </footer>}
+      {(view === 'choices' || view === 'branches') && (
+        <div className="mychoices">
+          <div className="mychoices-overlay" />
+          <ChapterTag chapter={6} />
+          <div className="mychoices-slider" style={{ transform: view === 'branches' ? 'translateX(-1920px)' : undefined }}>
+            <div className="mychoices-page"><Choices state={state} sliding={view === 'branches'} onNext={() => setView('branches')} /></div>
+            <div className="mychoices-page"><BranchTree state={state} dispatch={dispatch} onRestart={() => dispatch({ type: 'RESTART' })} onCards={() => setView('cards')} /></div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ───────── 나의 선택 (Figma 3098-2322) — 8개의 분기 선택을 4×2 카드로 보여 준다 */
+
+function Choices({ state, sliding, onNext }) {
+  const end = ENDINGS[state.final]
+  const [pressed, press] = usePress()
+  const go = () => press('next', onNext)
+  useKeys((e) => {
+    if (e.code === 'Space' || e.code === 'Enter') go()
+  })
+  // picks의 처음 8개(c1~c8)만 표시한다. 최종 선택(final)은 제외.
+  const picks = state.picks.filter((p) => p.id !== 'final').slice(0, 8)
+  return (
+    <div className="choices">
+      <p className="choices-step">{'STEP 1  ·  8번의 선택'}</p>
+      <div className="choices-grid">
+        {picks.map((pick, i) => {
+          const beat = CHOICE_MAP[pick.id]
+          if (!beat) return null
+          const label = CHOICE_LABELS[pick.id]
+          const num = String(i + 1).padStart(2, '0')
+          return (
+            <div className="choice-card" key={pick.id}>
+              <div className="choice-media">
+                <img src={cut(beat.img || 'p-fog')} alt="" />
+                <div className="choice-shade" />
+                <span className="choice-label"><span className="choice-label-num">{num}</span><span className="choice-label-name">{label}</span></span>
+              </div>
+              <div className="choice-options">
+                {beat.options.map((opt, j) => {
+                  const selected = opt.text === pick.text
+                  return (
+                    <div className={`choice-opt ${selected ? 'selected' : ''}`} key={j}>
+                      <span className="choice-opt-text">{opt.text}</span>
+                      <span className="choice-opt-sign">{opt.sign > 0 ? '+1' : '−1'}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      <footer className="caption-bar choices-bar" style={sliding ? { opacity: 0, transition: 'opacity 0.3s ease' } : { transition: 'opacity 0.3s ease' }}>
+        <ContinueButton on={pressed === 'next'} onClick={go} />
+      </footer>
+    </div>
+  )
+}
+
+/* ───────── STEP 2+3 결말 분기 트리 (Figma 471:206) */
+
+const FINAL_CHOICES = [
+  { key: 'adapter', text: 'HQ를 높이기 위해 시도한다', route: 'A' },
+  { key: 'insurgent', text: '돌아선다', route: 'A' },
+  { key: 'zealot', text: '어떻게든 들어간다', route: 'B' },
+  { key: 'outlier', text: 'HQ 제도에 회의를 느낀다', route: 'B' },
+]
+
+function BranchTree({ state, dispatch, onRestart, onCards }) {
+  const end = ENDINGS[state.final]
+  const [pressed, press] = usePress()
+  const isA = state.route === 'A'
+  useKeys((e) => {
+    if (e.code === 'Space' || e.code === 'Enter') press('cards', onCards)
+  })
+  const choiceY = [238, 427, 603, 772]
+  const endingY = [206, 395, 571, 740]
+  return (
+    <div className="branches">
+      <div className="branches-content">
+
+      {/* 컬럼 헤더 */}
+      <p className="branches-step" style={{ left: 395, top: 152 }}>{'STEP 2  ·  AI 축 판정'}</p>
+      <p className="branches-step" style={{ left: 1017, top: 152 }}>{'STEP 3  ·  마지막 선택'}</p>
+      <p className="branches-step" style={{ left: 1477, top: 152 }}>결말</p>
+
+      {/* SVG 연결선 */}
+      <svg className="branches-paths" viewBox="0 0 1920 1080" fill="none">
+        {/* 왼쪽: 중앙 → 분기+ */}
+        <path d="M0 536 H200 V313 H395" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+        <path d="M0 536 H200 V313 H395" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" style={{ opacity: isA ? 1 : 0 }} />
+        {/* 왼쪽: 중앙 → 분기- */}
+        <path d="M0 536 H200 V716 H395" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+        <path d="M0 536 H200 V716 H395" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" style={{ opacity: isA ? 0 : 1 }} />
+        {/* 중간: 분기+ → 선택1,2 */}
+        <path d="M817 313 H917 V266 H1017" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+        <path d="M817 313 H917 V266 H1017" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" style={{ opacity: state.final === 'adapter' ? 1 : 0 }} />
+        <path d="M817 313 H917 V455 H1017" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+        <path d="M817 313 H917 V455 H1017" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" style={{ opacity: state.final === 'insurgent' ? 1 : 0 }} />
+        {/* 중간: 분기- → 선택3,4 */}
+        <path d="M817 716 H917 V631 H1017" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+        <path d="M817 716 H917 V631 H1017" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" style={{ opacity: state.final === 'zealot' ? 1 : 0 }} />
+        <path d="M817 716 H917 V800 H1017" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+        <path d="M817 716 H917 V800 H1017" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" style={{ opacity: state.final === 'outlier' ? 1 : 0 }} />
+        {/* 오른쪽: 수평 연결선 (초상화 중심 y = endingY + 60) */}
+        {ENDING_ORDER.map((k, i) => {
+          const cy = endingY[i] + 60
+          return (
+            <React.Fragment key={k}>
+              <line x1={1357} y1={cy} x2={1477} y2={cy} stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+              <line x1={1357} y1={cy} x2={1477} y2={cy} stroke="rgba(255,255,255,0.4)" strokeWidth="2" style={{ opacity: state.final === k ? 1 : 0 }} />
+            </React.Fragment>
+          )
+        })}
+      </svg>
+
+      {/* 분기+ (AI 인정) */}
+      <div className="branch-group" style={{ top: 194, opacity: isA ? 1 : 0.38 }}>
+        <div className="branch-label">
+          <span className="branch-axis" style={{ color: isA ? '#adeaed' : 'rgba(255,255,255,0.6)' }}>AI 축 합계 +</span>
+          <span className="branch-name">AI를 인정한 사람들</span>
+        </div>
+        <div className="branch-scene"><img src={cut('s4-jin-a')} alt="" /></div>
+      </div>
+
+      {/* 분기- (AI 거부) */}
+      <div className="branch-group" style={{ top: 547, opacity: isA ? 0.38 : 1 }}>
+        <div className="branch-label">
+          <span className="branch-axis" style={{ color: isA ? 'rgba(255,255,255,0.6)' : '#adeaed' }}>AI 축 합계 −</span>
+          <span className="branch-name">AI를 거부한 사람들</span>
+        </div>
+        <div className="branch-scene"><img src={cut('s4-julian-b')} alt="" /></div>
+      </div>
+
+      {/* STEP 3: 마지막 선택 4개 */}
+      {FINAL_CHOICES.map((c, i) => {
+        const isMine = c.key === state.final
+        return (
+          <div key={c.key} className={`branch-choice ${isMine ? 'mine' : ''}`} style={{ top: choiceY[i] }}>
+            <span>{c.text}</span>
+          </div>
+        )
+      })}
+
+      {/* 결말 4개 */}
+      {ENDING_ORDER.map((k, i) => {
+        const e = ENDINGS[k]
+        const isMine = k === state.final
+        return (
+          <div key={k} className="branch-ending" style={{ top: endingY[i], opacity: isMine ? 1 : 0.3 }}>
+            <div className="branch-portrait">
+              <div style={e.photoGradientOpen ? undefined : { mixBlendMode: 'luminosity', overflow: 'hidden', position: 'absolute', inset: 0 }}>
+                {e.photoGradientOpen && <div style={{ position: 'absolute', inset: 0, mixBlendMode: 'luminosity', backgroundImage: e.photoGradient }} />}
+                <img src={`${BASE}ending/${e.cardPortrait || e.portrait}.jpg`} alt="" style={e.photoGradientOpen ? { mixBlendMode: 'luminosity', objectFit: 'cover', objectPosition: 'bottom', width: '100%', height: '100%' } : undefined} />
+              </div>
+            </div>
+            <span className="branch-ending-name" style={{ color: isMine ? '#adeaed' : '#fff' }}>{e.name}</span>
+          </div>
+        )
+      })}
+
+      {/* 하단 바 */}
+      <footer className="caption-bar branches-bar">
+        <div className="branch-result-line">
+          <span>이 선택들이 당신을</span>
+          <span className="branch-result-name">{end.name}</span>
+          <span>로 이끌었습니다.</span>
+        </div>
+        <div className="branch-buttons">
+          <button className={`continue ${pressed === 'restart' ? 'on' : ''}`} onClick={(e) => { origin(e); press('restart', onRestart) }}><span>다시 시작하기</span></button>
+          <button className={`continue ${pressed === 'cards' ? 'on' : ''}`} onClick={(e) => { origin(e); press('cards', onCards) }}><span>다른 결말 보기</span></button>
         </div>
       </footer>
+      </div>
     </div>
   )
 }
@@ -547,8 +748,30 @@ function Cards({ state, dispatch }) {
             style={{ background: on ? end.card : end.dim }}
             onClick={() => setOpen(k)}
           >
-            <img className="card-photo" src={`${BASE}ending/${end.portrait}.jpg`} alt="" />
+            <div className="card-photo-wrap"
+              style={(() => { const s = on ? end.cardOpen : end.cardClosed; return s ? { width: s.width, height: s.height, left: s.left, top: s.top } : undefined })()}
+            >
+            <div className="card-photo" style={end.photoGradientOpen ? undefined : { mixBlendMode: 'luminosity' }}>
+              {(end.photoGradient || end.photoGradientOpen) && <div style={{ position: 'absolute', inset: 0, mixBlendMode: 'luminosity', backgroundImage: on ? (end.photoGradientOpen || end.photoGradient) : (end.photoGradientClosed || end.photoGradient) }} />}
+              <img src={`${BASE}ending/${end.cardPortrait || end.portrait}.jpg`} alt=""
+                style={(() => {
+                  const ci = on ? (end.cardImgOpen || end.cardImg) : (end.cardImgClosed || end.cardImg)
+                  const s = on ? end.cardOpen : end.cardClosed
+                  if (!ci || !s) return undefined
+                  if (ci.objectFit) return { width: '100%', height: '100%', objectFit: ci.objectFit, objectPosition: ci.objectPosition, mixBlendMode: 'luminosity' }
+                  const pct = (v) => typeof v === 'string' && v.endsWith('%')
+                  return {
+                    width:  pct(ci.width)  ? s.width  * parseFloat(ci.width)  / 100 : ci.width,
+                    height: pct(ci.height) ? s.height * parseFloat(ci.height) / 100 : ci.height,
+                    left:   pct(ci.left)   ? s.width  * parseFloat(ci.left)   / 100 : (ci.left || 0),
+                    top:    pct(ci.top)    ? s.height * parseFloat(ci.top)    / 100 : (ci.top || 0),
+                  }
+                })()}
+              />
+            </div>
+            </div>
             <div className="card-fade" style={{ backgroundImage: on ? fade : end.dimFade }} />
+            {!on && <div className="card-dim" />}
             {on ? (
               <div className="card-head">
                 {k === state.mine ? (
