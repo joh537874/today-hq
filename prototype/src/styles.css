@@ -483,21 +483,26 @@ button { font: inherit; color: inherit; border: 0; background: none; }
 li.admin-chapter { display: block; position: sticky; top: 0; z-index: 1; padding: 10px 16px 6px; background: #0e1014; color: #fff; font-weight: 600; cursor: default !important; border-bottom: 1px solid #1d2026; }
 li.admin-chapter:hover { background: #0e1014; }
 
-/* ───────── 주인공 이름 입력 (오프닝 나레이션과 같은 검은 화면 가운데) */
+/* ───────── 주인공 이름 입력 (오프닝 나레이션 다음 검은 화면, 안내 화면과 같은 톤) */
 .name-entry {
   position: absolute; inset: 0; background: #000;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 48px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 56px;
+  animation: caption-in 0.8s ease both;
 }
-.name-entry > * { animation: caption-in 0.6s ease both; }
-.name-stack { display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; }
-.name-stack .ko { font-family: var(--gothic); font-weight: 400; font-size: 32px; line-height: 1.5; letter-spacing: -1.92px; }
-.name-stack .en { font-family: var(--gothic); font-weight: 200; font-size: 20px; line-height: 1.4; opacity: 0.6; }
+.name-q { font-family: var(--pretendard); font-weight: 400; font-size: 36px; line-height: 1.5; letter-spacing: -1.08px; color: var(--white); }
+.name-field { position: relative; width: 420px; border-bottom: 1px solid rgba(255, 255, 255, 0.25); transition: border-color 0.3s ease; }
+.name-field:focus-within { border-bottom-color: rgba(255, 255, 255, 0.6); }
 .name-input {
-  width: 520px; padding: 8px 0 12px; background: none; border: 0; border-bottom: 1px solid rgba(255, 255, 255, 0.4);
-  color: var(--white); outline: none; caret-color: var(--white); text-align: center;
-  font-family: var(--gothic); font-weight: 400; font-size: 56px; line-height: 1.2; letter-spacing: -2.6px;
+  width: 100%; padding: 4px 48px 14px; background: none; border: 0; outline: none; text-align: center;
+  color: var(--white); caret-color: var(--white);
+  font-family: var(--pretendard); font-weight: 400; font-size: 52px; line-height: 1.2; letter-spacing: -1.56px;
 }
-.name-input:focus { border-bottom-color: var(--white); }
+.name-go {
+  position: absolute; right: 0; bottom: 14px; width: 40px; height: 40px;
+  font-family: var(--pretendard); font-size: 30px; line-height: 40px; color: var(--white); opacity: 0.4;
+  transition: opacity 0.2s ease, translate 0.2s ease;
+}
+.name-go:hover, .name-go.on { opacity: 1; translate: 4px 0; }
 
 /* ───────── 영상 위에 얹는 자막. 이전에 영상에 굽던 자막(하단 가운데, 한글 위·영문 아래)과 같은 자리에 둔다 */
 .video-cue {

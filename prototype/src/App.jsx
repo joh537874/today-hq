@@ -464,16 +464,15 @@ function NameEntry({ onDone }) {
   const done = () => press('start', () => onDone(name))
   return (
     <div className="name-entry">
-      <div className="name-stack">
-        <p className="ko">이야기의 주인공, 당신의 이름은 무엇인가요?</p>
-        <p className="en">What’s your name?</p>
+      <p className="name-q">이야기의 주인공, 당신의 이름은 무엇인가요?</p>
+      <div className="name-field">
+        <input
+          ref={ref} className="name-input" value={name} maxLength={NAME_MAX} spellCheck={false} autoComplete="off"
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); done() } }}
+        />
+        <button className={`name-go ${pressed === 'start' ? 'on' : ''}`} onClick={done} aria-label="확인">→</button>
       </div>
-      <input
-            ref={ref} className="name-input" value={name} maxLength={NAME_MAX} spellCheck={false} autoComplete="off"
-            onChange={(e) => setName(e.target.value)}
-        onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); done() } }}
-      />
-      <button className={`pill ${pressed === 'start' ? 'on' : ''}`} onClick={(e) => { origin(e); done() }}>확인</button>
     </div>
   )
 }
