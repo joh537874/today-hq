@@ -1,5 +1,5 @@
 import React, { useEffect, useReducer, useRef, useState } from 'react'
-import { BEATS, CHAPTERS, ENDINGS, ENDING_ORDER, WHO_EN, CHOICE_LABELS, CHOICE_MAP, NAME_MAX, applyName, loadName } from './story.js'
+import { BEATS, CHAPTERS, ENDINGS, ENDING_ORDER, WHO_EN, CHOICE_LABELS, CHOICE_MAP, NAME_MAX, applyName } from './story.js'
 import { useTypewriter } from './ui.jsx'
 import { setBgm, setAmb, setVib, sfx, stopAll, setMuted } from './sound.js'
 import { isAdmin, PANEL_W, AdminPanel, buildState, defaultCfg, loadAdmin, saveAdmin } from './Admin.jsx'
@@ -455,13 +455,14 @@ function Title({ onStart, onSkip }) {
 }
 
 // 주인공 이름 입력. 오프닝 나레이션 다음, 검은 화면 가운데에 놓인다.
-// 지난번에 쓴 이름을 미리 채워 두고, 비워 두면 기본 이름으로 시작한다. Enter로 확인하고, 빈 곳을 누르면 입력란으로 돌아간다.
+// 빈칸으로 시작하고, 이름을 입력한 뒤 Enter를 눌러야 넘어간다. 빈 곳을 누르면 입력란으로 돌아간다.
 function NameEntry({ onDone }) {
   const [pressed, press] = usePress()
-  const [name, setName] = useState(loadName)
+  const [name, setName] = useState('')
   const ref = useRef(null)
   useEffect(() => { ref.current?.focus(); ref.current?.select() }, [])
-  const done = () => press('start', () => onDone(name))
+  // 이름을 입력해야만 넘어간다.
+  const done = () => { if (name.trim()) press('start', () => onDone(name)) }
   return (
     <div className="name-entry" onClick={() => ref.current?.focus()}>
       <p className="name-q">이야기의 주인공, 당신의 이름은 무엇인가요?</p>
