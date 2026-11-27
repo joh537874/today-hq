@@ -96,24 +96,24 @@ const raw = [
   L('클로이', '“…그래 알겠어. 그럼 그때 보자.”', '“...Alright, got it. I’ll see you then.”', { call: 'on', via: '전화' }),
   L('클로이', '“참, 방금 뉴스를 보니까 HQ가 난리더라. 너희 집 AI는 어때? 이름이… 나인이랬지?”', '“By the way, I just saw the news. HQ is causing quite a stir. How’s the AI at your place? Its name was... Nine, right?”', { call: 'on', via: '전화' }),
   L('클로이', '“…아무튼, 시간이 너무 늦었네. 내일 다시 연락할게. 잘 자.”', '“...Anyway, it’s getting pretty late. I’ll talk to you again tomorrow. Good night.”', { call: 'on', via: '전화' }),
-  L('나인', '“그러고 보니, 내일이 클로이 씨의 생일이네요. 내일은 일찍 나가셔야 할 것 같아요. 어서 주무시는 걸 추천할게요.”', '“Come to think of it, tomorrow is Chloe’s birthday. You’ll need to head out early, so I suggest getting some rest now.”', { img: 'p-home' }),
+  L('나인', '“그러고 보니, 내일이 클로이 씨의 생일이네요. 내일은 일찍 나가셔야 할 것 같아요. 어서 주무시는 걸 추천할게요.”', '“Come to think of it, tomorrow is Chloe’s birthday. You’ll need to head out early, so I suggest getting some rest now.”', { img: 'p-home-nine' }),
   N('창밖 전광판의 숫자가 자정을 알린다. 늦은 밤에도 도시는 여전히 환하게 빛나고, 사람들은 저마다의 밤을 보낸다.', 'The billboard outside marks midnight. Even this late, the city still glows, and everyone spends their own night.', { img: 'p-city' }),
 
   // ───────── 2장 · 집 · 다음 날 아침
   { chapter: 2, img: 's2-morning', bgm: 'morning', amb: null, sfx: 'humeter', hq: 72, hud: { hq: 72, delta: -9, note: '관리국 기준 갱신' }, ...L('휴미터', '“좋은 아침입니다, {name} 님. 오늘의 HQ는 72입니다.”', '“Good morning, {name}. Your HQ is 72 today.”') },
   N('다음 날 아침, {name}의 HQ가 81에서 72로 떨어졌다. 밤사이 관리국 기준이 갱신된 것이다.', 'The next morning, {name}’s HQ dropped from 81 to 72. The Bureau updated its standard overnight.'),
   L(ME, '“젠장. 하룻밤 새 9점이나 떨어졌네.”', '“Damn. It dropped nine points overnight.”'),
-  L('나인', '“오… 괜찮습니다, {name}. HQ는 매일 갱신되는 것이니까요. 오늘 하루는 제가 동행할 테니 큰 문제는 없을 겁니다.”', '“Oh... that’s alright, {name}. HQ is updated daily, after all. I’ll be accompanying you today, so there shouldn’t be any major problems.”'),
+  L('나인', '“오… 괜찮습니다, {name}. HQ는 매일 갱신되는 것이니까요. 오늘 하루는 제가 동행할 테니 큰 문제는 없을 겁니다.”', '“Oh... that’s alright, {name}. HQ is updated daily, after all. I’ll be accompanying you today, so there shouldn’t be any major problems.”', { img: 's2-morning-nine' }),
   N('나인의 HQ는 88. 나보다 더 높게 책정되어 있다.', 'Nyin’s HQ is 88. Rated higher than mine.'),
   L(ME, '“나보다… 더 높잖아.”', '“That’s… higher than mine.”'),
   L('나인', '“저는 당신의 최고의 친구이자 비서로서, 매일 밤 업데이트를 하고 있거든요.”', '“As your best friend and personal assistant, I make sure to update my score every night.”'),
 
   // 책상 위 편지
-  L('나인', '“그나저나 {name}, 클로이를 위한 선물은 준비했나요?”', '“By the way, {name}, have you prepared a gift for Chloe?”', { img: 's2-letter' }),
+  L('나인', '“그나저나 {name}, 클로이를 위한 선물은 준비했나요?”', '“By the way, {name}, have you prepared a gift for Chloe?”'),
   L(ME, '“이런, 그러고 보니 어제 뉴스를 보다 늦게 잠들어 선물을 준비하지 못했네.”', '“Oh no. I stayed up late watching the news and never got her a gift.”'),
   L('나인', '“그렇다면 손편지는 어떤가요? 최근 아날로그한 축하 방식이 유행을 하고 있다고 해요.”', '“How about a handwritten letter? I’ve heard that handwritten congratulations are becoming quite popular lately.”'),
   L(ME, '“좋은 아이디어야, 나인.”', '“Good idea, Nyin.”'),
-  N('{name:은} 책상에 앉아 클로이에게 줄 편지를 쓸 준비를 한다.', '{name} sits at the desk and gets ready to write a letter to Chloe.', { sfx: 'pen' }),
+  N('{name:은} 책상에 앉아 클로이에게 줄 편지를 쓸 준비를 한다.', '{name} sits at the desk and gets ready to write a letter to Chloe.', { img: 's2-letter', sfx: 'pen' }),
   L(ME, '“…실수로 잘못 적었어. 오늘은 되는 일이 없군.”', '“…I wrote it wrong. Nothing goes right today.”', { img: 's2-letter-write' }),
   L('나인', '“오타가 나쁘지만은 않아요. 듣자 하니 소문에 의하면, ‘실수’를 많이 할수록 HQ가 높아진다고도 하더라고요. AI는 실수를 하지 않으니까 그런 걸까요?”', '“Oh, mistakes aren’t necessarily a bad thing. According to rumors, the more mistakes you make, the higher your HQ score gets. Maybe it’s because AIs never make mistakes?”'),
   L('나인', '“어떤 사람들은 그래서 일부러 오타투성이 편지를 주고받기도 해요.”', '“Some people even deliberately give and receive letters with typos for that very reason.”'),
@@ -230,7 +230,7 @@ const raw = [
     ],
   },
   {
-    type: 'choice', id: 'c7', num: '⑦', axis: 'ai',
+    type: 'choice', id: 'c7', num: '⑦', axis: 'ai', img: 's3-julian',
     prompt: L('줄리안', '“AI의 발전은 축복이 아니라 위협일 뿐이야. 인간을 닮아 갈수록 그 위험성은 커지는 법이지.”', '“AI’s progress isn’t a blessing. It’s a threat. The more it resembles us, the more dangerous it gets.”'),
     options: [
       { text: '“글쎄, 나는 나인이 있어서 삶이 훨씬 나아졌어.”', sign: 1 },
@@ -249,7 +249,7 @@ const raw = [
 
   // ───────── 4장 · 클로이의 집 앞 · 저녁
   { type: 'route' },
-  { chapter: 4, img: 's4-hands', ...N('지하철에서 내려 클로이의 집으로 향한다.', 'Getting off the subway, {name} heads to Chloe’s place.') },
+  { chapter: 4, img: 's4-corridor', ...N('지하철에서 내려 클로이의 집으로 향한다.', 'Getting off the subway, {name} heads to Chloe’s place.') },
   N('클로이의 집 앞에 도착한 {name:이} 초인종을 누르려다 문 옆 패널을 본다. 입장 기준 75.', 'At Chloe’s door, {name} reaches for the bell and notices the panel beside it. Entry threshold: 75.', { img: 's4-corridor' }),
   N('당황한 {name:은} 초인종을 누르고, 도어폰에서 클로이의 목소리가 나온다.', 'Flustered, {name} rings the bell, and Chloe’s voice comes through the intercom.', { img: 's4-panel' }),
   L('클로이', '“왔구나. …어, 잠깐만 너 HQ가…”', '“You’re here! ...Oh, wait, your HQ...”'),
@@ -272,7 +272,7 @@ const raw = [
   { when: ifFinal('insurgent'), ...L(ME, '“미안, 오늘은 그냥 갈게.”', '“Sorry, I think I’ll just go today.”') },
 
   // Route B · AI를 배척한 사람들
-  { when: ifRoute('B'), img: 's4-julian-b', ...N('손에는 클로이에게 줄 편지가 들려 있다. 아까 마주친 줄리안이 했던 말이 떠오른다.', 'The letter for Chloe is in {name}’s hand. Julian’s words from earlier come back.') },
+  { when: ifRoute('B'), img: 's3-julian', ...N('손에는 클로이에게 줄 편지가 들려 있다. 아까 마주친 줄리안이 했던 말이 떠오른다.', 'The letter for Chloe is in {name}’s hand. Julian’s words from earlier come back.') },
   { when: ifRoute('B'), ...L('줄리안', '“친구로서 충고하는 거야. 절대 저 깡통보다 HQ가 낮게 두지 마.”', '“I’m telling you this as a friend. Never let your HQ score fall below that tin can’s.”', { via: '회상' }) },
   { when: ifRoute('B'), ...L('줄리안', '“…그럼 어떻게 하냐고? 이용하는 거지. HQ 점수를 올리는 건 쉬워. 저 깡통 안에 있는 휴미터를 꺼내서 너한테 끼우면 돼.”', '“...You want to know how? Use it. Raising your HQ score is easy. Just take the Humeter out of that tin can and wear it yourself.”', { via: '회상' }) },
   {
