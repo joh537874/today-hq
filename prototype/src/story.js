@@ -97,7 +97,7 @@ const raw = [
   L('클로이', '“참, 방금 뉴스를 보니까 HQ가 난리더라. 너희 집 AI는 어때? 이름이… 나인이랬지?”', '“By the way, I just saw the news. HQ is causing quite a stir. How’s the AI at your place? Its name was... Nine, right?”', { call: 'on', via: '전화' }),
   L('클로이', '“…아무튼, 시간이 너무 늦었네. 내일 다시 연락할게. 잘 자.”', '“...Anyway, it’s getting pretty late. I’ll talk to you again tomorrow. Good night.”', { call: 'on', via: '전화' }),
   L('나인', '“그러고 보니, 내일이 클로이 씨의 생일이네요. 내일은 일찍 나가셔야 할 것 같아요. 어서 주무시는 걸 추천할게요.”', '“Come to think of it, tomorrow is Chloe’s birthday. You’ll need to head out early, so I suggest getting some rest now.”', { img: 'p-home-nine' }),
-  N('창밖 전광판의 숫자가 자정을 알린다. 늦은 밤에도 도시는 여전히 환하게 빛나고, 사람들은 저마다의 밤을 보낸다.', 'The billboard outside marks midnight. Even this late, the city still glows, and everyone spends their own night.', { img: 'p-city' }),
+  N('창밖 전광판의 숫자가 자정을 알린다. 늦은 밤에도 도시는 여전히 환하게 빛나고, 사람들은 저마다의 밤을 보낸다.', 'The billboard outside marks midnight. Even this late, the city still glows, and everyone spends their own night.', { img: 'p-city', vid: 'scene/p-city.mp4' }),
 
   // ───────── 2장 · 집 · 다음 날 아침
   { chapter: 2, img: 's2-morning', bgm: 'morning', amb: null, sfx: 'humeter', hq: 72, hud: { hq: 72, delta: -9, note: '관리국 기준 갱신' }, ...L('휴미터', '“좋은 아침입니다, {name} 님. 오늘의 HQ는 72입니다.”', '“Good morning, {name}. Your HQ is 72 today.”') },

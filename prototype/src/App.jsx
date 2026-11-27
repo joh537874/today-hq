@@ -252,6 +252,12 @@ function Photo({ name }) {
   ))
 }
 
+// 컷 위에 까는 배경 영상. 한 번 재생하고 마지막 장면에서 멈춘다. 소리는 장면 배경음을 쓰므로 끈다.
+// 자막이 여러 쪽으로 나뉘어도 같은 영상이면 처음부터 다시 틀지 않는다(key가 영상 경로).
+function BgVideo({ src }) {
+  return <video className="photo photo-video" src={`${BASE}${src}`} autoPlay muted playsInline preload="auto" />
+}
+
 // 좌상단 "01 | Prologue"
 function ChapterTag({ chapter }) {
   const c = CHAPTERS[chapter - 1]
@@ -527,6 +533,7 @@ function Film({ state, beat, dispatch }) {
   return (
     <div className="film">
       <Photo name={beat.img} />
+      {beat.vid && <BgVideo key={beat.vid} src={beat.vid} />}
       {!isFinal && <ChapterTag chapter={beat.chapter} />}
 
       {beat.hud && <Hud {...beat.hud} />}
