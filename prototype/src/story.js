@@ -88,7 +88,7 @@ const raw = [
 
   // 당신의 집 · 크로스오버의 밤
   N('2069년 3월 14일 밤.', 'The night of March 14, 2069.', { img: 'p-home', bgm: 'night', amb: 'street' }),
-  L('뉴스', '“속보입니다. HQ관리국이 발표한 이번 분기 평균 HQ 점수에서 AI가 처음으로 인간을 넘어섰습니다. 판별 시스템이 인간보다 AI를 더 높은 인간 점수로 평가한 것은 이번이 처음인데요. 인간과 AI의 경계에 또 한 번 큰 파장이 예상됩니다.”', '“Breaking news. According to the HQ Bureau’s latest quarterly report, AI has surpassed humans in average HQ scores for the first time. This marks the first time the identification system has rated AI as more human than humans themselves. The news is expected to send shockwaves through society, once again blurring the line between humans and AI.”', { img: 'p-news-sketch', sfx: 'news' }),
+  L('뉴스', '“속보입니다. HQ관리국이 발표한 이번 분기 평균 HQ 점수에서 AI가 처음으로 인간을 넘어섰습니다. 판별 시스템이 인간보다 AI를 더 높은 인간 점수로 평가한 것은 이번이 처음인데요. 인간과 AI의 경계에 또 한 번 큰 파장이 예상됩니다.”', '“Breaking news. According to the HQ Bureau’s latest quarterly report, AI has surpassed humans in average HQ scores for the first time. This marks the first time the identification system has rated AI as more human than humans themselves. The news is expected to send shockwaves through society, once again blurring the line between humans and AI.”', { img: 'p-news', sfx: 'news' }),
   N('{name:은} 소파에 앉아 뉴스를 보고 있다. 그때, 휴대폰이 울린다.', '{name} is watching the news on the sofa. Then the phone rings.', { img: 'p-home', vib: true }),
   // 클로이의 전화. 휴대폰이 진동하고, 플레이어가 초록 버튼을 밀어서(또는 Space·Enter·→) 받는다.
   { type: 'call', img: 'p-call-bg', vib: true },
