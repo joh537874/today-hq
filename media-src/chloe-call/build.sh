@@ -1,24 +1,15 @@
 #!/bin/sh
-# 클로이 통화 영상(prototype/public/scene/chloe-call.mp4) 만들기.
-# 1) 원본(src.mp4, 힉스필드 hf_20261127_184512)을 카드 비율(614×720)로 잘라 장면별로 나눈다.
-# 2) macOS 기본 비전 기능으로 사람 가면을 뽑는다(seg.swift).
-# 3) 배경을 투명하게 뺀 영상을 두 형식으로 만든다.
+# 클로이 첫 통화 영상(src.mp4, 힉스필드 hf_20261127_184512. 음성은 영상에 들어 있는 것을 그대로 쓴다).
+# 공정은 ../chloe-call-3/build.sh 와 같다(도구는 ../call-tools). 이 영상은 처음부터 입 모양과 소리가 맞아 싱크 조정은 하지 않는다.
 set -e
 cd "$(dirname "$0")"
-mkdir -p frames masks comp
-ffmpeg -v error -y -i src.mp4 -vf "crop=614:720:333:0" frames/f%04d.png
-swift seg.swift frames masks
-# 3) 클로이만 남기고 배경을 투명하게 뺀 장면을 만든다(가면은 앞뒤 장면과 평균 내어 떨림을 줄임).
-python3 - <<'PY'
-import os
-from PIL import Image, ImageFilter
-os.makedirs('rgba', exist_ok=True)
-files=sorted(os.listdir('frames')); masks=[Image.open('masks/'+f).convert('L') for f in files]
-for i,f in enumerate(files):
-    m=Image.blend(Image.blend(masks[max(0,i-1)],masks[min(len(masks)-1,i+1)],0.5),masks[i],0.5).filter(ImageFilter.GaussianBlur(1.2))
-    im=Image.open('frames/'+f).convert('RGB'); im.putalpha(m); im.save('rgba/'+f)
-PY
-# 4) 투명 배경 영상 두 형식: 크롬·엣지용 웹엠, 사파리용 애플 형식. 유리 효과는 화면(CSS)에서 건다.
-ffmpeg -v error -y -framerate 24 -i rgba/f%04d.png -i src.mp4 -map 0:v -map 1:a -c:v libvpx-vp9 -pix_fmt yuva420p -b:v 0 -crf 30 -row-mt 1 -c:a libopus -b:a 128k -shortest chloe-call.webm
-ffmpeg -v error -y -framerate 24 -i rgba/f%04d.png -i src.mp4 -map 0:v -map 1:a -c:v hevc_videotoolbox -pix_fmt bgra -alpha_quality 0.8 -q:v 60 -tag:v hvc1 -c:a aac -b:a 160k -movflags +faststart -shortest chloe-call-hevc.mp4
+PY=../.venv/bin/python
+T=../call-tools
+rm -rf raw frames masks rgba comp && mkdir -p raw masks
+ffmpeg -v error -y -i src.mp4 raw/f%04d.png
+ffmpeg -v error -y -i src.mp4 -vn -c:a pcm_s16le voice.wav
+$PY $T/frame.py raw frames 637.5 226 293
+swift $T/seg.swift frames masks
+$PY $T/matte.py frames masks rgba
+sh $T/encode.sh rgba voice.wav chloe-call
 echo "완료: chloe-call.webm, chloe-call-hevc.mp4 → prototype/public/scene/ 로 복사"

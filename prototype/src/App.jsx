@@ -1,7 +1,7 @@
 import React, { useEffect, useReducer, useRef, useState } from 'react'
 import { BEATS, CHAPTERS, ENDINGS, ENDING_ORDER, WHO_EN, CHOICE_LABELS, CHOICE_MAP, NAME_MAX, applyName } from './story.js'
 import { useTypewriter } from './ui.jsx'
-import { setBgm, setAmb, setVib, sfx, stopAll, setMuted, isMuted } from './sound.js'
+import { setBgm, setAmb, setVib, sfx, stopAll, setMuted, isMuted, ui } from './sound.js'
 import { isAdmin, PANEL_W, AdminPanel, buildState, defaultCfg, loadAdmin, saveAdmin } from './Admin.jsx'
 import { setInstant as setTypeInstant } from './ui.jsx'
 
@@ -13,6 +13,7 @@ const BASE = import.meta.env.BASE_URL
 try { CSS.registerProperty({ name: '--trace-angle', syntax: '<angle>', inherits: false, initialValue: '0deg' }) } catch (e) {}
 const cut = (name) => `${BASE}cut/${name}.jpg`
 const PASSIVE = ['narr', 'line']
+const TITLE_BGM = 'night'
 
 const initial = { started: false, idx: 0, ai: 0, hq: 0, picks: [], route: null, final: null, mine: null, history: [] }
 // 엔딩 영상의 첫 비트. 다른 결말을 고르면 여기서부터 그 결말을 재생한다.
@@ -142,13 +143,23 @@ function AppInner() {
   // 장면이 바뀌면 그 장면의 배경음·환경음으로 맞추고, 효과음이 있으면 한 번 낸다.
   // 오프닝 영상·검은 화면 나레이션·엔딩 화면에는 따로 깔지 않는다(컷에 bgm이 없으면 꺼진다).
   useEffect(() => {
-    if (!state.started) { stopAll(); return }
+    if (!state.started) {
+      stopAll()
+      // 타이틀 배경음. 브라우저는 첫 입력 전에는 소리를 막으므로, 첫 클릭·키 입력에 맞춰 서서히 올린다.
+      // 시작 뒤 안내 화면(notice)도 같은 곡이라 끊기지 않고 이어지다가, 오프닝 영상에서 줄어든다.
+      const on = () => setBgm(TITLE_BGM)
+      window.addEventListener('pointerdown', on, { once: true })
+      window.addEventListener('keydown', on, { once: true })
+      return () => { window.removeEventListener('pointerdown', on); window.removeEventListener('keydown', on) }
+    }
     setBgm(beat.bgm)
     setAmb(beat.amb)
     setVib(beat.vib ? 'vibrate' : null)
     sfx(beat.sfx)
   }, [state.started, state.idx])
 
+  // 이름 입력 중에는 ← 키를 글자 지우기로 쓰므로 버튼을 두지 않는다. 영상·나레이션은 되돌리기가 없다.
+  const canBack = state.started && (state.history.length > 0 || beat.type === 'result') && !['name', 'video', 'voice', 'notice', 'news'].includes(beat.type)
   return (
     <>
     {ADMIN && <AdminPanel state={state} cfg={cfg} setCfg={setCfg} dispatch={dispatch} instant={instant} setInstant={setInstant} />}
@@ -158,13 +169,22 @@ function AppInner() {
         {state.started && beat.type === 'after' && <After key={state.final} state={state} dispatch={dispatch} />}
         {state.started && beat.type === 'result' && <Result key={state.final} state={state} dispatch={dispatch} />}
         {state.started && beat.type === 'video' && <OpeningVideo key={state.idx} beat={beat} dispatch={dispatch} muted={muted} />}
+        {state.started && beat.type === 'news' && <NewsVideo key={state.idx} beat={beat} dispatch={dispatch} muted={muted} />}
         {state.started && beat.type === 'notice' && <Notice key={state.idx} beat={beat} dispatch={dispatch} />}
         {state.started && beat.type === 'voice' && <VoiceOver key={state.idx} beat={beat} dispatch={dispatch} muted={muted} />}
         {state.started && beat.type === 'name' && <NameEntry key={state.idx} onDone={(name) => { applyName(name); dispatch({ type: 'NEXT' }) }} />}
-        <button className={`mute ${muted ? 'off' : ''}`} onClick={(e) => { e.stopPropagation(); setMutedState((m) => !m) }} aria-label={muted ? '소리 켜기' : '소리 끄기'}>
-          <span>{muted ? 'Sound Off' : 'Sound On'}</span><em>M</em>
-        </button>
-        {state.started && !['after', 'result', 'video', 'voice', 'name', 'notice'].includes(beat.type) && <Film state={state} beat={beat} dispatch={dispatch} />}
+        <div className="top-ctrl">
+          {/* 되돌리기. 화면마다 ← 키 처리가 다르므로(결과 화면은 안쪽 단계부터 되돌린다) 같은 키 입력을 보낸다. */}
+          {canBack && (
+            <button className="top-btn back" onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft' })) }} aria-label="뒤로 가기">
+              <span>Back</span><em>←</em>
+            </button>
+          )}
+          <button className={`top-btn mute ${muted ? 'off' : ''}`} onClick={(e) => { e.stopPropagation(); setMutedState((m) => !m) }} aria-label={muted ? '소리 켜기' : '소리 끄기'}>
+            <span>{muted ? 'Sound Off' : 'Sound On'}</span><em>M</em>
+          </button>
+        </div>
+        {state.started && !['after', 'result', 'video', 'voice', 'name', 'notice', 'news'].includes(beat.type) && <Film state={state} beat={beat} dispatch={dispatch} />}
       </div>
       <Cursor scale={scale} minX={ADMIN ? PANEL_W : 0} />
     </div>
@@ -376,6 +396,92 @@ function OpeningVideo({ beat, dispatch, muted }) {
   )
 }
 
+/* ───────── 1장 뉴스. 화면 전체로 시작해 세 번째 문장에서 거실(p-call-bg) 벽걸이 TV로 줌아웃한다.
+   거실 사진과 TV 화면을 따로 움직인다. 사진은 확대·이동만, TV 화면은 네 꼭짓점을 직접 정해 원근을 맞춘다. */
+
+// 거실 사진(1920×1080) 속 TV 화면의 네 꼭짓점(좌상·우상·우하·좌하). 사진을 확대해 측정했다.
+const TV_QUAD = [[456, 403], [781, 423], [781, 600], [455, 605]]
+// 줌아웃 시작 때 화면을 꽉 채우는 TV 안쪽의 16:9 사각형. 여기서 시작해 TV_QUAD로 옮겨 간다.
+const TV_R0 = { x: 461, y: 423, w: 314, h: 176.6 }
+const NEWS_ZOOM_AT = 15.2 // 줌아웃 시작(영상 초)
+const NEWS_ZOOM_MS = 2800
+
+// 1920×1080 요소를 네 꼭짓점에 맞추는 원근 변환(matrix3d). 단위 정사각형 → 사각형 사영 변환을 쓴다.
+function quadMatrix(q, w = 1920, h = 1080) {
+  const [[x0, y0], [x1, y1], [x2, y2], [x3, y3]] = q
+  const dx1 = x1 - x2, dx2 = x3 - x2, dx3 = x0 - x1 + x2 - x3
+  const dy1 = y1 - y2, dy2 = y3 - y2, dy3 = y0 - y1 + y2 - y3
+  const den = dx1 * dy2 - dx2 * dy1
+  const g = (dx3 * dy2 - dx2 * dy3) / den
+  const k = (dx1 * dy3 - dx3 * dy1) / den
+  const a = x1 - x0 + g * x1, b = x3 - x0 + k * x3
+  const d = y1 - y0 + g * y1, e = y3 - y0 + k * y3
+  return `matrix3d(${a / w},${d / w},0,${g / w},${b / h},${e / h},0,${k / h},0,0,1,0,${x0},${y0},0,1)`
+}
+// 처음엔 천천히, 가운데서 빠르게 빠졌다가, 끝에서 길게 감속한다.
+// 앞 35% 구간에서 절반을 가속해 빠지고, 남은 절반은 65% 구간에 걸쳐 감속한다. 두 식은 p=0.35에서 0.5로 만난다.
+const zoomEase = (p) => (p < 0.35 ? 0.5 * Math.pow(p / 0.35, 2.2) : 1 - 0.5 * Math.pow(1 - (p - 0.35) / 0.65, 3.2))
+
+function NewsVideo({ beat, dispatch, muted }) {
+  const ref = useRef(null)
+  const room = useRef(null)
+  const tv = useRef(null)
+  const [cue, setCue] = useState(-1)
+  const [zoomed, setZoomed] = useState(false)
+  const next = () => dispatch({ type: 'NEXT' })
+  useEffect(() => {
+    const v = ref.current
+    v.play().catch(() => { v.muted = true; v.play().catch(() => {}) })
+    const c = [TV_R0.x + TV_R0.w / 2, TV_R0.y + TV_R0.h / 2]
+    const S0 = 1920 / TV_R0.w
+    const r0 = [[TV_R0.x, TV_R0.y], [TV_R0.x + TV_R0.w, TV_R0.y], [TV_R0.x + TV_R0.w, TV_R0.y + TV_R0.h], [TV_R0.x, TV_R0.y + TV_R0.h]]
+    let raf = 0
+    let started = false
+    const tick = () => {
+      if (!room.current || !tv.current) return // 화면이 바뀐 직후의 마지막 프레임
+      const t = v.currentTime
+      setCue(beat.cues.findIndex((q) => t >= q.at && t < q.to))
+      const p = Math.min(1, Math.max(0, (t - NEWS_ZOOM_AT) / (NEWS_ZOOM_MS / 1000)))
+      const e = p === 0 ? 0 : p === 1 ? 1 : zoomEase(p)
+      // 거실 사진: 배율을 로그 척도로 줄여 일정한 속도로 멀어지는 느낌을 낸다. 중심은 TV에서 화면 가운데로 옮겨 간다.
+      const s = Math.pow(S0, 1 - e)
+      const cx = 960 + (c[0] - 960) * e, cy = 540 + (c[1] - 540) * e
+      const toScreen = ([x, y]) => [(x - c[0]) * s + cx, (y - c[1]) * s + cy]
+      room.current.style.transform = `translate(${cx - c[0] * s}px, ${cy - c[1] * s}px) scale(${s})`
+      tv.current.style.transform = quadMatrix(r0.map((pt, i) => toScreen([pt[0] + (TV_QUAD[i][0] - pt[0]) * e, pt[1] + (TV_QUAD[i][1] - pt[1]) * e])))
+      tv.current.style.filter = `brightness(${1 - 0.15 * e})`
+      // TV 속 소리처럼 들리게 줄이고, 거실 음악과 바깥 소리를 올린다.
+      if (!v.muted) v.volume = 1 - 0.45 * e
+      if (p > 0 && !started) { started = true; setZoomed(true); setBgm('living'); setAmb('street') }
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [])
+  useKeys((e) => {
+    if (e.code === 'Space' || e.code === 'Enter') next()
+    if (e.key === 'ArrowLeft' || e.key === 'Backspace') dispatch({ type: 'BACK' })
+  })
+  const c = cue >= 0 ? beat.cues[cue] : null
+  return (
+    <div className="news" onClick={next}>
+      <div className="news-room" ref={room} style={{ backgroundImage: `url(${cut(beat.img)})` }} />
+      <div className="news-tv" ref={tv}>
+        <video ref={ref} src={`${BASE}${beat.src}`} playsInline preload="auto" muted={muted} onEnded={() => setTimeout(next, 400)} />
+        <div className="news-live"><i />LIVE<span>2069.03.14 22:41</span></div>
+        <div className="news-lower"><em>속보</em><b>AI 평균 HQ, 사상 처음 인간 넘어서</b></div>
+      </div>
+      {zoomed && <ChapterTag chapter={1} />}
+      {c && (
+        <div className="video-cue" key={cue}>
+          <p className="ko">{c.text.split('\n').map((l, i) => <span key={i}>{l}</span>)}</p>
+          {c.en && <p className="en">{c.en}</p>}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // 영상이 끝난 뒤 검은 화면에 나레이션 목소리와 가운데 자막만 이어진다. 배경음은 음원에 섞여 있다.
 function VoiceOver({ beat, dispatch, muted }) {
   const ref = useRef(null)
@@ -490,6 +596,19 @@ function Film({ state, beat, dispatch }) {
   const passive = PASSIVE.includes(beat.type)
   const typing = useTypewriter(passive ? beat.text : '', state.idx)
   const [pressed, press] = usePress()
+
+  // 대사와 내레이션을 귀로 구분한다. 대사는 시작할 때 '핑' 한 번, 글자가 찍히는 동안 세 글자마다 작게 '타닥'.
+  // 같은 사람의 대사가 여러 쪽으로 이어지면 첫 쪽에서만 '핑'을 낸다. 내레이션에는 소리를 붙이지 않는다.
+  const isLine = beat.type === 'line'
+  useEffect(() => {
+    const prev = BEATS[state.idx - 1]
+    if (isLine && !(prev?.type === 'line' && prev.who === beat.who)) ui.ping()
+  }, [state.idx])
+  const shown = typing.text.length
+  useEffect(() => {
+    if (!isLine || typing.done || shown === 0 || shown % 3) return
+    if (beat.text[shown - 1]?.trim()) ui.tick()
+  }, [shown])
 
   const advance = () => {
     if (beat.type === 'clip') { dispatch({ type: 'NEXT' }); return }
@@ -639,7 +758,8 @@ function CallCard({ beat, idx, dispatch }) {
     )}
     <div className={`call-card ${on ? 'on' : 'ring'}`}>
       {on && beat.callVid
-        ? <CallVideo key="callvid" src={beat.callVid} play={beat.type === 'callvid'} cues={beat.cues} onCue={setCue} onEnd={() => dispatch({ type: 'NEXT' })} />
+        ? <CallVideo key="callvid" src={beat.callVid} play={beat.type === 'callvid'} cues={beat.cues} onCue={setCue} onEnd={() => dispatch({ type: 'NEXT' })}
+            fallback={<img className="call-face" src={`${CALL}chloe.png`} alt="" />} />
         : <img className="call-face" src={`${CALL}chloe.png`} alt="" />}
       <div className="call-shade" />
       {/* 받기 전에는 이름과 '전화 거는 중', 통화 중에는 통화 시간만 작게 보인다 */}
@@ -678,11 +798,35 @@ const alphaVideo = (base) => `${BASE}${base}${SAFARI ? '-hevc.mp4' : '.webm'}`
 
 // 통화 카드 속 클로이 영상. play일 때 재생하며 자막을 알리고, 끝나면 onEnd.
 // 이어지는 통화 대사에서는 마지막 장면에 멈춰 둔다.
-function CallVideo({ src, play, cues: cueList, onCue, onEnd }) {
+// 영상이 바뀔 때는 영상마다 층을 따로 두고, 새 영상이 첫 장면을 그리면 0.35초 동안 겹쳐 바꾼다(빈 화면·튐 방지).
+// 첫 영상이 준비되기 전까지는 통화 사진(fallback)을 그대로 둔다.
+function CallVideo({ src, play, cues, onCue, onEnd, fallback }) {
+  const [layers, setLayers] = useState([src])
+  const [ready, setReady] = useState(false)
+  useEffect(() => { setLayers((l) => (l[l.length - 1] === src ? l : [...l.filter((s) => s !== src), src].slice(-2))) }, [src])
+  const shown = (s) => {
+    setReady(true)
+    setTimeout(() => setLayers((l) => (l.includes(s) ? [s] : l)), 400)
+  }
+  return (
+    <>
+      {!ready && fallback}
+      {layers.map((s) => (
+        <CallVideoLayer key={s} src={s} active={s === src} play={play && s === src} cues={s === src ? cues : null}
+          onCue={onCue} onEnd={onEnd} onShown={() => shown(s)} />
+      ))}
+    </>
+  )
+}
+
+function CallVideoLayer({ src, active, play, cues: cueList, onCue, onEnd, onShown }) {
   const ref = useRef(null)
   const cues = useRef([])
+  const [shown, setShown] = useState(false)
   cues.current = cueList ?? []
+  const show = () => { if (active && !shown) { setShown(true); onShown() } }
   useEffect(() => {
+    if (!active) return
     const v = ref.current
     if (!play) {
       onCue(null)
@@ -701,8 +845,12 @@ function CallVideo({ src, play, cues: cueList, onCue, onEnd }) {
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [play])
-  return <video ref={ref} className="call-face" src={alphaVideo(src)} playsInline preload="auto" onEnded={() => { if (play) setTimeout(onEnd, 500) }} />
+  }, [play, active])
+  return (
+    <video ref={ref} className={`call-face call-vid ${shown ? 'in' : ''}`} src={alphaVideo(src)} playsInline preload="auto"
+      onPlaying={show} onSeeked={show}
+      onEnded={() => { if (play) setTimeout(onEnd, 500) }} />
+  )
 }
 
 // 우측 선택지. 반투명 박스에 번호와 문장을 둔다.

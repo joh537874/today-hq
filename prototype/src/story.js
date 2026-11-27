@@ -71,25 +71,36 @@ const raw = [
   // 오프닝 영상(자막 포함, 38.4초). 끝나면 검은 화면에 나레이션 목소리와 자막만 이어진다.
   // 플레이 방법 안내. 검은 화면에 5초 동안 띄운 뒤 오프닝 영상으로 넘어간다.
   {
-    chapter: 1, type: 'notice', title: 'How To Play', ms: 5000,
+    chapter: 1, type: 'notice', title: 'How To Play', ms: 5000, bgm: 'night', // 타이틀 배경음이 안내 화면까지 이어진다
     lines: ['지금부터, 이야기는 당신의 선택으로 이어집니다.', '정답은 없습니다. 당신의 생각에 더 가까운 쪽을 고르세요.'],
   },
-  { type: 'video', src: 'opening/prologue.mp4' },
+  { type: 'video', src: 'opening/prologue.mp4', bgm: null },
   {
     type: 'voice', audio: 'opening/after.mp3',
-    // ElevenLabs Brian(eleven_v3, 숨 한 번 + 속삭임) 1.1배속, 앞 1초 정적, 배경음은 아주 작게. 문장 사이 쉼 위치에 맞춘 자막 시점(초)
+    // ElevenLabs Brian(eleven_v3, 숨 한 번 + 속삭임), 앞 1초 정적, 배경음은 아주 작게.
+    // 2026-11-28 1.1배속 음원(media-src/opening/op/after_1.1x.mp3)을 0.91배로 늦췄다. 자막 시점도 1.1배로 늘렸다.
     cues: [
-      { at: 1.0, text: '하지만… 정말 이걸로 충분할까요?', en: 'But is this really enough?' },
-      { at: 3.9, text: '언젠가 AI가 인간다움마저 따라잡는다면, 우리는 무엇으로 구분될까요?', en: 'If AI one day catches up with our humanity, what will set us apart?' },
+      { at: 1.1, text: '하지만… 정말 이걸로 충분할까요?', en: 'But is this really enough?' },
+      { at: 4.3, text: '언젠가 AI가 인간다움마저 따라잡는다면, 우리는 무엇으로 구분될까요?', en: 'If AI one day catches up with our humanity, what will set us apart?' },
     ],
   },
   // 주인공 이름 입력. 여기서 정한 이름으로 이후 대본 전체를 다시 만든다.
   { type: 'name' },
 
   // 당신의 집 · 크로스오버의 밤
-  N('2069년 3월 14일 밤.', 'The night of March 14, 2069.', { img: 'p-call-bg', bgm: 'night', amb: 'street' }),
-  L('뉴스', '“속보입니다. HQ관리국이 발표한 이번 분기 평균 HQ 점수에서 AI가 처음으로 인간을 넘어섰습니다. 판별 시스템이 인간보다 AI를 더 높은 인간 점수로 평가한 것은 이번이 처음인데요. 인간과 AI의 경계에 또 한 번 큰 파장이 예상됩니다.”', '“Breaking news. According to the HQ Bureau’s latest quarterly report, AI has surpassed humans in average HQ scores for the first time. This marks the first time the identification system has rated AI as more human than humans themselves. The news is expected to send shockwaves through society, once again blurring the line between humans and AI.”', { img: 'p-news', sfx: 'news' }),
-  N('{name:은} 소파에 앉아 뉴스를 보고 있다. 그때, 휴대폰이 울린다.', '{name} is watching the news on the sofa. Then the phone rings.', { img: 'p-call-bg', vib: true }),
+  N('2069년 3월 14일 밤.', 'The night of March 14, 2069.', { img: 'p-call-bg', bgm: null, amb: 'street' }),
+  // 뉴스 영상(22초). 화면 전체로 시작해 세 번째 문장에서 거실 TV로 줌아웃한다(App.jsx NewsVideo).
+  // 영상 소리에 새 뉴스 배경음이 섞여 있다(media-src/news/build.sh). 줌아웃과 함께 거실 음악(living)과 환경음이 올라온다.
+  // 자막 시점은 말소리 사이의 쉼(8.7~9.1초, 15.0~15.5초)에 맞췄다.
+  {
+    type: 'news', src: 'scene/news.mp4', img: 'p-call-bg', bgm: null, amb: null,
+    cues: [
+      { at: 0.2, to: 8.9, text: '“속보입니다. HQ관리국이 발표한 이번 분기 평균 HQ 점수에서\nAI가 처음으로 인간을 넘어섰습니다.', en: '“Breaking news. According to the HQ Bureau’s latest quarterly report, AI has surpassed humans in average HQ scores for the first time.' },
+      { at: 9.1, to: 15.3, text: '판별 시스템이 인간보다 AI를 더 높은 인간 점수로\n평가한 것은 이번이 처음인데요.', en: 'This marks the first time the identification system has rated AI as more human than humans themselves.' },
+      { at: 15.5, to: 22.1, text: '인간과 AI의 경계에 또 한 번 큰 파장이 예상됩니다.”', en: 'The news is expected to send shockwaves through society, once again blurring the line between humans and AI.”' },
+    ],
+  },
+  N('{name:은} 소파에 앉아 뉴스를 보고 있다. 그때, 휴대폰이 울린다.', '{name} is watching the news on the sofa. Then the phone rings.', { img: 'p-call-bg', bgm: 'living', amb: 'street', vib: true }),
   // 클로이의 전화. 휴대폰이 진동하고, 플레이어가 초록 버튼을 밀어서(또는 Space·Enter·→) 받는다.
   { type: 'call', img: 'p-call-bg', vib: true },
   // 클로이 첫 대사는 통화 카드 안 영상으로 보여 준다(배경을 투명하게 뺀 영상, 유리 효과는 화면에서 건다). 자막은 말소리에 맞춰 아래에 뜨고, 영상이 끝나면 넘어간다.
@@ -106,17 +117,26 @@ const raw = [
   },
   L('클로이', '“…그래 알겠어. 그럼 그때 보자.”', '“...Alright, got it. I’ll see you then.”', { call: 'on', callVid: 'scene/chloe-call', via: '전화' }),
   // 클로이 두 번째 통화 영상. 첫 영상과 같은 방식(배경 투명, 말소리에 맞춘 자막).
-  // 원본은 입 모양이 소리보다 0.46초 앞서 있어 화면을 0.46초 늦춰 맞췄다.
+  // 영상은 원래 속도로 두고 음성 구절 사이 쉼을 옮겨 입 모양에 맞췄다. 음성에 없는 말 한 덩어리는 영상에서 잘라냈다(media-src/chloe-call-2/build.sh).
   {
     type: 'callvid', call: 'on', callVid: 'scene/chloe-call-2',
     cues: [
-      { at: 0.1, to: 2.4, text: '참, 방금 뉴스를 보니까', en: 'By the way, I just saw the news.' },
-      { at: 2.5, to: 4.8, text: 'HQ가 난리더라.', en: 'HQ is causing quite a stir.' },
-      { at: 5.0, to: 6.7, text: '너희 집 AI는 어때?', en: 'How’s the AI at your place?' },
-      { at: 6.8, to: 9.8, text: '이름이… 나인이랬지?', en: 'Its name was… Nyin, right?' },
+      { at: 0.1, to: 2.1, text: '참, 방금 뉴스를 보니까', en: 'By the way, I just saw the news.' },
+      { at: 2.3, to: 4.4, text: 'HQ가 난리더라.', en: 'HQ is causing quite a stir.' },
+      { at: 4.4, to: 6.0, text: '너희 집 AI는 어때?', en: 'How’s the AI at your place?' },
+      { at: 6.0, to: 8.75, text: '이름이… 나인이랬지?', en: 'Its name was… Nyin, right?' },
     ],
   },
-  L('클로이', '“…아무튼, 시간이 너무 늦었네. 내일 다시 연락할게. 잘 자.”', '“...Anyway, it’s getting pretty late. I’ll talk to you again tomorrow. Good night.”', { call: 'on', callVid: 'scene/chloe-call-2', via: '전화' }),
+  // 클로이 세 번째 통화 영상. 같은 방식(배경 투명, 말소리에 맞춘 자막).
+  // 음성 구절 사이 쉼을 옮겨 입 모양에 맞추고, 영상에 없는 '잘 자' 입 움직임은 같은 영상에서 빌려 끼웠다(media-src/chloe-call-3/build.sh).
+  {
+    type: 'callvid', call: 'on', callVid: 'scene/chloe-call-3',
+    cues: [
+      { at: 0.1, to: 2.4, text: '아무튼, 시간이 너무 늦었네.', en: 'Anyway, it’s getting pretty late.' },
+      { at: 2.6, to: 4.25, text: '내일 다시 연락할게.', en: 'I’ll talk to you again tomorrow.' },
+      { at: 4.3, to: 5.45, text: '잘 자.', en: 'Good night.' },
+    ],
+  },
   L('나인', '“그러고 보니, 내일이 클로이 씨의 생일이네요. 내일은 일찍 나가셔야 할 것 같아요. 어서 주무시는 걸 추천할게요.”', '“Come to think of it, tomorrow is Chloe’s birthday. You’ll need to head out early, so I suggest getting some rest now.”', { img: 'p-home-nine' }),
   // 자정에서 아침으로 넘어가는 도시 영상. 자막 없이 영상만 보여 주고, 끝나면 2장으로 넘어간다.
   { type: 'clip', img: 'p-city', vid: 'scene/p-city.mp4' },
