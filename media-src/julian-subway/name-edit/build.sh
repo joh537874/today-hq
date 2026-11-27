@@ -7,7 +7,7 @@
 # 이 폴더(name-edit)에서 실행한다. 원본 영상은 julian_subway_v2.mp4(자막 넣기 전 단계).
 set -e
 cd "$(dirname "$0")"
-NIGHT=../../../prototype/public/sound/night.mp3
+NIGHT=bgm_julian.wav  # 2026-11-28 밤 음악 대신 줄리안 장면 전용 음악
 
 # 1. 대사 트랙 추출
 ffmpeg -v error -y -i julian_subway_v2.mp4 -vn -ac 1 -ar 48000 dlg.wav

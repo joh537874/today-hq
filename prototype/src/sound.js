@@ -53,8 +53,10 @@ export const setAmb = makeLoop('amb')
 // 휴대폰 진동. 전화를 받는 순간 바로 멈춰야 하므로 짧게 줄인다.
 export const setVib = makeLoop('vib', 150)
 
+// 효과음. 배열이면 0.35초 간격으로 차례로 낸다(예: 게이트 통과음 → 문 종소리).
 export function sfx(name) {
   if (!name || muted) return
+  if (Array.isArray(name)) { name.forEach((n, i) => setTimeout(() => sfx(n), i * 350)); return }
   const a = new Audio(src(name))
   a.volume = VOL.sfx
   a.play().catch(() => {})
