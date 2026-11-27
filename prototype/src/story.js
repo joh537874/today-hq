@@ -69,7 +69,12 @@ const ifFinal = (k) => (s) => s.final === k
 const raw = [
   // ───────── 1장 · 프롤로그 (선택 없음)
   // 오프닝 영상(자막 포함, 38.4초). 끝나면 검은 화면에 나레이션 목소리와 자막만 이어진다.
-  { chapter: 1, type: 'video', src: 'opening/prologue.mp4' },
+  // 플레이 방법 안내. 검은 화면에 5초 동안 띄운 뒤 오프닝 영상으로 넘어간다.
+  {
+    chapter: 1, type: 'notice', title: 'How To Play', ms: 5000,
+    lines: ['지금부터, 이야기는 당신의 선택으로 이어집니다.', '정답은 없습니다. 당신의 생각에 더 가까운 쪽을 고르세요.'],
+  },
+  { type: 'video', src: 'opening/prologue.mp4' },
   {
     type: 'voice', audio: 'opening/after.mp3',
     // ElevenLabs Brian(eleven_v3, 숨 한 번 + 속삭임) 1.1배속, 앞 1초 정적, 배경음은 아주 작게. 문장 사이 쉼 위치에 맞춘 자막 시점(초)

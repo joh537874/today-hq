@@ -158,12 +158,13 @@ function AppInner() {
         {state.started && beat.type === 'after' && <After key={state.final} state={state} dispatch={dispatch} />}
         {state.started && beat.type === 'result' && <Result key={state.final} state={state} dispatch={dispatch} />}
         {state.started && beat.type === 'video' && <OpeningVideo key={state.idx} beat={beat} dispatch={dispatch} muted={muted} />}
+        {state.started && beat.type === 'notice' && <Notice key={state.idx} beat={beat} dispatch={dispatch} />}
         {state.started && beat.type === 'voice' && <VoiceOver key={state.idx} beat={beat} dispatch={dispatch} muted={muted} />}
         {state.started && beat.type === 'name' && <NameEntry key={state.idx} onDone={(name) => { applyName(name); dispatch({ type: 'NEXT' }) }} />}
         <button className={`mute ${muted ? 'off' : ''}`} onClick={(e) => { e.stopPropagation(); setMutedState((m) => !m) }} aria-label={muted ? '소리 켜기' : '소리 끄기'}>
           <span>{muted ? 'Sound Off' : 'Sound On'}</span><em>M</em>
         </button>
-        {state.started && !['after', 'result', 'video', 'voice', 'name'].includes(beat.type) && <Film state={state} beat={beat} dispatch={dispatch} />}
+        {state.started && !['after', 'result', 'video', 'voice', 'name', 'notice'].includes(beat.type) && <Film state={state} beat={beat} dispatch={dispatch} />}
       </div>
       <Cursor scale={scale} minX={ADMIN ? PANEL_W : 0} />
     </div>
@@ -405,6 +406,24 @@ function VoiceOver({ beat, dispatch, muted }) {
           {c.en && <p className="en">{c.en}</p>}
         </div>
       )}
+    </div>
+  )
+}
+
+// 검은 화면 안내. 정해진 시간이 지나면 넘어가고, 클릭·Space·Enter로 바로 넘길 수 있다.
+function Notice({ beat, dispatch }) {
+  const next = () => dispatch({ type: 'NEXT' })
+  useEffect(() => {
+    const t = setTimeout(next, beat.ms ?? 5000)
+    return () => clearTimeout(t)
+  }, [])
+  useKeys((e) => { if (e.code === 'Space' || e.code === 'Enter') next() })
+  return (
+    <div className="notice" onClick={next}>
+      <div className="notice-body">
+        <h2>{beat.title}</h2>
+        <p>{beat.lines.map((l, i) => <span key={i}>{l}</span>)}</p>
+      </div>
     </div>
   )
 }
