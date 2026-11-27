@@ -1,5 +1,5 @@
 import React, { useEffect, useReducer, useRef, useState } from 'react'
-import { BEATS, CHAPTERS, ENDINGS, ENDING_ORDER, WHO_EN, CHOICE_LABELS, CHOICE_MAP } from './story.js'
+import { BEATS, CHAPTERS, ENDINGS, ENDING_ORDER, WHO_EN, CHOICE_LABELS, CHOICE_MAP, NAME_MAX, applyName, loadName } from './story.js'
 import { useTypewriter } from './ui.jsx'
 import { setBgm, setAmb, sfx, stopAll, setMuted } from './sound.js'
 import { isAdmin, PANEL_W, AdminPanel, buildState, defaultCfg, loadAdmin, saveAdmin } from './Admin.jsx'
@@ -16,7 +16,8 @@ const PASSIVE = ['narr', 'line']
 
 const initial = { started: false, idx: 0, ai: 0, hq: 0, picks: [], route: null, final: null, mine: null, history: [] }
 // 엔딩 영상의 첫 비트. 다른 결말을 고르면 여기서부터 그 결말을 재생한다.
-const ENDING_START = BEATS.findIndex((b) => b.chapter === 5)
+// 이름에 따라 자막 페이지 수가 달라지므로 그때그때 찾는다.
+const endingStart = () => BEATS.findIndex((b) => b.chapter === 5)
 
 // from 위치부터 조건(when)이 맞는 첫 비트로 이동한다. route 비트에서 4장 루트를 정한다.
 function enter(state, from) {
@@ -79,7 +80,7 @@ function reducer(state, a) {
       return s
     }
     case 'JUMP': return a.state
-    case 'REPLAY': return enter({ ...state, history: [...state.history, snap(state)], final: a.key }, ENDING_START)
+    case 'REPLAY': return enter({ ...state, history: [...state.history, snap(state)], final: a.key }, endingStart())
     case 'JUMP_ENDING': {
       // S키 어드민 전용: 선택 8개를 첫 번째 옵션으로 채우고 지정된 엔딩 결과 화면으로 바로 간다.
       const mockPicks = Object.entries(CHOICE_MAP).map(([id, b]) => ({
@@ -130,7 +131,7 @@ function AppInner() {
     try { localStorage.setItem('hq-muted', muted ? '1' : '0') } catch {}
   }, [muted])
   useEffect(() => {
-    const onKey = (e) => { if (e.code === 'KeyM') setMutedState((m) => !m) }
+    const onKey = (e) => { if (e.code === 'KeyM' && !isTyping(e)) setMutedState((m) => !m) }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
@@ -154,10 +155,11 @@ function AppInner() {
         {state.started && beat.type === 'result' && <Result key={state.final} state={state} dispatch={dispatch} />}
         {state.started && beat.type === 'video' && <OpeningVideo key={state.idx} beat={beat} dispatch={dispatch} muted={muted} />}
         {state.started && beat.type === 'voice' && <VoiceOver key={state.idx} beat={beat} dispatch={dispatch} muted={muted} />}
+        {state.started && beat.type === 'name' && <NameEntry key={state.idx} onDone={(name) => { applyName(name); dispatch({ type: 'NEXT' }) }} />}
         <button className={`mute ${muted ? 'off' : ''}`} onClick={(e) => { e.stopPropagation(); setMutedState((m) => !m) }} aria-label={muted ? '소리 켜기' : '소리 끄기'}>
           <span>{muted ? 'Sound Off' : 'Sound On'}</span><em>M</em>
         </button>
-        {state.started && !['after', 'result', 'video', 'voice'].includes(beat.type) && <Film state={state} beat={beat} dispatch={dispatch} />}
+        {state.started && !['after', 'result', 'video', 'voice', 'name'].includes(beat.type) && <Film state={state} beat={beat} dispatch={dispatch} />}
       </div>
       <Cursor scale={scale} minX={ADMIN ? PANEL_W : 0} />
     </div>
@@ -183,11 +185,14 @@ function useStageScale(offset = 0) {
   return fit
 }
 
+// 입력란에서 글자를 치는 중이면 단축키를 쓰지 않는다.
+const isTyping = (e) => e.target instanceof HTMLInputElement
+
 // 키보드 공통 처리. Space·Enter로 진행, 숫자로 선택, ←·Backspace로 되돌리기.
 function useKeys(handler) {
   useEffect(() => {
     const onKey = (e) => {
-      if (e.repeat) return
+      if (e.repeat || isTyping(e)) return
       if (e.code === 'Space' || e.code === 'Enter') e.preventDefault()
       handler(e)
     }
@@ -272,7 +277,7 @@ function Caption({ item, typing }) {
       {item.type === 'line' && (
         <div className="who">
           <span>{item.who}</span>
-          {WHO_EN[item.who] && <em>{WHO_EN[item.who]}</em>}
+          {(item.whoEn ?? WHO_EN[item.who]) && <em>{item.whoEn ?? WHO_EN[item.who]}</em>}
           {item.via && <em>· {item.via}</em>}
         </div>
       )}
@@ -319,16 +324,29 @@ function Hud({ hq, delta, note }) {
   )
 }
 
-/* ───────── 오프닝 영상 (자막이 영상에 들어 있어 버튼·자막 없이 재생만 한다) */
+/* ───────── 영상 (버튼 없이 재생만 한다. 오프닝·재이 영상은 자막이 영상에 들어 있고,
+   줄리안 영상은 주인공 이름이 들어가므로 cues로 자막을 얹는다) */
 
 function OpeningVideo({ beat, dispatch, muted }) {
   const ref = useRef(null)
+  const [cue, setCue] = useState(-1)
   const next = () => dispatch({ type: 'NEXT' })
   useEffect(() => {
     const v = ref.current
     // 소리 재생이 막히면 음소거로라도 재생한다.
     v.play().catch(() => { v.muted = true; v.play().catch(() => {}) })
+    if (!beat.cues) return
+    // 영상 시간에 맞춰 자막을 바꾼다.
+    let raf = 0
+    const tick = () => {
+      const t = v.currentTime
+      setCue(beat.cues.findIndex((c) => t >= c.at && t < c.to))
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
   }, [])
+  const c = cue >= 0 ? beat.cues[cue] : null
   useKeys((e) => {
     if (e.code === 'Space' || e.code === 'Enter') next()
     if (e.code === 'KeyS') dispatch({ type: 'JUMP_ENDING', key: 'adapter' })
@@ -336,6 +354,12 @@ function OpeningVideo({ beat, dispatch, muted }) {
   return (
     <div className="opening" onClick={next}>
       <video ref={ref} src={`${BASE}${beat.src}`} playsInline preload="auto" muted={muted} onEnded={next} />
+      {c && (
+        <div className="video-cue">
+          <p className="ko">{c.text.split('\n').map((l, i) => <span key={i}>{l}</span>)}</p>
+          {c.en && <p className="en">{c.en}</p>}
+        </div>
+      )}
     </div>
   )
 }
@@ -403,6 +427,30 @@ function Title({ onStart, onSkip }) {
         </div>
         <button className={`pill ${pressed === 'start' ? 'on' : ''}`} onClick={(e) => { origin(e); start() }}>시작하기</button>
       </div>
+    </div>
+  )
+}
+
+// 주인공 이름 입력. 오프닝 나레이션 다음, 검은 화면 가운데에 놓인다.
+// 지난번에 쓴 이름을 미리 채워 두고, 비워 두면 기본 이름으로 시작한다.
+function NameEntry({ onDone }) {
+  const [pressed, press] = usePress()
+  const [name, setName] = useState(loadName)
+  const ref = useRef(null)
+  useEffect(() => { ref.current?.focus(); ref.current?.select() }, [])
+  const done = () => press('start', () => onDone(name))
+  return (
+    <div className="name-entry">
+      <div className="name-stack">
+        <p className="ko">이야기의 주인공, 당신의 이름은 무엇인가요?</p>
+        <p className="en">What’s your name?</p>
+      </div>
+      <input
+            ref={ref} className="name-input" value={name} maxLength={NAME_MAX} spellCheck={false} autoComplete="off"
+            onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); done() } }}
+      />
+      <button className={`pill ${pressed === 'start' ? 'on' : ''}`} onClick={(e) => { origin(e); done() }}>확인</button>
     </div>
   )
 }

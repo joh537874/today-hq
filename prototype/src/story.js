@@ -13,13 +13,54 @@ export const CHAPTERS = [
 
 // 화자 영문 표기 (Figma UI 2251 기준 '나인 Nyin')
 export const WHO_EN = {
-  진: 'Jin', 나인: 'Nyin', 클로이: 'Chloe', 줄리안: 'Julian', 재이: 'Jae',
+  나인: 'Nyin', 클로이: 'Chloe', 줄리안: 'Julian', 재이: 'Jae',
   'AI 바리스타': 'AI Barista', 'AI 승객': 'AI Passenger', 뉴스: 'News', 휴미터: 'Humeter', '게이트 안내': 'Gate',
+}
+
+// 주인공 이름. 대본에는 {name} 자리표시자로 적고, 시작할 때 플레이어가 입력한 이름으로 채운다.
+// {name:은}·{name:이}·{name:을}·{name:과}는 이름의 마지막 글자 받침에 따라 조사를 고른다.
+const ME = '{name}'
+export const DEFAULT_NAME = '진'
+export const NAME_MAX = 8
+const NAME_KEY = 'hq-name'
+const JOSA = { 은: ['은', '는'], 이: ['이', '가'], 을: ['을', '를'], 과: ['과', '와'] }
+// 한글이면 받침 유무(true/false), 한글이 아니면 null을 돌려준다.
+function batchim(name) {
+  const c = name.charCodeAt(name.length - 1) - 0xac00
+  return c >= 0 && c <= 11171 ? c % 28 !== 0 : null
+}
+function fillText(t, name) {
+  return t.replace(/\{name(?::(.))?\}/g, (_, j) => {
+    if (!j) return name
+    const b = batchim(name)
+    const [a, z] = JOSA[j]
+    return name + (b === null ? `${a}(${z})` : b ? a : z)
+  })
+}
+// 기본 이름일 때 영문 자막에는 기존 표기를 쓴다.
+const DEFAULT_EN = 'Jin'
+const EN_KEYS = ['en', 'whoEn']
+// 문자열·배열·일반 객체를 따라 내려가며 자리표시자를 채운다. 함수(when)는 그대로 둔다.
+function fill(v, name, key) {
+  if (typeof v === 'string') {
+    if (!v.includes('{name')) return v
+    return fillText(v, EN_KEYS.includes(key) && name === DEFAULT_NAME ? DEFAULT_EN : name)
+  }
+  if (Array.isArray(v)) return v.map((x) => fill(x, name))
+  if (v && typeof v === 'object' && Object.getPrototypeOf(v) === Object.prototype) {
+    const o = {}
+    for (const k in v) o[k] = fill(v[k], name, k)
+    return o
+  }
+  return v
+}
+export function loadName() {
+  try { return localStorage.getItem(NAME_KEY) || DEFAULT_NAME } catch { return DEFAULT_NAME }
 }
 
 // 내레이션 / 대사
 const N = (text, en, extra = {}) => ({ type: 'narr', text, en, ...extra })
-const L = (who, text, en, extra = {}) => ({ type: 'line', who, text, en, ...extra })
+const L = (who, text, en, extra = {}) => ({ type: 'line', who, text, en, ...(who === ME ? { whoEn: ME } : {}), ...extra })
 // 선택 결과에 따라 재생 여부를 정한다
 const ifPick = (id, sign) => (s) => s.picks.find((p) => p.id === id)?.sign === sign
 const ifRoute = (r) => (s) => s.route === r
@@ -37,12 +78,14 @@ const raw = [
       { at: 3.9, text: '언젠가 AI가 인간다움마저 따라잡는다면, 우리는 무엇으로 구분될까요?', en: 'If AI one day catches up with our humanity, what will set us apart?' },
     ],
   },
+  // 주인공 이름 입력. 여기서 정한 이름으로 이후 대본 전체를 다시 만든다.
+  { type: 'name' },
 
   // 당신의 집 · 크로스오버의 밤
   N('2069년 3월 14일 밤.', 'The night of March 14, 2069.', { img: 'p-home', bgm: 'night', amb: 'street' }),
   L('뉴스', '“속보입니다. HQ관리국이 발표한 이번 분기 평균 HQ 점수에서 AI가 처음으로 인간을 넘어섰습니다. 판별 시스템이 인간보다 AI를 더 높은 인간 점수로 평가한 것은 이번이 처음인데요. 인간과 AI의 경계에 또 한 번 큰 파장이 예상됩니다.”', '“Breaking news. According to the HQ Bureau’s latest quarterly report, AI has surpassed humans in average HQ scores for the first time. This marks the first time the identification system has rated AI as more human than humans themselves. The news is expected to send shockwaves through society, once again blurring the line between humans and AI.”', { img: 'p-news-sketch', sfx: 'news' }),
-  N('진은 소파에 앉아 뉴스를 보고 있다. 그때, 휴대폰이 울린다.', 'Jin is watching the news on the sofa. Then the phone rings.', { img: 'p-home', sfx: 'phone' }),
-  L('클로이', '“여보세요, 진? 아직 안 자고 있었네? 별건 아니고, 내일 있을 내 생일 파티 말이야. 한 7시쯤 볼까 하는데 시간 괜찮지?”', '“Hello? Jin? You’re still up? Oh, it’s nothing important. I just wanted to talk about my birthday party tomorrow. I was thinking around seven. Does that work for you?”', { img: 'p-phone-sketch', via: '전화' }),
+  N('{name:은} 소파에 앉아 뉴스를 보고 있다. 그때, 휴대폰이 울린다.', '{name} is watching the news on the sofa. Then the phone rings.', { img: 'p-home', sfx: 'phone' }),
+  L('클로이', '“여보세요, {name}? 아직 안 자고 있었네? 별건 아니고, 내일 있을 내 생일 파티 말이야. 한 7시쯤 볼까 하는데 시간 괜찮지?”', '“Hello? {name}? You’re still up? Oh, it’s nothing important. I just wanted to talk about my birthday party tomorrow. I was thinking around seven. Does that work for you?”', { img: 'p-phone-sketch', via: '전화' }),
   L('클로이', '“…그래 알겠어. 그럼 그때 보자.”', '“...Alright, got it. I’ll see you then.”', { via: '전화' }),
   L('클로이', '“참, 방금 뉴스를 보니까 HQ가 난리더라. 너희 집 AI는 어때? 이름이… 나인이랬지?”', '“By the way, I just saw the news. HQ is causing quite a stir. How’s the AI at your place? Its name was... Nine, right?”', { via: '전화' }),
   L('클로이', '“…아무튼, 시간이 너무 늦었네. 내일 다시 연락할게. 잘 자.”', '“...Anyway, it’s getting pretty late. I’ll talk to you again tomorrow. Good night.”', { via: '전화' }),
@@ -50,26 +93,26 @@ const raw = [
   N('창밖 전광판의 숫자가 자정을 알린다. 늦은 밤에도 도시는 여전히 환하게 빛나고, 사람들은 저마다의 밤을 보낸다.', 'The billboard outside marks midnight. Even this late, the city still glows, and everyone spends their own night.', { img: 'p-city' }),
 
   // ───────── 2장 · 집 · 다음 날 아침
-  { chapter: 2, img: 's2-morning', bgm: 'morning', amb: null, sfx: 'humeter', hq: 72, hud: { hq: 72, delta: -9, note: '관리국 기준 갱신' }, ...L('휴미터', '“좋은 아침입니다, 진 님. 오늘의 HQ는 72입니다.”', '“Good morning, Jin. Your HQ is 72 today.”') },
-  N('다음 날 아침, 진의 HQ가 81에서 72로 떨어졌다. 밤사이 관리국 기준이 갱신된 것이다.', 'The next morning, Jin’s HQ dropped from 81 to 72. The Bureau updated its standard overnight.'),
-  L('진', '“젠장. 하룻밤 새 9점이나 떨어졌네.”', '“Damn. It dropped nine points overnight.”'),
-  L('나인', '“오… 괜찮습니다, 진. HQ는 매일 갱신되는 것이니까요. 오늘 하루는 제가 동행할 테니 큰 문제는 없을 겁니다.”', '“Oh... that’s alright, Jin. HQ is updated daily, after all. I’ll be accompanying you today, so there shouldn’t be any major problems.”'),
+  { chapter: 2, img: 's2-morning', bgm: 'morning', amb: null, sfx: 'humeter', hq: 72, hud: { hq: 72, delta: -9, note: '관리국 기준 갱신' }, ...L('휴미터', '“좋은 아침입니다, {name} 님. 오늘의 HQ는 72입니다.”', '“Good morning, {name}. Your HQ is 72 today.”') },
+  N('다음 날 아침, {name}의 HQ가 81에서 72로 떨어졌다. 밤사이 관리국 기준이 갱신된 것이다.', 'The next morning, {name}’s HQ dropped from 81 to 72. The Bureau updated its standard overnight.'),
+  L(ME, '“젠장. 하룻밤 새 9점이나 떨어졌네.”', '“Damn. It dropped nine points overnight.”'),
+  L('나인', '“오… 괜찮습니다, {name}. HQ는 매일 갱신되는 것이니까요. 오늘 하루는 제가 동행할 테니 큰 문제는 없을 겁니다.”', '“Oh... that’s alright, {name}. HQ is updated daily, after all. I’ll be accompanying you today, so there shouldn’t be any major problems.”'),
   N('나인의 HQ는 88. 나보다 더 높게 책정되어 있다.', 'Nyin’s HQ is 88. Rated higher than mine.'),
-  L('진', '“나보다… 더 높잖아.”', '“That’s… higher than mine.”'),
+  L(ME, '“나보다… 더 높잖아.”', '“That’s… higher than mine.”'),
   L('나인', '“저는 당신의 최고의 친구이자 비서로서, 매일 밤 업데이트를 하고 있거든요.”', '“As your best friend and personal assistant, I make sure to update my score every night.”'),
 
   // 책상 위 편지
-  L('나인', '“그나저나 진, 클로이를 위한 선물은 준비했나요?”', '“By the way, Jin, have you prepared a gift for Chloe?”', { img: 's2-letter' }),
-  L('진', '“이런, 그러고 보니 어제 뉴스를 보다 늦게 잠들어 선물을 준비하지 못했네.”', '“Oh no. I stayed up late watching the news and never got her a gift.”'),
+  L('나인', '“그나저나 {name}, 클로이를 위한 선물은 준비했나요?”', '“By the way, {name}, have you prepared a gift for Chloe?”', { img: 's2-letter' }),
+  L(ME, '“이런, 그러고 보니 어제 뉴스를 보다 늦게 잠들어 선물을 준비하지 못했네.”', '“Oh no. I stayed up late watching the news and never got her a gift.”'),
   L('나인', '“그렇다면 손편지는 어떤가요? 최근 아날로그한 축하 방식이 유행을 하고 있다고 해요.”', '“How about a handwritten letter? I’ve heard that handwritten congratulations are becoming quite popular lately.”'),
-  L('진', '“좋은 아이디어야, 나인.”', '“Good idea, Nyin.”'),
-  N('진은 책상에 앉아 클로이에게 줄 편지를 쓸 준비를 한다.', 'Jin sits at the desk and gets ready to write a letter to Chloe.', { sfx: 'pen' }),
-  L('진', '“…실수로 잘못 적었어. 오늘은 되는 일이 없군.”', '“…I wrote it wrong. Nothing goes right today.”', { img: 's2-letter-close' }),
+  L(ME, '“좋은 아이디어야, 나인.”', '“Good idea, Nyin.”'),
+  N('{name:은} 책상에 앉아 클로이에게 줄 편지를 쓸 준비를 한다.', '{name} sits at the desk and gets ready to write a letter to Chloe.', { sfx: 'pen' }),
+  L(ME, '“…실수로 잘못 적었어. 오늘은 되는 일이 없군.”', '“…I wrote it wrong. Nothing goes right today.”', { img: 's2-letter-close' }),
   L('나인', '“오타가 나쁘지만은 않아요. 듣자 하니 소문에 의하면, ‘실수’를 많이 할수록 HQ가 높아진다고도 하더라고요. AI는 실수를 하지 않으니까 그런 걸까요?”', '“Oh, mistakes aren’t necessarily a bad thing. According to rumors, the more mistakes you make, the higher your HQ score gets. Maybe it’s because AIs never make mistakes?”'),
   L('나인', '“어떤 사람들은 그래서 일부러 오타투성이 편지를 주고받기도 해요.”', '“Some people even deliberately give and receive letters with typos for that very reason.”'),
-  L('진', '“오타를 내면 HQ에 도움이 된다고?”', '“Typos help your HQ?”'),
+  L(ME, '“오타를 내면 HQ에 도움이 된다고?”', '“Typos help your HQ?”'),
   L('나인', '“소문에 의하면요.”', '“That’s what the rumors say.”'),
-  N('편지로 돌아온 진은, 방금 쓴 문장에서 틀린 맞춤법 하나를 발견하고 손에 든 지우개를 바라보며 생각에 빠진다.', 'Back at the letter, Jin spots a misspelling in the line just written and stares at the eraser in hand, lost in thought.', { img: 's2-letter' }),
+  N('편지로 돌아온 {name:은}, 방금 쓴 문장에서 틀린 맞춤법 하나를 발견하고 손에 든 지우개를 바라보며 생각에 빠진다.', 'Back at the letter, {name} spots a misspelling in the line just written and stares at the eraser in hand, lost in thought.', { img: 's2-letter' }),
   {
     type: 'choice', id: 'c1', num: '①', axis: 'hq', img: 's2-letter-close',
     prompt: N('편지 속 틀린 맞춤법 하나. 커서가 그 위에서 깜빡인다.', 'One misspelling in the letter. The cursor blinks over it.'),
@@ -78,19 +121,19 @@ const raw = [
       { text: '틀린 맞춤법을 고쳐 제대로 다시 쓴다.', sign: -1 },
     ],
   },
-  N('편지를 다 쓰고 봉투에 넣는다.', 'Jin finishes the letter and seals it in an envelope.', { img: 's2-letter-write' }),
+  N('편지를 다 쓰고 봉투에 넣는다.', '{name} finishes the letter and seals it in an envelope.', { img: 's2-letter-write' }),
   L('나인', '“다 쓰셨나요? 쓰시는 사이에 백화점에 선물을 예약해 두었어요. 가는 길에 바로 픽업하면 돼요.”', '“Are you all set? While you were getting ready, I reserved a gift for you at the department store. We can pick it up on our way.”'),
-  L('진', '“고마워, 나인. 바로 나가자.”', '“Thanks, Nyin. Let’s head out.”'),
+  L(ME, '“고마워, 나인. 바로 나가자.”', '“Thanks, Nyin. Let’s head out.”'),
 
   // 백화점 입구 · 낮
   N('백화점으로 향한다. 입구에는 기준선이 적혀 있다. HQ 75.', 'They head to the department store. The entrance posts a threshold: HQ 75.', { img: 's2-store', bgm: null }),
-  N('나인이 먼저 게이트를 지난다. 88, 초록 불. 뒤따르던 진 앞에서 짧은 경고음과 함께 빨간 불이 켜진다.', 'Nyin passes the gate first. 88, green light. As Jin follows, a short beep sounds and the light turns red.'),
+  N('나인이 먼저 게이트를 지난다. 88, 초록 불. 뒤따르던 {name} 앞에서 짧은 경고음과 함께 빨간 불이 켜진다.', 'Nyin passes the gate first. 88, green light. As {name} follows, a short beep sounds and the light turns red.'),
   L('게이트 안내', '“죄송합니다. 현재 HQ로는 입장하실 수 없습니다.”', '“We’re sorry. Your current HQ score does not meet the entry requirements.”'),
-  N('안으로 들어갔던 나인이 발길을 돌려, 들어오지 못한 진에게 돌아온다.', 'Nyin turns back from inside and returns to Jin, who couldn’t get in.', { img: 's2-nine-back' }),
-  N('나인이 진의 얼굴을 살핀다.', 'Nyin studies Jin’s face.', { img: 's2-nine-face' }),
+  N('안으로 들어갔던 나인이 발길을 돌려, 들어오지 못한 {name}에게 돌아온다.', 'Nyin turns back from inside and returns to {name}, who couldn’t get in.', { img: 's2-nine-back' }),
+  N('나인이 {name}의 얼굴을 살핀다.', 'Nyin studies {name}’s face.', { img: 's2-nine-face' }),
   {
     type: 'choice', id: 'c2', num: '②', axis: 'ai',
-    prompt: L('나인', '“…진? 괜찮나요?”', '“...Jin? Are you okay?”'),
+    prompt: L('나인', '“…{name}? 괜찮나요?”', '“...{name}? Are you okay?”'),
     options: [
       { text: '“하… 여긴 못 가겠다. 다른 갈 만한 데 있을까? 장소 찾아봐 줘.”', sign: 1 },
       { text: '‘AI는 들어가는데 사람이 못 들어가는 게 말이 되나.’ 생각한다.', sign: -1 },
@@ -100,10 +143,10 @@ const raw = [
   { when: ifPick('c2', -1), ...L('나인', '“…어쩔 수 없죠. 제가 가서 픽업해 올게요. 잠시만 기다려 주세요.”', '“...There’s nothing we can do. I’ll go pick it up myself. Please wait here for a moment.”') },
 
   // 단골 카페
-  L('진', '“그래도 어찌저찌 선물을 샀네. 지쳤어.”', '“Well, I managed to get a gift somehow. I’m exhausted.”', { img: 's2-cafe' }),
+  L(ME, '“그래도 어찌저찌 선물을 샀네. 지쳤어.”', '“Well, I managed to get a gift somehow. I’m exhausted.”', { img: 's2-cafe' }),
   L('나인', '“의도치 않게 너무 시간이 오래 걸렸네요. 생체 신호를 보니 많이 지치신 것 같아요. 마침 근처에 카페가 있으니, 잠시 쉬었다 가죠.”', '“I’m sorry it took so much longer than expected. Your vital signs suggest you’re quite tired. There’s a café nearby, so why don’t we take a short break?”'),
   N('둘은 기준선이 70인 단골 카페로 간다. 패널에 72가 뜨고, 초록 불이 켜진다.', 'They go to their usual café, threshold 70. The panel shows 72, and the light turns green.'),
-  N('커피를 주문하자, 카운터의 AI 바리스타가 컵을 내밀며 말을 건다.', 'As Jin orders, the AI barista at the counter hands over the cup and starts talking.', { img: 's2-barista' }),
+  N('커피를 주문하자, 카운터의 AI 바리스타가 컵을 내밀며 말을 건다.', 'As {name} orders, the AI barista at the counter hands over the cup and starts talking.', { img: 's2-barista' }),
   L('AI 바리스타', '“안녕하세요~! 날씨가 우중충해서 다운되는 하루네요. 저는 오늘 같은 날만 되면 기분이 축 처지더라고요.”', '“Hello~! The weather is so gloomy today, isn’t it? Days like this always bring my mood down.”'),
   {
     type: 'choice', id: 'c3', num: '③', axis: 'ai',
@@ -117,7 +160,7 @@ const raw = [
   { when: ifPick('c3', -1), ...L('AI 바리스타', '“안녕히 가세요 손님, 좋은 하루 되세요~!”', '“Goodbye! Have a wonderful day~!”') },
 
   // 길거리
-  N('커피를 받아 카페를 나와 걷는데, 길 건너에서 누군가 홀로 피켓을 들고 서 있다.', 'Leaving the café with coffee in hand, Jin sees someone standing alone across the street with a picket sign.', { img: 's2-jae' }),
+  N('커피를 받아 카페를 나와 걷는데, 길 건너에서 누군가 홀로 피켓을 들고 서 있다.', 'Leaving the café with coffee in hand, {name} sees someone standing alone across the street with a picket sign.', { img: 's2-jae' }),
   N('피켓에는 ‘HQ 폐지’. 숫자가 없는 재이의 머리 위를 흘끗 본 사람들은, 못 본 척 지나간다.', 'The sign reads ‘Abolish HQ.’ People glance at the empty space above Jae’s head and walk past as if they saw nothing.'),
   // 재이 시위 영상(22초, 1·2 이어 붙임). 대사·자막·거리 소리가 영상에 들어 있다.
   { type: 'video', src: 'scene/jae-protest.mp4' },
@@ -130,8 +173,8 @@ const raw = [
     ],
   },
   N('나란히 걷던 나인이 저녁 파티 이야기를 꺼낸다.', 'Walking side by side, Nyin brings up the party tonight.', { img: 's2-nine-flowers' }),
-  L('나인', '“진, 그러고 보니 클로이의 파티에 참석하는 건 굉장히 오랜만이네요.”', '“Jin, come to think of it, it’s been a really long time since you’ve attended one of Chloe’s parties.”'),
-  L('진', '“응. 그래서 살짝 걱정이 돼. 솔직히, 요즘 뭐 하고 사는지도 모르거든.”', '“Yeah. That’s why I’m a little worried. Honestly, I don’t even know what she’s been up to lately.”'),
+  L('나인', '“{name}, 그러고 보니 클로이의 파티에 참석하는 건 굉장히 오랜만이네요.”', '“{name}, come to think of it, it’s been a really long time since you’ve attended one of Chloe’s parties.”'),
+  L(ME, '“응. 그래서 살짝 걱정이 돼. 솔직히, 요즘 뭐 하고 사는지도 모르거든.”', '“Yeah. That’s why I’m a little worried. Honestly, I don’t even know what she’s been up to lately.”'),
   {
     type: 'choice', id: 'c5', num: '⑤', axis: 'ai',
     prompt: L('나인', '“음, 그럼 제가 클로이의 관심사를 기반으로 축하 대화를 시뮬레이션해 드릴까요? 제가 준비한 대사대로 말만 해도 그녀는 굉장히 좋아할 거예요.”', '“Hmm, would you like me to simulate a congratulatory conversation based on Chloe’s interests? If you just say the lines I’ve prepared, she’ll absolutely love it.”'),
@@ -158,10 +201,27 @@ const raw = [
   },
 
   // 지하철 · 다음 역
-  N('잠시 뒤 열차의 문이 열리고, 오랜 친구이자 Born Human Society 회원인 줄리안과 마주친다.', 'Soon the doors open, and Jin runs into Julian, an old friend and a member of the Born Human Society.', { img: 's3-julian-door' }),
-  N('줄리안은 진과 나인의 HQ를 보며 말을 꺼낸다.', 'Julian looks at Jin’s and Nyin’s HQ and speaks up.'),
-  // 줄리안 지하철 영상(40초). 줄리안·나인 대사, 자막, 지하철 소리가 영상에 들어 있다.
-  { type: 'video', src: 'scene/julian-subway.mp4' },
+  N('잠시 뒤 열차의 문이 열리고, 오랜 친구이자 Born Human Society 회원인 줄리안과 마주친다.', 'Soon the doors open, and {name} runs into Julian, an old friend and a member of the Born Human Society.', { img: 's3-julian-door' }),
+  N('줄리안은 {name:과} 나인의 HQ를 보며 말을 꺼낸다.', 'Julian looks at {name}’s and Nyin’s HQ and speaks up.'),
+  // 줄리안 지하철 영상(40초). 줄리안·나인 대사와 지하철 소리가 영상에 들어 있다.
+  // 영상에서는 주인공 이름을 부르지 않는다. 음성의 이름 자리는 0.5초 'Hey', 13.5초 'an'(나인의 'Julian' 끝음절), 28.4초 'shit'으로 바꿨다.
+  // 자막은 영상에 굽지 않고 코드로 얹는다. at·to는 영상 기준 초.
+  {
+    type: 'video', src: 'scene/julian-subway.mp4',
+    cues: [
+      { at: 0.5, to: 3.9, text: '어이! 오랜만이야.', en: 'Hey! Long time no see.' },
+      { at: 4.0, to: 6.4, text: '근데 옆에 있는….', en: 'But who’s that next to you...?' },
+      { at: 8.25, to: 11.05, text: '안녕하세요, 줄리안. 오랜만이군요.', en: 'Hello, Julian. It’s been a while.' },
+      { at: 11.1, to: 15.0, text: '기억하실지 모르겠지만,\n저는 AI 비서 나인입니다.', en: 'You may not remember me, but I’m Nyin, an AI assistant.' },
+      { at: 15.9, to: 18.35, text: '…기억하지.', en: '...Yeah, I remember.' },
+      { at: 18.4, to: 21.0, text: '근데 HQ가 이렇게 높진 않았던 걸로 기억해서.', en: 'But I don’t remember your HQ being this high.' },
+      { at: 21.4, to: 23.85, text: '아시다시피, 저는 매일 업데이트를 하거든요.', en: 'As you know, I receive updates every day.' },
+      { at: 23.9, to: 27.0, text: '점점 더 인간다워지는 것이 놀라운 일은 아니죠.', en: 'It’s only natural that I’m becoming more human-like.' },
+      { at: 28.4, to: 32.7, text: '젠장. 진심이야?', en: 'Shit... are you serious?' },
+      { at: 32.8, to: 37.85, text: '인간을 모방한 고철 덩어리가\n주제도 모르고 기어오르는데', en: 'A pile of scrap metal pretending to be human, getting above itself...' },
+      { at: 37.9, to: 40.1, text: '넌 불쾌하지도 않아?', en: '...and that doesn’t bother you?' },
+    ],
+  },
   {
     type: 'choice', id: 'c7', num: '⑦', axis: 'ai',
     prompt: L('줄리안', '“AI의 발전은 축복이 아니라 위협일 뿐이야. 인간을 닮아 갈수록 그 위험성은 커지는 법이지.”', '“AI’s progress isn’t a blessing. It’s a threat. The more it resembles us, the more dangerous it gets.”'),
@@ -170,7 +230,7 @@ const raw = [
       { text: '‘정말 인간의 영역이 점점 위협받고 있는 걸까?’ 잠시 생각에 잠긴다.', sign: -1 },
     ],
   },
-  N('진이 내릴 즈음, 줄리안이 나인을 턱으로 가리키며 말한다.', 'As Jin is about to get off, Julian nods toward Nyin.', { img: 's3-julian-point' }),
+  N('{name:이} 내릴 즈음, 줄리안이 나인을 턱으로 가리키며 말한다.', 'As {name} is about to get off, Julian nods toward Nyin.', { img: 's3-julian-point' }),
   {
     type: 'choice', id: 'c8', num: '⑧', axis: 'ai',
     prompt: L('줄리안', '“그 깡통이랑 같이 다니지 마. 장담컨대, 언젠가는 큰코다칠 거야. 우리 자릴 빼앗길 거라고.”', '“Stop hanging around with that tin can. Trust me, you’ll regret it someday. They’re going to take our place.”'),
@@ -182,16 +242,16 @@ const raw = [
 
   // ───────── 4장 · 클로이의 집 앞 · 저녁
   { type: 'route' },
-  { chapter: 4, img: 's4-hands', ...N('지하철에서 내려 클로이의 집으로 향한다.', 'Getting off the subway, Jin heads to Chloe’s place.') },
-  N('클로이의 집 앞에 도착한 진이 초인종을 누르려다 문 옆 패널을 본다. 입장 기준 75.', 'At Chloe’s door, Jin reaches for the bell and notices the panel beside it. Entry threshold: 75.', { img: 's4-corridor' }),
-  N('당황한 진은 초인종을 누르고, 도어폰에서 클로이의 목소리가 나온다.', 'Flustered, Jin rings the bell, and Chloe’s voice comes through the intercom.', { img: 's4-panel' }),
+  { chapter: 4, img: 's4-hands', ...N('지하철에서 내려 클로이의 집으로 향한다.', 'Getting off the subway, {name} heads to Chloe’s place.') },
+  N('클로이의 집 앞에 도착한 {name:이} 초인종을 누르려다 문 옆 패널을 본다. 입장 기준 75.', 'At Chloe’s door, {name} reaches for the bell and notices the panel beside it. Entry threshold: 75.', { img: 's4-corridor' }),
+  N('당황한 {name:은} 초인종을 누르고, 도어폰에서 클로이의 목소리가 나온다.', 'Flustered, {name} rings the bell, and Chloe’s voice comes through the intercom.', { img: 's4-panel' }),
   L('클로이', '“왔구나. …어, 잠깐만 너 HQ가…”', '“You’re here! ...Oh, wait, your HQ...”'),
   N('스피커 너머로 뒤쪽의 웃음소리가 섞여 들어온다.', 'Laughter from inside drifts through the speaker.'),
   L('클로이', '“미리 말할걸 그랬네. 미안하지만 너도 알다시피 체면상… 우린 75 이하의 사람과 어울리기 조금 그래. 애들이 기준은 못 낮춘다는데… HQ 조금만 올려서 다시 오면 안 돼?”', '“I should’ve told you earlier. I’m sorry, but as you know, I have my reputation to think about... We’re just not comfortable having anyone with a score below 75 around. The others won’t lower the threshold... Could you try raising your HQ a little and come back?”'),
 
   // Route A · AI를 인정한 사람들
-  { when: ifRoute('A'), img: 's4-jin-a', ...N('나인과 함께 문 앞에 선다.', 'Jin stands at the door with Nyin.') },
-  { when: ifRoute('A'), ...N('손에는 클로이에게 줄 편지가 들려 있다. 친구 집에까지 기준선이 있을 줄은 몰랐다. 옆에서 나인이 조용히 진을 바라본다.', 'The letter for Chloe is in Jin’s hand. Who knew even a friend’s home had a threshold. Beside Jin, Nyin watches quietly.') },
+  { when: ifRoute('A'), img: 's4-jin-a', ...N('나인과 함께 문 앞에 선다.', '{name} stands at the door with Nyin.') },
+  { when: ifRoute('A'), ...N('손에는 클로이에게 줄 편지가 들려 있다. 친구 집에까지 기준선이 있을 줄은 몰랐다. 옆에서 나인이 조용히 {name:을} 바라본다.', 'The letter for Chloe is in {name}’s hand. Who knew even a friend’s home had a threshold. Beside {name}, Nyin watches quietly.') },
   {
     when: ifRoute('A'), type: 'final', num: '⑨',
     options: [
@@ -199,13 +259,13 @@ const raw = [
       { key: 'insurgent', text: '돌아선다' },
     ],
   },
-  { when: ifFinal('adapter'), ...L('진', '“HQ를 올리려면 뭘 하면 돼?”', '“What do I have to do to raise my HQ?”') },
-  { when: ifFinal('adapter'), ...N('진이 나인에게 묻는다.', 'Jin asks Nyin.') },
-  { when: ifFinal('insurgent'), ...N('편지를 든 채 발길을 돌린다.', 'Letter still in hand, Jin turns away.') },
-  { when: ifFinal('insurgent'), ...L('진', '“미안, 오늘은 그냥 갈게.”', '“Sorry, I think I’ll just go today.”') },
+  { when: ifFinal('adapter'), ...L(ME, '“HQ를 올리려면 뭘 하면 돼?”', '“What do I have to do to raise my HQ?”') },
+  { when: ifFinal('adapter'), ...N('{name:이} 나인에게 묻는다.', '{name} asks Nyin.') },
+  { when: ifFinal('insurgent'), ...N('편지를 든 채 발길을 돌린다.', 'Letter still in hand, {name} turns away.') },
+  { when: ifFinal('insurgent'), ...L(ME, '“미안, 오늘은 그냥 갈게.”', '“Sorry, I think I’ll just go today.”') },
 
   // Route B · AI를 배척한 사람들
-  { when: ifRoute('B'), img: 's4-julian-b', ...N('손에는 클로이에게 줄 편지가 들려 있다. 아까 마주친 줄리안이 했던 말이 떠오른다.', 'The letter for Chloe is in Jin’s hand. Julian’s words from earlier come back.') },
+  { when: ifRoute('B'), img: 's4-julian-b', ...N('손에는 클로이에게 줄 편지가 들려 있다. 아까 마주친 줄리안이 했던 말이 떠오른다.', 'The letter for Chloe is in {name}’s hand. Julian’s words from earlier come back.') },
   { when: ifRoute('B'), ...L('줄리안', '“친구로서 충고하는 거야. 절대 저 깡통보다 HQ가 낮게 두지 마.”', '“I’m telling you this as a friend. Never let your HQ score fall below that tin can’s.”', { via: '회상' }) },
   { when: ifRoute('B'), ...L('줄리안', '“…그럼 어떻게 하냐고? 이용하는 거지. HQ 점수를 올리는 건 쉬워. 저 깡통 안에 있는 휴미터를 꺼내서 너한테 끼우면 돼.”', '“...You want to know how? Use it. Raising your HQ score is easy. Just take the Humeter out of that tin can and wear it yourself.”', { via: '회상' }) },
   {
@@ -215,25 +275,25 @@ const raw = [
       { key: 'outlier', text: 'HQ 제도에 회의를 느낀다' },
     ],
   },
-  { when: ifFinal('zealot'), ...L('진', '“여기까지 와서 돌아갈 순 없어.”', '“I can’t turn back after coming all this way.”') },
-  { when: ifFinal('outlier'), ...N('AI의 점수를 빌려서까지 들어가고 싶지는 않다.', 'Jin won’t borrow an AI’s score just to get in.') },
+  { when: ifFinal('zealot'), ...L(ME, '“여기까지 와서 돌아갈 순 없어.”', '“I can’t turn back after coming all this way.”') },
+  { when: ifFinal('outlier'), ...N('AI의 점수를 빌려서까지 들어가고 싶지는 않다.', '{name} won’t borrow an AI’s score just to get in.') },
 
   // ───────── 5장 · 엔딩 (엔딩 영상 → 마지막 질문 → 결과 화면, Figma 2254 · 2255 · 2262)
-  { chapter: 5, when: ifFinal('adapter'), img: 'e-adapter-phone', ...N('급하게 감동적인 영상을 찾아보고, 기부를 하고, 길에서 쓰레기를 줍는다.', 'Jin rushes to watch moving videos, makes a donation, picks up trash on the street.') },
-  { when: ifFinal('adapter'), img: 'e-adapter-party', ...N('그렇게 애를 써서 들어간 클로이의 집. 진은 점수를 겨우 올려 파티에 들어간다.', 'After all that effort, Jin barely raises the score and makes it into Chloe’s party.') },
-  { when: ifFinal('adapter'), ...N('쓸쓸한 진의 뒷모습과 파티 소음이 교차된다.', 'Jin’s lonely back cuts against the noise of the party.') },
+  { chapter: 5, when: ifFinal('adapter'), img: 'e-adapter-phone', ...N('급하게 감동적인 영상을 찾아보고, 기부를 하고, 길에서 쓰레기를 줍는다.', '{name} rushes to watch moving videos, makes a donation, picks up trash on the street.') },
+  { when: ifFinal('adapter'), img: 'e-adapter-party', ...N('그렇게 애를 써서 들어간 클로이의 집. {name:은} 점수를 겨우 올려 파티에 들어간다.', 'After all that effort, {name} barely raises the score and makes it into Chloe’s party.') },
+  { when: ifFinal('adapter'), ...N('쓸쓸한 {name}의 뒷모습과 파티 소음이 교차된다.', '{name}’s lonely back cuts against the noise of the party.') },
 
-  { chapter: 5, when: ifFinal('insurgent'), img: 'e-insurgent-sky', ...N('하늘을 올려다보며 나인과 이야기를 나눈다. 바람과 온도를 느끼는 지금, 진은 오히려 가장 사람답다고 느낀다.', 'Looking up at the sky, Jin talks with Nyin. Feeling the wind and the air, Jin feels more human than ever.') },
-  { when: ifFinal('insurgent'), ...N('진은 파티에 가지 않고 나인과 함께 집으로 돌아간다. 나인과 자신의 집에서 저녁을 보낸다.', 'Jin skips the party and goes home with Nyin, spending the evening there together.') },
+  { chapter: 5, when: ifFinal('insurgent'), img: 'e-insurgent-sky', ...N('하늘을 올려다보며 나인과 이야기를 나눈다. 바람과 온도를 느끼는 지금, {name:은} 오히려 가장 사람답다고 느낀다.', 'Looking up at the sky, {name} talks with Nyin. Feeling the wind and the air, {name} feels more human than ever.') },
+  { when: ifFinal('insurgent'), ...N('{name:은} 파티에 가지 않고 나인과 함께 집으로 돌아간다. 나인과 자신의 집에서 저녁을 보낸다.', '{name} skips the party and goes home with Nyin, spending the evening there together.') },
   { when: ifFinal('insurgent'), img: 'e-mail', ...N('편지는 다음 날 우편으로 보낸다.', 'The letter goes out by mail the next day.') },
 
-  { chapter: 5, when: ifFinal('zealot'), img: 'e-zealot-hand', ...N('나인의 몸에서 휴미터를 꺼내 귀에 단다.', 'Jin takes the Humeter out of Nyin and puts it on.') },
-  { when: ifFinal('zealot'), img: 'e-zealot-nine', ...N('진은 파티에 들어가고, 꺼진 나인은 문 앞 바닥에 쓰러져 있다.', 'Jin walks into the party, while Nyin lies switched off on the floor by the door.') },
-  { when: ifFinal('zealot'), img: 'e-zealot-chloe', ...N('클로이가 편지를 읽다 눈물을 보여도 진의 숫자는 그대로다.', 'Even as Chloe tears up reading the letter, Jin’s number doesn’t move.') },
+  { chapter: 5, when: ifFinal('zealot'), img: 'e-zealot-hand', ...N('나인의 몸에서 휴미터를 꺼내 귀에 단다.', '{name} takes the Humeter out of Nyin and puts it on.') },
+  { when: ifFinal('zealot'), img: 'e-zealot-nine', ...N('{name:은} 파티에 들어가고, 꺼진 나인은 문 앞 바닥에 쓰러져 있다.', '{name} walks into the party, while Nyin lies switched off on the floor by the door.') },
+  { when: ifFinal('zealot'), img: 'e-zealot-chloe', ...N('클로이가 편지를 읽다 눈물을 보여도 {name}의 숫자는 그대로다.', 'Even as Chloe tears up reading the letter, {name}’s number doesn’t move.') },
 
-  { chapter: 5, when: ifFinal('outlier'), img: 'e-outlier-humeter', ...N('진은 자기 휴미터를 떼어 내고 던져 버린다.', 'Jin pulls off the Humeter and throws it away.') },
+  { chapter: 5, when: ifFinal('outlier'), img: 'e-outlier-humeter', ...N('{name:은} 자기 휴미터를 떼어 내고 던져 버린다.', '{name} pulls off the Humeter and throws it away.') },
   { when: ifFinal('outlier'), img: 'e-outlier-sketch', ...N('그리고 한결 가벼운 얼굴로 그 자리를 떠난다.', 'And walks away, looking lighter.') },
-  { when: ifFinal('outlier'), img: 'e-outlier-up', ...N('머리 위 숫자가 사라지고, 진은 편지를 주머니에 넣은 채 돌아선다.', 'The number overhead disappears. Jin turns away, the letter tucked in a pocket.') },
+  { when: ifFinal('outlier'), img: 'e-outlier-up', ...N('머리 위 숫자가 사라지고, {name:은} 편지를 주머니에 넣은 채 돌아선다.', 'The number overhead disappears. {name} turns away, the letter tucked in a pocket.') },
 
   { type: 'after' },
   { type: 'result' },
@@ -320,34 +380,51 @@ export const CHOICE_LABELS = {
   c5: '나인의 제안', c6: 'AI 승객에 대한 반응',
   c7: '줄리안의 말·1', c8: '줄리안의 말·2',
 }
-export const CHOICE_MAP = (() => {
+function buildChoiceMap(src) {
   const map = {}
   let img = 'p-fog'
-  for (const b of raw) {
+  for (const b of src) {
     if (b.img) img = b.img
     if (b.type === 'choice') map[b.id] = { ...b, img: b.img || img }
   }
   return map
-})()
+}
 
-let carry = { chapter: 0, img: 'p-fog', bgm: null, amb: null }
-export const BEATS = raw.flatMap((b) => {
-  const chapterStart = b.chapter != null && b.chapter !== carry.chapter
-  carry = {
-    chapter: b.chapter ?? carry.chapter,
-    img: b.img ?? carry.img,
-    bgm: 'bgm' in b ? b.bgm : carry.bgm,
-    amb: 'amb' in b ? b.amb : carry.amb,
-  }
-  const center = false // 가운데 정렬은 오프닝 영상 자막과 검은 화면 자막만 쓴다
-  const beat = { ...b, ...carry, center, start: chapterStart }
-  if (beat.type === 'narr' || beat.type === 'line') return paginate(beat)
-  if (beat.prompt) {
-    const w = KO_LINE.left
-    return [{ ...beat, prompt: { ...beat.prompt, text: toLines(sentencesOf(beat.prompt.text), w).join('\n'), en: splitEn(beat.prompt.en, 1)[0] } }]
-  }
-  return [beat]
-})
+// 자막은 이름 길이에 따라 줄바꿈과 페이지 수가 달라지므로, 이름을 채운 뒤에 페이지를 나눈다.
+function buildBeats(src) {
+  let carry = { chapter: 0, img: 'p-fog', bgm: null, amb: null }
+  return src.flatMap((b) => {
+    const chapterStart = b.chapter != null && b.chapter !== carry.chapter
+    carry = {
+      chapter: b.chapter ?? carry.chapter,
+      img: b.img ?? carry.img,
+      bgm: 'bgm' in b ? b.bgm : carry.bgm,
+      amb: 'amb' in b ? b.amb : carry.amb,
+    }
+    const center = false // 가운데 정렬은 오프닝 영상 자막과 검은 화면 자막만 쓴다
+    const beat = { ...b, ...carry, center, start: chapterStart }
+    if (beat.type === 'narr' || beat.type === 'line') return paginate(beat)
+    if (beat.prompt) {
+      const w = KO_LINE.left
+      return [{ ...beat, prompt: { ...beat.prompt, text: toLines(sentencesOf(beat.prompt.text), w).join('\n'), en: splitEn(beat.prompt.en, 1)[0] } }]
+    }
+    return [beat]
+  })
+}
+
+export let NAME = DEFAULT_NAME
+export let BEATS = []
+export let CHOICE_MAP = {}
+// 이름을 정하고 대본 전체를 다시 만든다. 빈 이름이면 기본 이름을 쓴다.
+export function applyName(input) {
+  NAME = (input ?? '').trim().slice(0, NAME_MAX) || DEFAULT_NAME
+  try { localStorage.setItem(NAME_KEY, NAME) } catch {}
+  const src = fill(raw, NAME)
+  CHOICE_MAP = buildChoiceMap(src)
+  BEATS = buildBeats(src)
+  return NAME
+}
+applyName(loadName())
 
 // 결말별 정보. last는 엔딩 영상의 마지막 컷, color는 엔딩 카드(3061:1315)의 선택 상태 색이다.
 // card: 선택 카드 배경 / fade: 하단 그라데이션 [투명 시작색, 중간색, 끝색, 시작 위치]
