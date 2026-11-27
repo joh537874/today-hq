@@ -47,8 +47,11 @@ function reducer(state, a) {
     case 'START': return enter({ ...initial, started: true }, 0)
     case 'RESTART': return initial
     case 'BACK': {
-      if (!state.history.length) return state
-      return { ...state.history[state.history.length - 1], history: state.history.slice(0, -1) }
+      // 저절로 넘어가는 컷(type: 'cut')에는 되돌아가 멈추지 않고 그 앞까지 간다.
+      let h = state.history
+      while (h.length > 1 && BEATS[h[h.length - 1].idx]?.type === 'cut') h = h.slice(0, -1)
+      if (!h.length) return state
+      return { ...h[h.length - 1], history: h.slice(0, -1) }
     }
     case 'NEXT': return enter({ ...state, history: [...state.history, snap(state)] }, state.idx + 1)
     case 'CHOOSE': {
@@ -493,6 +496,13 @@ function Film({ state, beat, dispatch }) {
     const i = Number(e.key) - 1
     if ((beat.type === 'choice' || beat.type === 'final') && beat.options[i]) pick(i)
   })
+
+  // 컷만 잠깐 보여 주는 비트는 정해진 시간 뒤 저절로 넘어간다.
+  useEffect(() => {
+    if (beat.type !== 'cut') return
+    const t = setTimeout(() => dispatch({ type: 'NEXT' }), beat.ms ?? 700)
+    return () => clearTimeout(t)
+  }, [state.idx])
 
   const isFinal = beat.type === 'final'
   return (

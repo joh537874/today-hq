@@ -84,8 +84,10 @@ const raw = [
   // 당신의 집 · 크로스오버의 밤
   N('2069년 3월 14일 밤.', 'The night of March 14, 2069.', { img: 'p-home', bgm: 'night', amb: 'street' }),
   L('뉴스', '“속보입니다. HQ관리국이 발표한 이번 분기 평균 HQ 점수에서 AI가 처음으로 인간을 넘어섰습니다. 판별 시스템이 인간보다 AI를 더 높은 인간 점수로 평가한 것은 이번이 처음인데요. 인간과 AI의 경계에 또 한 번 큰 파장이 예상됩니다.”', '“Breaking news. According to the HQ Bureau’s latest quarterly report, AI has surpassed humans in average HQ scores for the first time. This marks the first time the identification system has rated AI as more human than humans themselves. The news is expected to send shockwaves through society, once again blurring the line between humans and AI.”', { img: 'p-news-sketch', sfx: 'news' }),
-  N('{name:은} 소파에 앉아 뉴스를 보고 있다. 그때, 휴대폰이 울린다.', '{name} is watching the news on the sofa. Then the phone rings.', { img: 'p-home', sfx: 'phone' }),
-  L('클로이', '“여보세요, {name}? 아직 안 자고 있었네? 별건 아니고, 내일 있을 내 생일 파티 말이야. 한 7시쯤 볼까 하는데 시간 괜찮지?”', '“Hello? {name}? You’re still up? Oh, it’s nothing important. I just wanted to talk about my birthday party tomorrow. I was thinking around seven. Does that work for you?”', { img: 'p-phone-sketch', via: '전화' }),
+  N('{name:은} 소파에 앉아 뉴스를 보고 있다. 그때, 휴대폰이 울린다.', '{name} is watching the news on the sofa. Then the phone rings.', { img: 'p-call-ring', sfx: 'phone' }),
+  // 전화를 받는 순간. 컷만 0.7초 보여 주고 저절로 넘어간다.
+  { type: 'cut', img: 'p-call-slide', ms: 700 },
+  L('클로이', '“여보세요, {name}? 아직 안 자고 있었네? 별건 아니고, 내일 있을 내 생일 파티 말이야. 한 7시쯤 볼까 하는데 시간 괜찮지?”', '“Hello? {name}? You’re still up? Oh, it’s nothing important. I just wanted to talk about my birthday party tomorrow. I was thinking around seven. Does that work for you?”', { img: 'p-call-on', via: '전화' }),
   L('클로이', '“…그래 알겠어. 그럼 그때 보자.”', '“...Alright, got it. I’ll see you then.”', { via: '전화' }),
   L('클로이', '“참, 방금 뉴스를 보니까 HQ가 난리더라. 너희 집 AI는 어때? 이름이… 나인이랬지?”', '“By the way, I just saw the news. HQ is causing quite a stir. How’s the AI at your place? Its name was... Nine, right?”', { via: '전화' }),
   L('클로이', '“…아무튼, 시간이 너무 늦었네. 내일 다시 연락할게. 잘 자.”', '“...Anyway, it’s getting pretty late. I’ll talk to you again tomorrow. Good night.”', { via: '전화' }),
