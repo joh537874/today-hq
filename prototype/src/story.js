@@ -92,10 +92,21 @@ const raw = [
   N('{name:은} 소파에 앉아 뉴스를 보고 있다. 그때, 휴대폰이 울린다.', '{name} is watching the news on the sofa. Then the phone rings.', { img: 'p-home', vib: true }),
   // 클로이의 전화. 휴대폰이 진동하고, 플레이어가 초록 버튼을 밀어서(또는 Space·Enter·→) 받는다.
   { type: 'call', img: 'p-call-bg', vib: true },
-  L('클로이', '“여보세요, {name}? 아직 안 자고 있었네? 별건 아니고, 내일 있을 내 생일 파티 말이야. 한 7시쯤 볼까 하는데 시간 괜찮지?”', '“Hello? {name}? You’re still up? Oh, it’s nothing important. I just wanted to talk about my birthday party tomorrow. I was thinking around seven. Does that work for you?”', { img: 'p-call-bg', call: 'on', via: '전화' }),
-  L('클로이', '“…그래 알겠어. 그럼 그때 보자.”', '“...Alright, got it. I’ll see you then.”', { call: 'on', via: '전화' }),
-  L('클로이', '“참, 방금 뉴스를 보니까 HQ가 난리더라. 너희 집 AI는 어때? 이름이… 나인이랬지?”', '“By the way, I just saw the news. HQ is causing quite a stir. How’s the AI at your place? Its name was... Nine, right?”', { call: 'on', via: '전화' }),
-  L('클로이', '“…아무튼, 시간이 너무 늦었네. 내일 다시 연락할게. 잘 자.”', '“...Anyway, it’s getting pretty late. I’ll talk to you again tomorrow. Good night.”', { call: 'on', via: '전화' }),
+  // 클로이 첫 대사는 통화 카드 안 영상으로 보여 준다(배경은 반투명 유리로 합성). 자막은 말소리에 맞춰 아래에 뜨고, 영상이 끝나면 넘어간다.
+  // 영상 속 클로이는 주인공 이름을 부르지 않는다.
+  {
+    type: 'callvid', img: 'p-call-bg', call: 'on', callVid: 'scene/chloe-call.mp4',
+    cues: [
+      { at: 0.1, to: 1.9, text: '여보세요? 아직 안 자고 있었네?', en: 'Hello? You’re still up?' },
+      { at: 2.1, to: 3.9, text: '아, 별건 아니고.', en: 'Oh, it’s nothing important.' },
+      { at: 4.0, to: 6.6, text: '내일 있을 내 생일 파티 말이야.', en: 'I just wanted to talk about my birthday party tomorrow.' },
+      { at: 6.7, to: 8.8, text: '한 7시쯤 볼까 하는데', en: 'I was thinking around seven.' },
+      { at: 8.9, to: 10.1, text: '시간 괜찮지?', en: 'Does that work for you?' },
+    ],
+  },
+  L('클로이', '“…그래 알겠어. 그럼 그때 보자.”', '“...Alright, got it. I’ll see you then.”', { call: 'on', callVid: 'scene/chloe-call.mp4', via: '전화' }),
+  L('클로이', '“참, 방금 뉴스를 보니까 HQ가 난리더라. 너희 집 AI는 어때? 이름이… 나인이랬지?”', '“By the way, I just saw the news. HQ is causing quite a stir. How’s the AI at your place? Its name was... Nine, right?”', { call: 'on', callVid: 'scene/chloe-call.mp4', via: '전화' }),
+  L('클로이', '“…아무튼, 시간이 너무 늦었네. 내일 다시 연락할게. 잘 자.”', '“...Anyway, it’s getting pretty late. I’ll talk to you again tomorrow. Good night.”', { call: 'on', callVid: 'scene/chloe-call.mp4', via: '전화' }),
   L('나인', '“그러고 보니, 내일이 클로이 씨의 생일이네요. 내일은 일찍 나가셔야 할 것 같아요. 어서 주무시는 걸 추천할게요.”', '“Come to think of it, tomorrow is Chloe’s birthday. You’ll need to head out early, so I suggest getting some rest now.”', { img: 'p-home-nine' }),
   // 자정에서 아침으로 넘어가는 도시 영상. 자막 없이 영상만 보여 주고, 끝나면 2장으로 넘어간다.
   { type: 'clip', img: 'p-city', vid: 'scene/p-city.mp4' },

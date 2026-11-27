@@ -15,4 +15,5 @@ media-src/**
 !media-src/**/
 !media-src/**/*.sh
 !media-src/**/*.py
+!media-src/**/*.swift
 !media-src/README.md

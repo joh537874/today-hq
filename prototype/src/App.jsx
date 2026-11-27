@@ -1,7 +1,7 @@
 import React, { useEffect, useReducer, useRef, useState } from 'react'
 import { BEATS, CHAPTERS, ENDINGS, ENDING_ORDER, WHO_EN, CHOICE_LABELS, CHOICE_MAP, NAME_MAX, applyName } from './story.js'
 import { useTypewriter } from './ui.jsx'
-import { setBgm, setAmb, setVib, sfx, stopAll, setMuted } from './sound.js'
+import { setBgm, setAmb, setVib, sfx, stopAll, setMuted, isMuted } from './sound.js'
 import { isAdmin, PANEL_W, AdminPanel, buildState, defaultCfg, loadAdmin, saveAdmin } from './Admin.jsx'
 import { setInstant as setTypeInstant } from './ui.jsx'
 
@@ -569,6 +569,7 @@ function CallCard({ beat, idx, dispatch }) {
   const [drag, setDrag] = useState(0) // 받기 버튼 위치 0~1
   const [dragging, setDragging] = useState(false)
   const [since, setSince] = useState(null) // 통화 시작 시각
+  const [cue, setCue] = useState(null) // 통화 영상 자막
   const [, tick] = useState(0)
   const track = useRef(null)
   const start = useRef(null)
@@ -629,8 +630,17 @@ function CallCard({ beat, idx, dispatch }) {
   const secs = since ? Math.floor((performance.now() - since) / 1000) : 0
   const time = `${String(Math.floor(secs / 60)).padStart(2, '0')}:${String(secs % 60).padStart(2, '0')}`
   return (
+    <>
+    {beat.type === 'callvid' && cue && (
+      <div className="video-cue">
+        <p className="ko">{cue.text.split('\n').map((l, i) => <span key={i}>{l}</span>)}</p>
+        {cue.en && <p className="en">{cue.en}</p>}
+      </div>
+    )}
     <div className={`call-card ${on ? 'on' : 'ring'}`}>
-      <img className="call-face" src={`${CALL}chloe.png`} alt="" />
+      {on && beat.callVid
+        ? <CallVideo key="callvid" src={beat.callVid} play={beat.type === 'callvid'} cues={beat.cues} onCue={setCue} onEnd={() => dispatch({ type: 'NEXT' })} />
+        : <img className="call-face" src={`${CALL}chloe.png`} alt="" />}
       <div className="call-shade" />
       <div className="call-name">
         <p>Chloe</p>
@@ -657,7 +667,37 @@ function CallCard({ beat, idx, dispatch }) {
         </div>
       )}
     </div>
+    </>
   )
+}
+
+// 통화 카드 속 클로이 영상. play일 때 재생하며 자막을 알리고, 끝나면 onEnd.
+// 이어지는 통화 대사에서는 마지막 장면에 멈춰 둔다.
+function CallVideo({ src, play, cues: cueList, onCue, onEnd }) {
+  const ref = useRef(null)
+  const cues = useRef([])
+  cues.current = cueList ?? []
+  useEffect(() => {
+    const v = ref.current
+    if (!play) {
+      onCue(null)
+      const toEnd = () => { v.pause(); if (isFinite(v.duration)) v.currentTime = Math.max(0, v.duration - 0.05) }
+      if (v.readyState >= 1) toEnd(); else v.addEventListener('loadedmetadata', toEnd, { once: true })
+      return
+    }
+    v.currentTime = 0
+    v.muted = isMuted()
+    v.play().catch(() => { v.muted = true; v.play().catch(() => {}) })
+    let raf = 0
+    const tick = () => {
+      const t = v.currentTime
+      onCue(cues.current.find((c) => t >= c.at && t < c.to) ?? null)
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [play])
+  return <video ref={ref} className="call-face" src={`${BASE}${src}`} playsInline preload="auto" onEnded={() => { if (play) setTimeout(onEnd, 500) }} />
 }
 
 // 우측 선택지. 반투명 박스에 번호와 문장을 둔다.

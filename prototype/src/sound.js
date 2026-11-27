@@ -4,6 +4,7 @@ const src = (name) => `${BASE}sound/${name}.mp3`
 const VOL = { bgm: 0.35, amb: 0.22, sfx: 0.7, vib: 0.8 }
 const FADE_MS = 1000
 let muted = false
+export const isMuted = () => muted
 const loops = [] // 현재 재생 중인 반복 음원 { audio, kind }
 
 // 음량을 ms 동안 to까지 옮긴다. 끝나면 done을 부른다.
