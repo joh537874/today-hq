@@ -254,8 +254,9 @@ function Photo({ name }) {
 
 // 컷 위에 까는 배경 영상. 한 번 재생하고 마지막 장면에서 멈춘다. 소리는 장면 배경음을 쓰므로 끈다.
 // 자막이 여러 쪽으로 나뉘어도 같은 영상이면 처음부터 다시 틀지 않는다(key가 영상 경로).
-function BgVideo({ src }) {
-  return <video className="photo photo-video" src={`${BASE}${src}`} autoPlay muted playsInline preload="auto" />
+// 자막 없는 영상 컷(type: 'clip')은 영상이 끝나면 다음으로 넘어간다.
+function BgVideo({ src, onEnd }) {
+  return <video className="photo photo-video" src={`${BASE}${src}`} autoPlay muted playsInline preload="auto" onEnded={onEnd} />
 }
 
 // 좌상단 "01 | Prologue"
@@ -491,6 +492,7 @@ function Film({ state, beat, dispatch }) {
   const [pressed, press] = usePress()
 
   const advance = () => {
+    if (beat.type === 'clip') { dispatch({ type: 'NEXT' }); return }
     if (!passive) return
     if (!typing.done) typing.finish()
     else press('next', () => dispatch({ type: 'NEXT' }))
@@ -531,9 +533,9 @@ function Film({ state, beat, dispatch }) {
 
   const isFinal = beat.type === 'final'
   return (
-    <div className="film">
+    <div className="film" onClick={beat.type === 'clip' ? advance : undefined}>
       <Photo name={beat.img} />
-      {beat.vid && <BgVideo key={beat.vid} src={beat.vid} />}
+      {beat.vid && <BgVideo key={beat.vid} src={beat.vid} onEnd={beat.type === 'clip' ? () => setTimeout(() => dispatch({ type: 'NEXT' }), 600) : undefined} />}
       {!isFinal && <ChapterTag chapter={beat.chapter} />}
 
       {beat.hud && <Hud {...beat.hud} />}

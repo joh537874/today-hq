@@ -80,7 +80,7 @@ function tagOf(b, i) {
   return out.join(' ')
 }
 
-const TYPE = { narr: '나레이션', line: '대사', choice: '선택', final: '최종 선택', video: '영상', voice: '목소리', name: '이름 입력', cut: '컷', call: '전화 받기', notice: '안내', after: '엔딩 질문', result: '결과' }
+const TYPE = { narr: '나레이션', line: '대사', choice: '선택', final: '최종 선택', video: '영상', voice: '목소리', name: '이름 입력', cut: '컷', call: '전화 받기', notice: '안내', clip: '영상 컷', after: '엔딩 질문', result: '결과' }
 const preview = (b) => (b.text ?? b.prompt?.text ?? b.src ?? b.cues?.[0]?.text ?? '').replace(/\n/g, ' ')
 
 export function loadAdmin() {
