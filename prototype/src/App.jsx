@@ -642,8 +642,9 @@ function CallCard({ beat, idx, dispatch }) {
         ? <CallVideo key="callvid" src={beat.callVid} play={beat.type === 'callvid'} cues={beat.cues} onCue={setCue} onEnd={() => dispatch({ type: 'NEXT' })} />
         : <img className="call-face" src={`${CALL}chloe.png`} alt="" />}
       <div className="call-shade" />
+      {/* 받기 전에는 이름과 '전화 거는 중', 통화 중에는 통화 시간만 작게 보인다 */}
       <div className="call-name">
-        <p>Chloe</p>
+        {!on && <p>Chloe</p>}
         <p className="call-status">{on ? time : 'calling...'}</p>
       </div>
       {!on || (answered && beat.type === 'call') ? (
