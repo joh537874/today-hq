@@ -516,7 +516,7 @@ li.admin-chapter:hover { background: #0e1014; }
   backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   animation: caption-in 0.5s ease both;
 }
-.call-card.ring { animation: caption-in 0.5s ease both, call-buzz 2s linear 0.5s infinite; }
+.call-card.ring { animation: caption-in 0.5s ease both, call-buzz 2s ease-in-out 0.5s infinite; }
 /* 피그마 프레임과 같이 사진을 카드 크기에 맞춰 채운다(원본 3:4를 카드 비율로 늘림) */
 .call-face { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; pointer-events: none; }
 .call-shade { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 40.471%, #222e33 98.353%); pointer-events: none; }
@@ -553,47 +553,28 @@ li.admin-chapter:hover { background: #0e1014; }
 .call-btn.small img { width: 57px; height: 57px; }
 .call-btn.end { width: 114.1px; height: 114.1px; background: #e62222; }
 .call-btn.end img { width: 70.2px; height: 70.2px; }
+/* 진동: 2초 주기 중 앞 1.2초 동안 1px 안팎으로 살짝 떨린다 */
 @keyframes call-buzz {
-  0.0% { translate: -3px 1px; }
-  1.5% { translate: 3px -1px; }
-  3.0% { translate: -2px 0.5px; }
-  4.5% { translate: 2.5px -0.5px; }
-  6.0% { translate: -2.5px 1px; }
-  7.5% { translate: 2px -1px; }
-  9.0% { translate: -3px 1px; }
-  10.5% { translate: 3px -1px; }
-  12.0% { translate: -2px 0.5px; }
-  13.5% { translate: 2.5px -0.5px; }
-  15.0% { translate: -2.5px 1px; }
-  16.5% { translate: 2px -1px; }
-  18.0% { translate: -3px 1px; }
-  19.5% { translate: 3px -1px; }
-  21.0% { translate: -2px 0.5px; }
-  22.5% { translate: 2.5px -0.5px; }
-  24.0% { translate: -2.5px 1px; }
-  25.5% { translate: 2px -1px; }
-  27.0% { translate: -3px 1px; }
-  28.5% { translate: 3px -1px; }
-  30.0% { translate: -2px 0.5px; }
-  31.5% { translate: 2.5px -0.5px; }
-  33.0% { translate: -2.5px 1px; }
-  34.5% { translate: 2px -1px; }
-  36.0% { translate: -3px 1px; }
-  37.5% { translate: 3px -1px; }
-  39.0% { translate: -2px 0.5px; }
-  40.5% { translate: 2.5px -0.5px; }
-  42.0% { translate: -2.5px 1px; }
-  43.5% { translate: 2px -1px; }
-  45.0% { translate: -3px 1px; }
-  46.5% { translate: 3px -1px; }
-  48.0% { translate: -2px 0.5px; }
-  49.5% { translate: 2.5px -0.5px; }
-  51.0% { translate: -2.5px 1px; }
-  52.5% { translate: 2px -1px; }
-  54.0% { translate: -3px 1px; }
-  55.5% { translate: 3px -1px; }
-  57.0% { translate: -2px 0.5px; }
-  58.5% { translate: 2.5px -0.5px; }
-  60.0% { translate: -2.5px 1px; }
+  0% { translate: -1px 0; }
+  3% { translate: 1px 0; }
+  6% { translate: -0.6px 0; }
+  9% { translate: 0.8px 0; }
+  12% { translate: -1px 0; }
+  15% { translate: 1px 0; }
+  18% { translate: -0.6px 0; }
+  21% { translate: 0.8px 0; }
+  24% { translate: -1px 0; }
+  27% { translate: 1px 0; }
+  30% { translate: -0.6px 0; }
+  33% { translate: 0.8px 0; }
+  36% { translate: -1px 0; }
+  39% { translate: 1px 0; }
+  42% { translate: -0.6px 0; }
+  45% { translate: 0.8px 0; }
+  48% { translate: -1px 0; }
+  51% { translate: 1px 0; }
+  54% { translate: -0.6px 0; }
+  57% { translate: 0.8px 0; }
+  60% { translate: -1px 0; }
   61%, 100% { translate: 0 0; }
 }
