@@ -508,7 +508,7 @@ li.admin-chapter:hover { background: #0e1014; }
 
 /* ───────── 클로이의 전화 (Figma 3233:1078·1089·1100, 162×190 프레임을 3.549배로 키움) */
 .call-card {
-  position: absolute; left: 674px; top: 90px; width: 575px; height: 674px; z-index: 2;
+  position: absolute; left: 674px; top: 115px; width: 575px; height: 674px; z-index: 2;
   /* 피그마보다 조금 위로 올리고 1.12배 키움(답답해 보이지 않게) */
   scale: 1.12; transform-origin: 50% 0;
   display: flex; flex-direction: column; align-items: center; justify-content: space-between;
