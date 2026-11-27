@@ -106,14 +106,14 @@ const raw = [
   },
   L('클로이', '“…그래 알겠어. 그럼 그때 보자.”', '“...Alright, got it. I’ll see you then.”', { call: 'on', callVid: 'scene/chloe-call', via: '전화' }),
   // 클로이 두 번째 통화 영상. 첫 영상과 같은 방식(배경 투명, 말소리에 맞춘 자막).
-  // 영상 속 클로이가 '방금 뉴스를 봤어'를 두 번 말해 첫 자막을 길게 둔다.
+  // 원본은 입 모양이 소리보다 0.46초 앞서 있어 화면을 0.46초 늦춰 맞췄다.
   {
     type: 'callvid', call: 'on', callVid: 'scene/chloe-call-2',
     cues: [
-      { at: 0.1, to: 3.6, text: '참, 방금 뉴스를 보니까', en: 'By the way, I just saw the news.' },
-      { at: 3.9, to: 6.6, text: 'HQ가 난리더라.', en: 'HQ is causing quite a stir.' },
-      { at: 6.9, to: 8.7, text: '너희 집 AI는 어때?', en: 'How’s the AI at your place?' },
-      { at: 8.8, to: 10.1, text: '이름이… 나인이랬지?', en: 'Its name was… Nyin, right?' },
+      { at: 0.1, to: 2.4, text: '참, 방금 뉴스를 보니까', en: 'By the way, I just saw the news.' },
+      { at: 2.5, to: 4.8, text: 'HQ가 난리더라.', en: 'HQ is causing quite a stir.' },
+      { at: 5.0, to: 6.7, text: '너희 집 AI는 어때?', en: 'How’s the AI at your place?' },
+      { at: 6.8, to: 9.8, text: '이름이… 나인이랬지?', en: 'Its name was… Nyin, right?' },
     ],
   },
   L('클로이', '“…아무튼, 시간이 너무 늦었네. 내일 다시 연락할게. 잘 자.”', '“...Anyway, it’s getting pretty late. I’ll talk to you again tomorrow. Good night.”', { call: 'on', callVid: 'scene/chloe-call-2', via: '전화' }),
