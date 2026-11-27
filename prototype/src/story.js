@@ -105,8 +105,18 @@ const raw = [
     ],
   },
   L('클로이', '“…그래 알겠어. 그럼 그때 보자.”', '“...Alright, got it. I’ll see you then.”', { call: 'on', callVid: 'scene/chloe-call', via: '전화' }),
-  L('클로이', '“참, 방금 뉴스를 보니까 HQ가 난리더라. 너희 집 AI는 어때? 이름이… 나인이랬지?”', '“By the way, I just saw the news. HQ is causing quite a stir. How’s the AI at your place? Its name was... Nine, right?”', { call: 'on', callVid: 'scene/chloe-call', via: '전화' }),
-  L('클로이', '“…아무튼, 시간이 너무 늦었네. 내일 다시 연락할게. 잘 자.”', '“...Anyway, it’s getting pretty late. I’ll talk to you again tomorrow. Good night.”', { call: 'on', callVid: 'scene/chloe-call', via: '전화' }),
+  // 클로이 두 번째 통화 영상. 첫 영상과 같은 방식(배경 투명, 말소리에 맞춘 자막).
+  // 영상 속 클로이가 '방금 뉴스를 봤어'를 두 번 말해 첫 자막을 길게 둔다.
+  {
+    type: 'callvid', call: 'on', callVid: 'scene/chloe-call-2',
+    cues: [
+      { at: 0.1, to: 3.6, text: '참, 방금 뉴스를 보니까', en: 'By the way, I just saw the news.' },
+      { at: 3.9, to: 6.6, text: 'HQ가 난리더라.', en: 'HQ is causing quite a stir.' },
+      { at: 6.9, to: 8.7, text: '너희 집 AI는 어때?', en: 'How’s the AI at your place?' },
+      { at: 8.8, to: 10.1, text: '이름이… 나인이랬지?', en: 'Its name was… Nyin, right?' },
+    ],
+  },
+  L('클로이', '“…아무튼, 시간이 너무 늦었네. 내일 다시 연락할게. 잘 자.”', '“...Anyway, it’s getting pretty late. I’ll talk to you again tomorrow. Good night.”', { call: 'on', callVid: 'scene/chloe-call-2', via: '전화' }),
   L('나인', '“그러고 보니, 내일이 클로이 씨의 생일이네요. 내일은 일찍 나가셔야 할 것 같아요. 어서 주무시는 걸 추천할게요.”', '“Come to think of it, tomorrow is Chloe’s birthday. You’ll need to head out early, so I suggest getting some rest now.”', { img: 'p-home-nine' }),
   // 자정에서 아침으로 넘어가는 도시 영상. 자막 없이 영상만 보여 주고, 끝나면 2장으로 넘어간다.
   { type: 'clip', img: 'p-city', vid: 'scene/p-city.mp4' },
