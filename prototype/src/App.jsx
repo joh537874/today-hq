@@ -1,5 +1,5 @@
 import React, { useEffect, useReducer, useRef, useState } from 'react'
-import { BEATS, CHAPTERS, ENDINGS, ENDING_ORDER, WHO_EN, CHOICE_LABELS, CHOICE_MAP, NAME_MAX, applyName } from './story.js'
+import { BEATS, CHAPTERS, ENDINGS, ENDING_ORDER, WHO_EN, CHOICE_LABELS, CHOICE_MAP } from './story.js'
 import { useTypewriter } from './ui.jsx'
 import { setBgm, setAmb, setVib, sfx, stopAll, setMuted, isMuted, ui } from './sound.js'
 import { isAdmin, PANEL_W, AdminPanel, buildState, defaultCfg, loadAdmin, saveAdmin } from './Admin.jsx'
@@ -172,7 +172,6 @@ function AppInner() {
         {state.started && beat.type === 'news' && <NewsVideo key={state.idx} beat={beat} dispatch={dispatch} muted={muted} />}
         {state.started && beat.type === 'notice' && <Notice key={state.idx} beat={beat} dispatch={dispatch} />}
         {state.started && beat.type === 'voice' && <VoiceOver key={state.idx} beat={beat} dispatch={dispatch} muted={muted} />}
-        {state.started && beat.type === 'name' && <NameEntry key={state.idx} onDone={(name) => { applyName(name); dispatch({ type: 'NEXT' }) }} />}
         <div className="top-ctrl">
           {/* 되돌리기. 화면마다 ← 키 처리가 다르므로(결과 화면은 안쪽 단계부터 되돌린다) 같은 키 입력을 보낸다. */}
           {canBack && (
@@ -268,7 +267,10 @@ function Photo({ name }) {
     return () => clearTimeout(t)
   }, [name])
   return layers.map((n, i) => (
-    <div key={n} className={`photo ${i === layers.length - 1 && layers.length > 1 ? 'photo-new' : ''}`} style={{ backgroundImage: `url(${cut(n)})` }} />
+    <div key={n} className={`photo ${i === layers.length - 1 && layers.length > 1 ? 'photo-new' : ''}`} style={{ backgroundImage: `url(${cut(n)})` }}>
+      {/* 거실 TV의 뉴스 화면은 사진 한 장처럼 사진과 함께 나타나야 하므로 같은 층에 넣는다 */}
+      {n === 'p-call-bg' && <TvStill />}
+    </div>
   ))
 }
 
@@ -590,29 +592,6 @@ function Title({ onStart, onSkip }) {
   )
 }
 
-// 주인공 이름 입력. 오프닝 나레이션 다음, 검은 화면 가운데에 놓인다.
-// 빈칸으로 시작하고, 이름을 입력한 뒤 Enter를 눌러야 넘어간다. 빈 곳을 누르면 입력란으로 돌아간다.
-function NameEntry({ onDone }) {
-  const [pressed, press] = usePress()
-  const [name, setName] = useState('')
-  const ref = useRef(null)
-  useEffect(() => { ref.current?.focus(); ref.current?.select() }, [])
-  // 이름을 입력해야만 넘어간다.
-  const done = () => { if (name.trim()) press('start', () => onDone(name)) }
-  return (
-    <div className="name-entry" onClick={() => ref.current?.focus()}>
-      <p className="name-q">이야기의 주인공, 당신의 이름은 무엇인가요?</p>
-      <div className="name-field">
-        <input
-          ref={ref} className="name-input" value={name} maxLength={NAME_MAX} spellCheck={false} autoComplete="off"
-          onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); done() } }}
-        />
-      </div>
-    </div>
-  )
-}
-
 /* ───────── 장면 (Figma 2245 · 2249 · 2251) */
 
 function Film({ state, beat, dispatch }) {
@@ -677,7 +656,6 @@ function Film({ state, beat, dispatch }) {
   return (
     <div className="film" onClick={beat.type === 'clip' ? advance : undefined}>
       <Photo name={beat.img} />
-      {beat.img === 'p-call-bg' && <TvStill />}
       {beat.vid && <BgVideo key={beat.vid} src={beat.vid} onEnd={beat.type === 'clip' ? () => setTimeout(() => dispatch({ type: 'NEXT' }), 600) : undefined} />}
       {!isFinal && <ChapterTag chapter={beat.chapter} />}
 
