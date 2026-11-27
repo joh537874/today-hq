@@ -109,14 +109,14 @@ const raw = [
   L('나인', '“그렇다면 손편지는 어떤가요? 최근 아날로그한 축하 방식이 유행을 하고 있다고 해요.”', '“How about a handwritten letter? I’ve heard that handwritten congratulations are becoming quite popular lately.”'),
   L(ME, '“좋은 아이디어야, 나인.”', '“Good idea, Nyin.”'),
   N('{name:은} 책상에 앉아 클로이에게 줄 편지를 쓸 준비를 한다.', '{name} sits at the desk and gets ready to write a letter to Chloe.', { sfx: 'pen' }),
-  L(ME, '“…실수로 잘못 적었어. 오늘은 되는 일이 없군.”', '“…I wrote it wrong. Nothing goes right today.”', { img: 's2-letter-close' }),
+  L(ME, '“…실수로 잘못 적었어. 오늘은 되는 일이 없군.”', '“…I wrote it wrong. Nothing goes right today.”', { img: 's2-letter-write' }),
   L('나인', '“오타가 나쁘지만은 않아요. 듣자 하니 소문에 의하면, ‘실수’를 많이 할수록 HQ가 높아진다고도 하더라고요. AI는 실수를 하지 않으니까 그런 걸까요?”', '“Oh, mistakes aren’t necessarily a bad thing. According to rumors, the more mistakes you make, the higher your HQ score gets. Maybe it’s because AIs never make mistakes?”'),
   L('나인', '“어떤 사람들은 그래서 일부러 오타투성이 편지를 주고받기도 해요.”', '“Some people even deliberately give and receive letters with typos for that very reason.”'),
   L(ME, '“오타를 내면 HQ에 도움이 된다고?”', '“Typos help your HQ?”'),
   L('나인', '“소문에 의하면요.”', '“That’s what the rumors say.”'),
-  N('편지로 돌아온 {name:은}, 방금 쓴 문장에서 틀린 맞춤법 하나를 발견하고 손에 든 지우개를 바라보며 생각에 빠진다.', 'Back at the letter, {name} spots a misspelling in the line just written and stares at the eraser in hand, lost in thought.', { img: 's2-letter' }),
+  N('편지로 돌아온 {name:은}, 방금 쓴 문장에서 틀린 맞춤법 하나를 발견하고 손에 든 지우개를 바라보며 생각에 빠진다.', 'Back at the letter, {name} spots a misspelling in the line just written and stares at the eraser in hand, lost in thought.', { img: 's2-letter-write' }),
   {
-    type: 'choice', id: 'c1', num: '①', axis: 'hq', img: 's2-letter-close',
+    type: 'choice', id: 'c1', num: '①', axis: 'hq', img: 's2-letter-write',
     prompt: N('편지 속 틀린 맞춤법 하나. 커서가 그 위에서 깜빡인다.', 'One misspelling in the letter. The cursor blinks over it.'),
     options: [
       { text: '틀린 맞춤법을 보고도 고치지 않고 그대로 둔다.', sign: 1 },
