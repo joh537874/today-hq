@@ -9,3 +9,10 @@ dist/
 # Local workshop research is not part of the game release.
 /harness/
 /research/
+
+# 영상 작업 원본: 용량이 커서 제외하고 스크립트와 문서만 커밋한다 (media-src/README.md)
+media-src/**
+!media-src/**/
+!media-src/**/*.sh
+!media-src/**/*.py
+!media-src/README.md
