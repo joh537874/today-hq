@@ -517,7 +517,8 @@ li.admin-chapter:hover { background: #0e1014; }
   animation: caption-in 0.5s ease both;
 }
 .call-card.ring { animation: caption-in 0.5s ease both, call-buzz 2s linear 0.5s infinite; }
-.call-face { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: bottom; pointer-events: none; }
+/* 피그마 프레임과 같이 사진을 카드 크기에 맞춰 채운다(원본 3:4를 카드 비율로 늘림) */
+.call-face { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; pointer-events: none; }
 .call-shade { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 40.471%, #222e33 98.353%); pointer-events: none; }
 .call-name { position: relative; display: flex; flex-direction: column; align-items: center; color: var(--white); font-family: var(--pretendard); font-weight: 400; line-height: 1.2; white-space: nowrap; }
 .call-name p { font-size: 64px; letter-spacing: -1.28px; }
