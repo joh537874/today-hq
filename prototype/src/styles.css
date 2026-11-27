@@ -490,19 +490,12 @@ li.admin-chapter:hover { background: #0e1014; }
   animation: caption-in 0.8s ease both;
 }
 .name-q { font-family: var(--pretendard); font-weight: 400; font-size: 36px; line-height: 1.5; letter-spacing: -1.08px; color: var(--white); }
-.name-field { position: relative; width: 420px; border-bottom: 1px solid rgba(255, 255, 255, 0.25); transition: border-color 0.3s ease; }
-.name-field:focus-within { border-bottom-color: rgba(255, 255, 255, 0.6); }
+.name-field { width: 560px; }
 .name-input {
-  width: 100%; padding: 4px 48px 14px; background: none; border: 0; outline: none; text-align: center;
+  width: 100%; padding: 0; background: none; border: 0; outline: none; text-align: center;
   color: var(--white); caret-color: var(--white);
   font-family: var(--pretendard); font-weight: 400; font-size: 52px; line-height: 1.2; letter-spacing: -1.56px;
 }
-.name-go {
-  position: absolute; right: 0; bottom: 14px; width: 40px; height: 40px;
-  font-family: var(--pretendard); font-size: 30px; line-height: 40px; color: var(--white); opacity: 0.4;
-  transition: opacity 0.2s ease, translate 0.2s ease;
-}
-.name-go:hover, .name-go.on { opacity: 1; translate: 4px 0; }
 
 /* ───────── 영상 위에 얹는 자막. 이전에 영상에 굽던 자막(하단 가운데, 한글 위·영문 아래)과 같은 자리에 둔다 */
 .video-cue {

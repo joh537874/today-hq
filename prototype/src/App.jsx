@@ -455,7 +455,7 @@ function Title({ onStart, onSkip }) {
 }
 
 // 주인공 이름 입력. 오프닝 나레이션 다음, 검은 화면 가운데에 놓인다.
-// 지난번에 쓴 이름을 미리 채워 두고, 비워 두면 기본 이름으로 시작한다.
+// 지난번에 쓴 이름을 미리 채워 두고, 비워 두면 기본 이름으로 시작한다. Enter로 확인하고, 빈 곳을 누르면 입력란으로 돌아간다.
 function NameEntry({ onDone }) {
   const [pressed, press] = usePress()
   const [name, setName] = useState(loadName)
@@ -463,7 +463,7 @@ function NameEntry({ onDone }) {
   useEffect(() => { ref.current?.focus(); ref.current?.select() }, [])
   const done = () => press('start', () => onDone(name))
   return (
-    <div className="name-entry">
+    <div className="name-entry" onClick={() => ref.current?.focus()}>
       <p className="name-q">이야기의 주인공, 당신의 이름은 무엇인가요?</p>
       <div className="name-field">
         <input
@@ -471,7 +471,6 @@ function NameEntry({ onDone }) {
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); done() } }}
         />
-        <button className={`name-go ${pressed === 'start' ? 'on' : ''}`} onClick={done} aria-label="확인">→</button>
       </div>
     </div>
   )
