@@ -672,6 +672,10 @@ function CallCard({ beat, idx, dispatch }) {
   )
 }
 
+// 배경이 투명한 영상은 브라우저마다 형식이 다르다. 사파리는 애플 형식(HEVC), 그 밖은 웹엠(VP9).
+const SAFARI = /^((?!chrome|android|crios|fxios).)*safari/i.test(navigator.userAgent)
+const alphaVideo = (base) => `${BASE}${base}${SAFARI ? '-hevc.mp4' : '.webm'}`
+
 // 통화 카드 속 클로이 영상. play일 때 재생하며 자막을 알리고, 끝나면 onEnd.
 // 이어지는 통화 대사에서는 마지막 장면에 멈춰 둔다.
 function CallVideo({ src, play, cues: cueList, onCue, onEnd }) {
@@ -698,7 +702,7 @@ function CallVideo({ src, play, cues: cueList, onCue, onEnd }) {
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
   }, [play])
-  return <video ref={ref} className="call-face" src={`${BASE}${src}`} playsInline preload="auto" onEnded={() => { if (play) setTimeout(onEnd, 500) }} />
+  return <video ref={ref} className="call-face" src={alphaVideo(src)} playsInline preload="auto" onEnded={() => { if (play) setTimeout(onEnd, 500) }} />
 }
 
 // 우측 선택지. 반투명 박스에 번호와 문장을 둔다.
