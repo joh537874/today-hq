@@ -86,6 +86,15 @@ button { font: inherit; color: inherit; border: 0; background: none; }
 .news-room, .news-tv { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; will-change: transform; }
 .news-room { background-size: cover; background-position: center; }
 .news-tv { overflow: hidden; background: #000; }
+/* 자막 아래 딤. 화면 아래쪽을 진하게 눌러 밝은 스튜디오 위에서도 자막이 읽히게 한다. */
+.news-dim {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 420px; pointer-events: none;
+  background: linear-gradient(to top, rgba(5, 8, 10, 0.85) 0%, rgba(5, 8, 10, 0.6) 45%, transparent 100%);
+}
+.news-tv img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+/* 거실 TV 정지 화면: 컷이 바뀔 때 사진과 함께 서서히 나타나고, 띠 등장 모션은 다시 틀지 않는다 */
+.news-tv.still { z-index: 0; animation: photo-in 0.9s ease both; }
+.news-tv.still *, .news-tv.still *::before, .news-tv.still *::after { animation: none !important; }
 .news-tv video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
 /* 좌상단 생방송 표시 */
 .news-live {
@@ -101,28 +110,29 @@ button { font: inherit; color: inherit; border: 0; background: none; }
   position: absolute; left: 160px; right: 160px; top: 680px; height: 92px; gap: 28px;
   display: flex; align-items: center; justify-content: center;
   background: linear-gradient(180deg, rgba(150, 175, 195, 0.16), rgba(40, 55, 65, 0.42));
-  animation: news-bar 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) 0.5s both;
+  animation: news-bar 1s cubic-bezier(0.7, 0, 0.15, 1) 0.4s both;
 }
 .news-lower::before, .news-lower::after {
   content: ''; position: absolute; left: 0; right: 0; height: 2px;
   background: linear-gradient(90deg, transparent, rgba(225, 240, 255, 0.95) 20%, rgba(225, 240, 255, 0.95) 80%, transparent);
   box-shadow: 0 0 14px rgba(170, 215, 255, 0.7);
-  animation: news-line 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) 0.3s both;
+  transform-origin: 0 50%;
+  animation: news-line 1s cubic-bezier(0.7, 0, 0.15, 1) 0.3s both;
 }
 .news-lower::before { top: 0; }
 .news-lower::after { bottom: 0; }
 .news-lower em {
-  font-style: normal; font-family: var(--pretendard); font-weight: 700; font-size: 30px; letter-spacing: -0.5px;
+  font-style: normal; font-family: var(--helvetica); font-weight: 700; font-size: 24px; letter-spacing: 0.5px;
   padding: 6px 16px; color: #0b0f10; background: #eef6fb; box-shadow: 0 0 16px rgba(190, 225, 255, 0.5);
-  animation: news-text 0.8s ease 0.9s both;
+  animation: news-text 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) 0.9s both;
 }
 .news-lower b {
-  font-family: var(--pretendard); font-weight: 500; font-size: 52px; letter-spacing: -1.5px; color: #eef6fb;
-  text-shadow: 0 0 18px rgba(190, 225, 255, 0.55); animation: news-text 0.8s ease 1s both;
+  font-family: var(--helvetica); font-weight: 500; font-size: 50px; letter-spacing: -1px; color: #eef6fb;
+  text-shadow: 0 0 18px rgba(190, 225, 255, 0.55); animation: news-text 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 1.05s both;
 }
 @keyframes news-line { from { scale: 0 1; opacity: 0; } to { scale: 1 1; opacity: 1; } }
-@keyframes news-bar { from { clip-path: inset(0 50% 0 50%); } to { clip-path: inset(0 0 0 0); } }
-@keyframes news-text { from { opacity: 0; filter: blur(8px); translate: 0 6px; } to { opacity: 1; filter: none; translate: 0 0; } }
+@keyframes news-bar { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes news-text { from { opacity: 0; filter: blur(8px); translate: -80px 0; } to { opacity: 1; filter: none; translate: 0 0; } }
 @keyframes news-fade { from { opacity: 0; } to { opacity: 1; } }
 
 /* ───────── 좌상단 장 표시 "01 | Prologue" */

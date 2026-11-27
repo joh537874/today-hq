@@ -403,8 +403,9 @@ function OpeningVideo({ beat, dispatch, muted }) {
 const TV_QUAD = [[456, 403], [781, 423], [781, 600], [455, 605]]
 // 줌아웃 시작 때 화면을 꽉 채우는 TV 안쪽의 16:9 사각형. 여기서 시작해 TV_QUAD로 옮겨 간다.
 const TV_R0 = { x: 461, y: 423, w: 314, h: 176.6 }
-const NEWS_ZOOM_AT = 15.2 // 줌아웃 시작(영상 초)
-const NEWS_ZOOM_MS = 2800
+// 두 번째 문장 끝(15.0초) 무렵 시작해 6초 동안 천천히 빠진다. 영상(22초)이 끝나기 약 1초 전에 TV에 자리 잡는다.
+const NEWS_ZOOM_AT = 14.8 // 줌아웃 시작(영상 초)
+const NEWS_ZOOM_MS = 6000
 
 // 1920×1080 요소를 네 꼭짓점에 맞추는 원근 변환(matrix3d). 단위 정사각형 → 사각형 사영 변환을 쓴다.
 function quadMatrix(q, w = 1920, h = 1080) {
@@ -421,6 +422,28 @@ function quadMatrix(q, w = 1920, h = 1080) {
 // 처음엔 천천히, 가운데서 빠르게 빠졌다가, 끝에서 길게 감속한다.
 // 앞 35% 구간에서 절반을 가속해 빠지고, 남은 절반은 65% 구간에 걸쳐 감속한다. 두 식은 p=0.35에서 0.5로 만난다.
 const zoomEase = (p) => (p < 0.35 ? 0.5 * Math.pow(p / 0.35, 2.2) : 1 - 0.5 * Math.pow(1 - (p - 0.35) / 0.65, 3.2))
+
+// 뉴스 화면 위의 생방송 표시와 제목 띠. 영상 재생 중과 거실 TV 정지 화면이 같은 것을 쓴다.
+function NewsUi() {
+  return (
+    <>
+      <div className="news-live"><i />LIVE<span>2069.03.14 22:41</span></div>
+      <div className="news-lower"><em>BREAKING</em><b>AI NOW SCORES MORE HUMAN THAN HUMANS</b></div>
+    </>
+  )
+}
+
+// 거실 컷(p-call-bg)의 TV에 새 뉴스 화면을 얹는다. 사진 속 TV에는 예전 앵커가 그려져 있기 때문이다.
+// 뉴스 영상의 마지막 프레임(cut/news-still.jpg)을 써서, 영상이 끝나고 넘어가도 TV 화면이 이어진다.
+const TV_MATRIX = quadMatrix(TV_QUAD)
+function TvStill() {
+  return (
+    <div className="news-tv still" style={{ transform: TV_MATRIX, filter: 'brightness(0.85)' }}>
+      <img src={cut('news-still')} alt="" />
+      <NewsUi />
+    </div>
+  )
+}
 
 function NewsVideo({ beat, dispatch, muted }) {
   const ref = useRef(null)
@@ -468,9 +491,9 @@ function NewsVideo({ beat, dispatch, muted }) {
       <div className="news-room" ref={room} style={{ backgroundImage: `url(${cut(beat.img)})` }} />
       <div className="news-tv" ref={tv}>
         <video ref={ref} src={`${BASE}${beat.src}`} playsInline preload="auto" muted={muted} onEnded={() => setTimeout(next, 400)} />
-        <div className="news-live"><i />LIVE<span>2069.03.14 22:41</span></div>
-        <div className="news-lower"><em>속보</em><b>AI 평균 HQ, 사상 처음 인간 넘어서</b></div>
+        <NewsUi />
       </div>
+      <div className="news-dim" />
       {zoomed && <ChapterTag chapter={1} />}
       {c && (
         <div className="video-cue" key={cue}>
@@ -654,6 +677,7 @@ function Film({ state, beat, dispatch }) {
   return (
     <div className="film" onClick={beat.type === 'clip' ? advance : undefined}>
       <Photo name={beat.img} />
+      {beat.img === 'p-call-bg' && <TvStill />}
       {beat.vid && <BgVideo key={beat.vid} src={beat.vid} onEnd={beat.type === 'clip' ? () => setTimeout(() => dispatch({ type: 'NEXT' }), 600) : undefined} />}
       {!isFinal && <ChapterTag chapter={beat.chapter} />}
 
