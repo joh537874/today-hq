@@ -1,7 +1,7 @@
 import React, { useEffect, useReducer, useRef, useState } from 'react'
 import { BEATS, CHAPTERS, ENDINGS, ENDING_ORDER, WHO_EN, CHOICE_LABELS, CHOICE_MAP, NAME_MAX, applyName, loadName } from './story.js'
 import { useTypewriter } from './ui.jsx'
-import { setBgm, setAmb, sfx, stopAll, setMuted } from './sound.js'
+import { setBgm, setAmb, setVib, sfx, stopAll, setMuted } from './sound.js'
 import { isAdmin, PANEL_W, AdminPanel, buildState, defaultCfg, loadAdmin, saveAdmin } from './Admin.jsx'
 import { setInstant as setTypeInstant } from './ui.jsx'
 
@@ -145,6 +145,7 @@ function AppInner() {
     if (!state.started) { stopAll(); return }
     setBgm(beat.bgm)
     setAmb(beat.amb)
+    setVib(beat.vib ? 'vibrate' : null)
     sfx(beat.sfx)
   }, [state.started, state.idx])
 
@@ -511,6 +512,7 @@ function Film({ state, beat, dispatch }) {
       {!isFinal && <ChapterTag chapter={beat.chapter} />}
 
       {beat.hud && <Hud {...beat.hud} />}
+      {(beat.type === 'call' || beat.call) && <CallCard key="call" beat={beat} idx={state.idx} dispatch={dispatch} />}
       {(beat.type === 'choice' || isFinal) && <Options final={isFinal} options={beat.options} chosen={chosen} onPick={pick} />}
 
       {/* 지시문(내레이션) 형태의 선택 질문은 자막으로 띄우지 않고 화면(컷)으로 보여 준다 */}
@@ -523,6 +525,109 @@ function Film({ state, beat, dispatch }) {
             </div>
           )}
         </footer>
+      )}
+    </div>
+  )
+}
+
+/* ───────── 클로이의 전화 (Figma 3233:1078 수신 · 3233:1089 밀어서 받기 · 3233:1100 통화 중)
+   피그마 프레임(162×190)을 화면 폭에 맞춰 3.549배로 키운 크기다. */
+
+const CALL = `${BASE}ui/call/`
+// 받기 버튼을 막대의 이 비율 이상 밀면 전화를 받는다.
+const ANSWER_AT = 0.8
+
+function CallCard({ beat, idx, dispatch }) {
+  const [answered, setAnswered] = useState(false)
+  const [drag, setDrag] = useState(0) // 받기 버튼 위치 0~1
+  const [dragging, setDragging] = useState(false)
+  const [since, setSince] = useState(null) // 통화 시작 시각
+  const [, tick] = useState(0)
+  const track = useRef(null)
+  const start = useRef(null)
+  const on = answered || beat.call === 'on'
+
+  // 전화 비트로 (다시) 들어오면 처음 상태로 돌린다.
+  useEffect(() => {
+    if (beat.type !== 'call') return
+    setAnswered(false); setDrag(0); setSince(null)
+  }, [idx])
+  // 통화 시간
+  useEffect(() => {
+    if (!on) return
+    setSince((t) => t ?? performance.now())
+    const id = setInterval(() => tick((n) => n + 1), 500)
+    return () => clearInterval(id)
+  }, [on])
+
+  const answer = () => {
+    if (answered || beat.type !== 'call') return
+    setAnswered(true)
+    setDrag(1)
+    setVib(null)
+    sfx('call-connect')
+    setTimeout(() => dispatch({ type: 'NEXT' }), 700)
+  }
+  useKeys((e) => {
+    if (e.code === 'Space' || e.code === 'Enter' || e.key === 'ArrowRight') answer()
+  })
+
+  // 받기 버튼 끌기. 놓았을 때 ANSWER_AT을 넘었으면 받고, 아니면 제자리로 돌아간다.
+  const max = () => {
+    const el = track.current
+    const knob = el.firstElementChild
+    const pad = parseFloat(getComputedStyle(el).paddingLeft)
+    return el.clientWidth - pad * 2 - knob.offsetWidth
+  }
+  const onDown = (e) => {
+    if (answered) return
+    e.stopPropagation()
+    e.currentTarget.setPointerCapture(e.pointerId)
+    start.current = e.clientX
+    setDragging(true)
+  }
+  const onMove = (e) => {
+    if (!dragging) return
+    // 무대가 축소되어 있으므로 화면 거리를 무대 거리로 바꾼다.
+    const scale = track.current.getBoundingClientRect().width / track.current.offsetWidth
+    setDrag(Math.min(1, Math.max(0, (e.clientX - start.current) / scale / max())))
+  }
+  const onUp = () => {
+    if (!dragging) return
+    setDragging(false)
+    if (drag >= ANSWER_AT) answer()
+    else setDrag(0)
+  }
+
+  const secs = since ? Math.floor((performance.now() - since) / 1000) : 0
+  const time = `${String(Math.floor(secs / 60)).padStart(2, '0')}:${String(secs % 60).padStart(2, '0')}`
+  return (
+    <div className={`call-card ${on ? 'on' : 'ring'}`}>
+      <img className="call-face" src={`${CALL}chloe.png`} alt="" />
+      <div className="call-shade" />
+      <div className="call-name">
+        <p>Chloe</p>
+        <p className="call-status">{on ? time : 'calling...'}</p>
+      </div>
+      {!on || (answered && beat.type === 'call') ? (
+        <div className="call-track" ref={track} style={{ '--p': drag }}>
+          <button
+            className={`call-knob ${dragging ? 'dragging' : ''}`}
+            style={{ transform: `translateX(calc(var(--p) * var(--max)))` }}
+            onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
+            onClick={(e) => e.stopPropagation()}
+            aria-label="전화 받기"
+          >
+            <img src={`${CALL}call-answer.svg`} alt="" />
+          </button>
+          <span className="call-hint">slide to answer</span>
+        </div>
+      ) : (
+        <div className="call-actions">
+          <span className="call-btn small"><img src={`${CALL}volume-up.svg`} alt="" /></span>
+          <span className="call-btn end"><img src={`${CALL}call-end.svg`} alt="" /></span>
+          <span className="call-btn small"><img src={`${CALL}mic-off.svg`} alt="" /></span>
+        </div>
       )}
     </div>
   )

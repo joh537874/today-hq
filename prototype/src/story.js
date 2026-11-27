@@ -84,13 +84,13 @@ const raw = [
   // 당신의 집 · 크로스오버의 밤
   N('2069년 3월 14일 밤.', 'The night of March 14, 2069.', { img: 'p-home', bgm: 'night', amb: 'street' }),
   L('뉴스', '“속보입니다. HQ관리국이 발표한 이번 분기 평균 HQ 점수에서 AI가 처음으로 인간을 넘어섰습니다. 판별 시스템이 인간보다 AI를 더 높은 인간 점수로 평가한 것은 이번이 처음인데요. 인간과 AI의 경계에 또 한 번 큰 파장이 예상됩니다.”', '“Breaking news. According to the HQ Bureau’s latest quarterly report, AI has surpassed humans in average HQ scores for the first time. This marks the first time the identification system has rated AI as more human than humans themselves. The news is expected to send shockwaves through society, once again blurring the line between humans and AI.”', { img: 'p-news-sketch', sfx: 'news' }),
-  N('{name:은} 소파에 앉아 뉴스를 보고 있다. 그때, 휴대폰이 울린다.', '{name} is watching the news on the sofa. Then the phone rings.', { img: 'p-call-ring', sfx: 'phone' }),
-  // 전화를 받는 순간. 컷만 0.7초 보여 주고 저절로 넘어간다.
-  { type: 'cut', img: 'p-call-slide', ms: 700 },
-  L('클로이', '“여보세요, {name}? 아직 안 자고 있었네? 별건 아니고, 내일 있을 내 생일 파티 말이야. 한 7시쯤 볼까 하는데 시간 괜찮지?”', '“Hello? {name}? You’re still up? Oh, it’s nothing important. I just wanted to talk about my birthday party tomorrow. I was thinking around seven. Does that work for you?”', { img: 'p-call-on', via: '전화' }),
-  L('클로이', '“…그래 알겠어. 그럼 그때 보자.”', '“...Alright, got it. I’ll see you then.”', { via: '전화' }),
-  L('클로이', '“참, 방금 뉴스를 보니까 HQ가 난리더라. 너희 집 AI는 어때? 이름이… 나인이랬지?”', '“By the way, I just saw the news. HQ is causing quite a stir. How’s the AI at your place? Its name was... Nine, right?”', { via: '전화' }),
-  L('클로이', '“…아무튼, 시간이 너무 늦었네. 내일 다시 연락할게. 잘 자.”', '“...Anyway, it’s getting pretty late. I’ll talk to you again tomorrow. Good night.”', { via: '전화' }),
+  N('{name:은} 소파에 앉아 뉴스를 보고 있다. 그때, 휴대폰이 울린다.', '{name} is watching the news on the sofa. Then the phone rings.', { img: 'p-home', vib: true }),
+  // 클로이의 전화. 휴대폰이 진동하고, 플레이어가 초록 버튼을 밀어서(또는 Space·Enter·→) 받는다.
+  { type: 'call', img: 'p-call-bg', vib: true },
+  L('클로이', '“여보세요, {name}? 아직 안 자고 있었네? 별건 아니고, 내일 있을 내 생일 파티 말이야. 한 7시쯤 볼까 하는데 시간 괜찮지?”', '“Hello? {name}? You’re still up? Oh, it’s nothing important. I just wanted to talk about my birthday party tomorrow. I was thinking around seven. Does that work for you?”', { img: 'p-call-bg', call: 'on', via: '전화' }),
+  L('클로이', '“…그래 알겠어. 그럼 그때 보자.”', '“...Alright, got it. I’ll see you then.”', { call: 'on', via: '전화' }),
+  L('클로이', '“참, 방금 뉴스를 보니까 HQ가 난리더라. 너희 집 AI는 어때? 이름이… 나인이랬지?”', '“By the way, I just saw the news. HQ is causing quite a stir. How’s the AI at your place? Its name was... Nine, right?”', { call: 'on', via: '전화' }),
+  L('클로이', '“…아무튼, 시간이 너무 늦었네. 내일 다시 연락할게. 잘 자.”', '“...Anyway, it’s getting pretty late. I’ll talk to you again tomorrow. Good night.”', { call: 'on', via: '전화' }),
   L('나인', '“그러고 보니, 내일이 클로이 씨의 생일이네요. 내일은 일찍 나가셔야 할 것 같아요. 어서 주무시는 걸 추천할게요.”', '“Come to think of it, tomorrow is Chloe’s birthday. You’ll need to head out early, so I suggest getting some rest now.”', { img: 'p-home' }),
   N('창밖 전광판의 숫자가 자정을 알린다. 늦은 밤에도 도시는 여전히 환하게 빛나고, 사람들은 저마다의 밤을 보낸다.', 'The billboard outside marks midnight. Even this late, the city still glows, and everyone spends their own night.', { img: 'p-city' }),
 
