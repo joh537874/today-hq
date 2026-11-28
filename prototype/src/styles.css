@@ -535,6 +535,21 @@ button { font: inherit; color: inherit; border: 0; background: none; }
 .admin-edit-foot button { padding: 3px 10px; border-radius: 5px; background: #1a1d23; color: #9aa2ad; font-size: 12px; }
 .admin-edit-foot button.on { background: #d5f6ff; color: #0e1014; }
 .admin-edit-foot button:disabled { opacity: 0.4; cursor: default !important; }
+.admin-edit label.draft textarea { border-color: #6fb5c9; }
+.admin-drafts { padding: 10px 16px 12px; border-bottom: 1px solid #1d2026; display: grid; gap: 6px; max-height: 30vh; overflow-y: auto; }
+.admin-drafts > strong { color: #fff; font-size: 12.5px; font-weight: 600; }
+.admin-drafts ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.admin-drafts li { display: grid; grid-template-columns: 1fr auto; column-gap: 6px; padding: 4px 6px; border-radius: 5px; cursor: pointer !important; }
+.admin-drafts li * { cursor: pointer !important; }
+.admin-drafts li:hover { background: #161920; }
+.admin-drafts li del { color: #6b727c; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+.admin-drafts li ins { grid-column: 1; color: #dfe3e8; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-drafts li button { grid-row: span 2; align-self: center; padding: 0 6px; background: none; color: #7d8590; font-size: 15px; }
+.admin-drafts li.sent { opacity: 0.5; }
+.admin-drafts input { width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid #262a32; border-radius: 5px; background: #14171c; color: #dfe3e8; font: inherit; cursor: text !important; }
+.admin-drafts input:focus { outline: none; border-color: #d5f6ff; }
+.admin-drafts a { color: #7d8590; text-decoration: underline; cursor: pointer !important; }
+.admin-drafts p { margin: 0; color: #7d8590; font-size: 12px; line-height: 1.5; }
 .admin-list { list-style: none; margin: 0; padding: 0 0 40px; overflow-y: auto; flex: 1; }
 .admin-list li { display: grid; grid-template-columns: 34px 1fr; column-gap: 6px; padding: 7px 16px 7px 10px; border-left: 3px solid transparent; cursor: pointer !important; }
 .admin-list li * { cursor: pointer !important; }

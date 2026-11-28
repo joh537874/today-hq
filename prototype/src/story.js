@@ -350,8 +350,36 @@ const raw = [
   { type: 'result', bgm: 'result', amb: null },
 ]
 
-// 관리자 뷰어의 문장 편집이 원문(이름을 채우기 전, 페이지를 나누기 전)을 읽을 때 쓴다.
-export const RAW = raw
+// ───────── 관리자 뷰어의 문장 편집
+// 비트 하나에서 고칠 수 있는 한글 문장과 그 위치(path). 순서는 story.js에 적힌 순서와 같아야 한다.
+function fieldsOf(b) {
+  const out = []
+  if (b.type === 'narr' || b.type === 'line') out.push({ label: '문장', path: ['text'] })
+  if (b.prompt) out.push({ label: '질문', path: ['prompt', 'text'] })
+  b.options?.forEach((o, k) => out.push({ label: `선택지 ${k + 1}`, path: ['options', k, 'text'] }))
+  b.cues?.forEach((c, k) => out.push({ label: `자막 ${k + 1}`, path: ['cues', k, 'text'] }))
+  b.lines?.forEach((t, k) => out.push({ label: `안내 ${k + 1}`, path: ['lines', k] }))
+  return out.map((f) => ({ ...f, text: f.path.reduce((v, key) => v[key], b) }))
+}
+// 원문(이름을 채우기 전, 페이지를 나누기 전) 기준의 문장 목록. FIELDS[ri]가 raw[ri]의 문장들이다.
+export const FIELDS = raw.map(fieldsOf)
+const setIn = (v, [k, ...rest], x) => {
+  const c = Array.isArray(v) ? [...v] : { ...v }
+  c[k] = rest.length ? setIn(v[k], rest, x) : x
+  return c
+}
+// 배포 전 임시 수정. 문장 전체 순번 → 고친 문장. 관리자 뷰어에서만 채우며, 채우면 대본을 다시 만든다.
+let drafts = null
+export function setDrafts(map) { drafts = map; applyName(NAME) }
+function patched() {
+  if (!drafts) return raw
+  let g = 0
+  return raw.map((b, ri) => {
+    let out = b
+    for (const f of FIELDS[ri]) { if (g in drafts) out = setIn(out, f.path, drafts[g]); g += 1 }
+    return out
+  })
+}
 
 // chapter, img를 앞 비트에서 이어받는다. 각 장의 첫 내레이션과 1장 내레이션은 가운데 정렬한다.
 // ───────── 자막 나누기
@@ -474,7 +502,7 @@ export let CHOICE_MAP = {}
 // 2026-11-28 이름 입력 화면을 없앴다. 주인공 이름은 기본 이름('진')으로 고정한다.
 export function applyName(input) {
   NAME = (input ?? '').trim().slice(0, NAME_MAX) || DEFAULT_NAME
-  const src = fill(raw, NAME)
+  const src = fill(patched(), NAME)
   CHOICE_MAP = buildChoiceMap(src)
   BEATS = buildBeats(src)
   return NAME
