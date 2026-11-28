@@ -111,3 +111,27 @@ export const ui = {
   // 대사 글자가 찍힐 때. 음높이를 조금씩 흔들어 기계음처럼 들리지 않게 한다.
   tick: () => tone({ f0: 520 + Math.random() * 120, f1: 380, type: 'triangle', vol: 0.018, dur: 0.035 }),
 }
+
+// 스캐너를 꾹 누르는 동안 음이 천천히 올라간다. 돌려받은 함수로 멈춘다(done이면 짧게 '띵' 하고 끝낸다).
+export function charge(ms) {
+  const c = ac()
+  if (!c || muted) return () => {}
+  const t = c.currentTime
+  const o = c.createOscillator()
+  const g = c.createGain()
+  o.type = 'sine'
+  o.frequency.setValueAtTime(420, t)
+  o.frequency.exponentialRampToValueAtTime(1180, t + ms / 1000)
+  g.gain.setValueAtTime(0.0001, t)
+  g.gain.exponentialRampToValueAtTime(0.03, t + 0.08)
+  o.connect(g).connect(c.destination)
+  o.start(t)
+  return (done) => {
+    const n = c.currentTime
+    g.gain.cancelScheduledValues(n)
+    g.gain.setValueAtTime(Math.max(g.gain.value, 0.0001), n)
+    g.gain.exponentialRampToValueAtTime(0.0001, n + (done ? 0.05 : 0.12))
+    o.stop(n + 0.15)
+    if (done) tone({ f0: 1760, vol: 0.04, dur: 0.4, at: 0.02 })
+  }
+}

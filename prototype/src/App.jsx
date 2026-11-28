@@ -1,7 +1,7 @@
 import React, { useEffect, useReducer, useRef, useState } from 'react'
 import { BEATS, CHAPTERS, ENDINGS, ENDING_ORDER, WHO_EN, CHOICE_LABELS, CHOICE_MAP } from './story.js'
 import { useTypewriter } from './ui.jsx'
-import { setBgm, setAmb, setVib, sfx, stopAll, setMuted, isMuted, ui } from './sound.js'
+import { setBgm, setAmb, setVib, sfx, stopAll, setMuted, isMuted, ui, charge } from './sound.js'
 import { isAdmin, PANEL_W, AdminPanel, buildState, defaultCfg, loadAdmin, saveAdmin } from './Admin.jsx'
 import { setInstant as setTypeInstant } from './ui.jsx'
 
@@ -259,17 +259,19 @@ const CHOICE_MS = 900
 /* ───────── 화면 공통 요소 */
 
 // 사진 한 장이 화면 전체를 덮는다. 컷이 바뀌면 이전 컷 위로 새 컷이 서서히 겹쳐 올라온다.
-function Photo({ name }) {
+// overlay는 지금 컷 층 안에 함께 그린다(스캐너 표시처럼 사진 속 위치에 붙어 같이 움직여야 하는 것).
+function Photo({ name, overlay = null }) {
   const [layers, setLayers] = useState([name])
   useEffect(() => {
     setLayers((l) => (l[l.length - 1] === name ? l : [...l.slice(-1), name]))
-    const t = setTimeout(() => setLayers((l) => l.slice(-1)), 1000)
+    const t = setTimeout(() => setLayers((l) => l.slice(-1)), 1300)
     return () => clearTimeout(t)
   }, [name])
   return layers.map((n, i) => (
     <div key={n} className={`photo ${i === layers.length - 1 && layers.length > 1 ? 'photo-new' : ''}`} style={{ backgroundImage: `url(${cut(n)})` }}>
       {/* 거실 TV의 뉴스 화면은 사진 한 장처럼 사진과 함께 나타나야 하므로 같은 층에 넣는다 */}
       {n === 'p-call-bg' && <TvStill />}
+      {n === name && overlay}
     </div>
   ))
 }
@@ -290,6 +292,25 @@ function ChapterTag({ chapter }) {
       <img src={`${BASE}ui/divider.svg`} alt="" width="1" height="18" />
       <span>{c.en}</span>
     </div>
+  )
+}
+
+// 스캐너 표시. 사진 속 스캐너 테두리(타원) 위로 흰 빛 한 줄이 계속 돌고, 누르고 있으면 테두리가 흰색으로 차오른다.
+// cx·cy·rx·ry는 1920×1080 컷 기준 좌표다(story.js의 scan).
+const SCAN_MS = 1100
+// 누르는 동안 차오르는 선은 흰색에서 블루민트(#adeaed, 결과 화면 강조색)로 바뀐다.
+const MINT = [173, 234, 237]
+const mint = (p) => `rgb(${MINT.map((c) => Math.round(255 + (c - 255) * Math.min(1, p * 1.4))).join(',')})`
+function Scanner({ cx, cy, rx, ry, p, done, onDown }) {
+  const color = mint(p)
+  return (
+    <svg className={`scan ${done ? 'done' : ''} ${p > 0 ? 'holding' : ''}`} viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+      <ellipse className="scan-orbit" cx={cx} cy={cy} rx={rx} ry={ry} pathLength="100" />
+      {p > 0 && <ellipse className="scan-fill" cx={cx} cy={cy} rx={rx} ry={ry} pathLength="100" strokeDasharray={`${p * 100} 100`}
+        style={{ stroke: color, filter: `drop-shadow(0 0 ${8 + p * 10}px ${color}) drop-shadow(0 0 4px ${color})` }} />}
+      <ellipse className="scan-hit" cx={cx} cy={cy} rx={rx + 50} ry={ry + 50}
+        onPointerDown={(e) => { e.stopPropagation(); onDown() }} onClick={(e) => e.stopPropagation()} />
+    </svg>
   )
 }
 
@@ -357,8 +378,8 @@ function Hud({ hq, delta, note }) {
   )
 }
 
-/* ───────── 영상 (버튼 없이 재생만 한다. 오프닝·재이 영상은 자막이 영상에 들어 있고,
-   줄리안 영상은 주인공 이름이 들어가므로 cues로 자막을 얹는다) */
+/* ───────── 영상 (버튼 없이 재생만 한다. 자막은 영상에 굽지 않고 cues로 얹는다.
+   흰 배경 구간의 자막은 cue에 tone: 'dark'를 주어 어두운 글씨로 띄운다) */
 
 function OpeningVideo({ beat, dispatch, muted }) {
   const ref = useRef(null)
@@ -388,7 +409,7 @@ function OpeningVideo({ beat, dispatch, muted }) {
     <div className="opening" onClick={next}>
       <video ref={ref} src={`${BASE}${beat.src}`} playsInline preload="auto" muted={muted} onEnded={next} />
       {c && (
-        <div className="video-cue">
+        <div className={`video-cue${c.tone === 'dark' ? ' dark' : ''}`}>
           <p className="ko">{c.text.split('\n').map((l, i) => <span key={i}>{l}</span>)}</p>
         </div>
       )}
@@ -608,10 +629,47 @@ function Film({ state, beat, dispatch }) {
     if (beat.text[shown - 1]?.trim()) ui.tick()
   }, [shown])
 
+  // 스캐너 비트(beat.scan): 스캐너를 꾹 눌러야(또는 Space를 누르고 있어야) 넘어간다. SCAN_MS 전에 떼면 처음으로 돌아간다.
+  const scan = beat.scan
+  const [scanP, setScanP] = useState(0)
+  const [scanned, setScanned] = useState(false)
+  const holdRef = useRef(null)
+  const cancelScan = () => {
+    const h = holdRef.current
+    if (!h) return
+    cancelAnimationFrame(h.raf); h.stop(false); holdRef.current = null
+    setScanP(0)
+  }
+  const startScan = () => {
+    if (!scan || scanned || holdRef.current) return
+    typing.finish()
+    const t0 = performance.now()
+    const h = { stop: charge(SCAN_MS), raf: 0 }
+    const tick = () => {
+      const p = Math.min(1, (performance.now() - t0) / SCAN_MS)
+      setScanP(p)
+      if (p < 1) { h.raf = requestAnimationFrame(tick); return }
+      h.stop(true); holdRef.current = null
+      setScanned(true)
+      setTimeout(() => dispatch({ type: 'NEXT' }), 450)
+    }
+    h.raf = requestAnimationFrame(tick)
+    holdRef.current = h
+  }
+  useEffect(() => {
+    setScanP(0); setScanned(false)
+    const up = () => cancelScan()
+    const keyUp = (e) => { if (e.code === 'Space' || e.code === 'Enter') cancelScan() }
+    window.addEventListener('pointerup', up)
+    window.addEventListener('keyup', keyUp)
+    return () => { cancelScan(); window.removeEventListener('pointerup', up); window.removeEventListener('keyup', keyUp) }
+  }, [state.idx])
+
   const advance = () => {
     if (beat.type === 'clip') { dispatch({ type: 'NEXT' }); return }
     if (!passive) return
     if (!typing.done) typing.finish()
+    else if (scan) startScan()
     else press('next', () => dispatch({ type: 'NEXT' }))
   }
   // 같은 컷 안의 자막(대사·내레이션)은 다 찍힌 뒤 0.5초 있다가 스스로 넘어간다.
@@ -651,13 +709,13 @@ function Film({ state, beat, dispatch }) {
   const isFinal = beat.type === 'final'
   return (
     <div className="film" onClick={beat.type === 'clip' ? advance : undefined}>
-      <Photo name={beat.img} />
+      <Photo name={beat.img} overlay={scan && <Scanner key={state.idx} {...scan} p={scanP} done={scanned} onDown={startScan} />} />
       {beat.vid && <BgVideo key={beat.vid} src={beat.vid} onEnd={beat.type === 'clip' ? () => setTimeout(() => dispatch({ type: 'NEXT' }), 600) : undefined} />}
       {!isFinal && <ChapterTag chapter={beat.chapter} />}
 
       {beat.hud && <Hud {...beat.hud} />}
       {(beat.type === 'call' || beat.call) && <CallCard key="call" beat={beat} idx={state.idx} dispatch={dispatch} />}
-      {(beat.type === 'choice' || isFinal) && <Options final={isFinal} options={beat.options} chosen={chosen} onPick={pick} />}
+      {(beat.type === 'choice' || isFinal) && <Options key={state.idx} final={isFinal} at={beat.at} options={beat.options} chosen={chosen} onPick={pick} />}
 
       {/* 지시문(내레이션) 형태의 선택 질문은 자막으로 띄우지 않고 화면(컷)으로 보여 준다 */}
       {!isFinal && (passive || beat.prompt?.type === 'line') && (
@@ -665,7 +723,9 @@ function Film({ state, beat, dispatch }) {
           <Caption key={state.idx} item={passive ? beat : beat.prompt} typing={passive ? typing : null} />
           {passive && (
             <div className="caption-actions">
-              <ContinueButton on={pressed === 'next'} onClick={advance} />
+              {scan
+                ? <span className={`scan-hint ${scanP > 0 ? 'on' : ''}`}>꾹 눌러 스캔<em>Space</em></span>
+                : <ContinueButton on={pressed === 'next'} onClick={advance} />}
             </div>
           )}
         </footer>
@@ -851,9 +911,12 @@ function CallVideoLayer({ src, active, play, cues: cueList, onCue, onEnd, onShow
 }
 
 // 우측 선택지. 반투명 박스에 번호와 문장을 둔다.
-function Options({ options, onPick, chosen = null, final = false }) {
+// at: [left, top, side] — 인물을 가리지 않는 자리(1920×1080 기준). side는 선택지가 인물의 어느 쪽에 있는지('left'·'right')로,
+// 인물 쪽에서 작게 튀어나오듯 등장한다. at이 없으면 기존 자리(오른쪽)에 뜬다.
+function Options({ options, onPick, chosen = null, final = false, at = null }) {
+  const style = at ? { left: at[0], top: at[1], '--from': at[2] === 'left' ? '28px' : '-28px' } : undefined
   return (
-    <div className={`options ${final ? 'final' : ''} ${chosen !== null ? 'picked' : ''}`}>
+    <div className={`options ${final ? 'final' : ''} ${at ? 'placed' : ''} ${chosen !== null ? 'picked' : ''}`} style={style}>
       {options.map((o, i) => (
         <button key={i} className={`option ${chosen === i ? 'on' : ''}`} onClick={(e) => { e.stopPropagation(); origin(e); onPick(i) }}>
           <span className="num">{i + 1}</span>

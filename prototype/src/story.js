@@ -96,7 +96,7 @@ const raw = [
   },
   // 2026-11-28 Figma '최종 이미지' 스토리보드 01~04(3082:698·713·741·755) 기준으로 1~4장 문구와 컷을 맞췄다.
   // 나레이션의 주어는 Figma처럼 '당신'으로 쓰고, 대사 속 호칭만 플레이어가 입력한 이름({name})으로 채운다.
-  N('당신은 AI 비서 ‘나인’과 함께 소파에 앉아 뉴스를 보고 있다. 그때, 휴대폰이 울린다.', 'You are sitting on the sofa watching the news with your AI assistant, Nyin. Then the phone rings.', { img: 'p-call-bg', bgm: 'living', amb: 'street', vib: true }),
+  N('AI 비서 ‘나인’과 함께 소파에 앉아 뉴스를 보고 있다. 그때 휴대폰이 울린다.', 'You are sitting on the sofa watching the news with your AI assistant, Nyin. Then the phone rings.', { img: 'p-call-bg', bgm: 'living', amb: 'street', vib: true }),
   // 클로이의 전화. 휴대폰이 진동하고, 플레이어가 초록 버튼을 밀어서(또는 Space·Enter·→) 받는다.
   { type: 'call', img: 'p-call-bg', vib: true },
   // 클로이 첫 대사는 통화 카드 안 영상으로 보여 준다(배경을 투명하게 뺀 영상, 유리 효과는 화면에서 건다). 자막은 말소리에 맞춰 아래에 뜨고, 영상이 끝나면 넘어간다.
@@ -151,7 +151,7 @@ const raw = [
   L('나인', '“그런 소문이 있어요.”', '“That’s what people are saying.”'),
   N('편지를 쓰던 중, 당신은 방금 적은 문장에서 맞춤법이 틀린 부분을 발견한다. 지우개를 든 채 잠시 망설인다.', 'While writing, you notice a misspelling in the sentence you just wrote. You hesitate, eraser in hand.', { img: 's2-letter-write' }),
   {
-    type: 'choice', id: 'c1', num: '①', axis: 'hq', img: 's2-letter-write',
+    type: 'choice', id: 'c1', num: '①', axis: 'hq', img: 's2-letter-write', at: [1230, 560, 'right'],
     prompt: L(ME, '‘혹시 오타를 지우지 않고 그냥 주면, 내 HQ가 오르지 않을까? 하지만 오타를 그냥 두면 보기 안 좋을 텐데. 어떡하지?’', '‘If I just leave the typo, maybe my HQ will go up? But it won’t look good. What should I do?’'),
     options: [
       { text: '틀린 부분을 발견하고도 고치지 않고 그대로 둔다.', sign: 1 },
@@ -165,11 +165,11 @@ const raw = [
   // 백화점 입구 · 낮 (게이트: 나인 통과 → 내 차례 → 72 거부)
   N('당신과 나인은 백화점으로 향한다. 입구에는 ‘입장 기준 HQ 75’라는 안내가 붙어 있다.', 'You and Nyin head to the department store. A sign at the entrance reads ‘Entry requirement: HQ 75.’', { img: 's2-store', bgm: 'day', amb: 'mall' }),
   N('나인이 먼저 게이트를 통과한다. HQ 88. 초록색 불이 켜진다.', 'Nyin passes through the gate first. HQ 88. The light turns green.', { img: 's2-gate-nine', sfx: 'gate-ok' }),
-  N('이제 당신의 HQ를 입력할 차례다.', 'Now it’s your turn to enter your HQ.', { img: 's2-gate-panel' }),
+  N('이제 당신의 HQ를 입력할 차례다.', 'Now it’s your turn to enter your HQ.', { img: 's2-gate-panel', scan: { cx: 1241, cy: 595, rx: 121, ry: 88 } }),
   L('게이트 안내', '“죄송합니다. 현재 HQ로는 입장하실 수 없습니다.”', '“We’re sorry. Your current HQ score does not meet the entry requirements.”', { img: 's2-gate-denied', sfx: 'gate-no' }),
   N('먼저 게이트를 통과했던 나인이 발길을 돌려 당신에게 돌아온다. 나인이 당신의 얼굴을 살핀다.', 'Nyin, who had already gone through, turns back and returns to you, studying your face.', { img: 's2-nine-face' }),
   {
-    type: 'choice', id: 'c2', num: '②', axis: 'ai',
+    type: 'choice', id: 'c2', num: '②', axis: 'ai', at: [1140, 300, 'right'],
     prompt: L('나인', '“……괜찮아요?”', '“...Are you okay?”'),
     options: [
       { text: '“하… 여긴 못 들어가겠네. 다른 곳을 찾아볼 수 있을까? 어디 갈 만한 데 있는지 알아봐 줘.”', sign: 1 },
@@ -182,13 +182,13 @@ const raw = [
   // 단골 카페 (입구 패널: 빈 화면 → 72 입장 허용)
   L(ME, '“어찌어찌 선물은 샀네. 이제 좀 지친다.”', '“Well, at least we got the gift. I’m pretty tired now.”', { img: 's2-cafe', amb: 'street-day' }),
   L('나인', '“생각보다 오래 걸렸네요. 많이 피곤해 보이는데, 근처에 카페가 있어요. 잠깐 쉬었다 갈까요?”', '“That took longer than expected. You look pretty tired. There’s a café nearby. Shall we take a break?”'),
-  N('둘은 입장 기준이 HQ 70인 단골 카페로 향한다.', 'The two head to their usual café, where the entry requirement is HQ 70.', { img: 's2-cafe-panel' }),
+  N('둘은 입장 기준이 HQ 70인 단골 카페로 향한다.', 'The two head to their usual café, where the entry requirement is HQ 70.', { img: 's2-cafe-panel', scan: { cx: 1196, cy: 742, rx: 43, ry: 46 } }),
   // 패널에 72와 입장 허용이 뜨는 컷. 글 없이 잠깐 보여 주고 넘어간다.
   { type: 'cut', img: 's2-cafe-allowed', ms: 1600, amb: 'cafe', sfx: ['gate-ok', 'bell'] },
   N('당신이 커피를 주문하자, 카운터의 AI 바리스타가 컵을 내밀며 말을 건다.', 'As you order coffee, the AI barista at the counter hands you a cup and starts talking.', { img: 's2-barista' }),
   L('AI 바리스타', '“안녕하세요~! 날씨가 우중충해서 다운되는 하루네요. 저는 오늘 같은 날만 되면 기분이 축 처지더라고요.”', '“Hello~! The weather is so gloomy today, isn’t it? Days like this always bring my mood down.”'),
   {
-    type: 'choice', id: 'c3', num: '③', axis: 'ai',
+    type: 'choice', id: 'c3', num: '③', axis: 'ai', at: [380, 260, 'left'],
     prompt: L('AI 바리스타', '“……어머, 손님도 오늘 무슨 안 좋은 일 있으셨어요? 표정이 좀 어두우시네요.”', '“...Oh, did something happen today? You look a little down, too.”'),
     options: [
       { text: '“그러게요. 오늘 참… 기분이 안 좋은 하루네요.”', sign: 1 },
@@ -201,10 +201,19 @@ const raw = [
   // 길거리
   N('커피를 받아 카페를 나온다. 나인과 함께 걷던 중, 길 건너편에서 누군가 홀로 피켓을 들고 서 있는 것을 발견한다.', 'You leave the café with your coffee. Walking with Nyin, you spot someone standing alone across the street, holding a picket sign.', { img: 's2-cafe-street', amb: 'street-day' }),
   N('피켓에는 ‘HQ 폐지!’라고 적혀 있다. 머리 위에 HQ 숫자가 없는 그녀를 힐끗거리던 사람들은 이내 모른 척 지나간다.', 'The sign reads ‘Abolish HQ!’ People glance at her, with no HQ number above her head, then pretend not to see and walk past.', { img: 's2-jae' }),
-  // 재이 시위 영상(22초, 1·2 이어 붙임). 대사·자막·거리 소리가 영상에 들어 있다.
-  { type: 'video', src: 'scene/jae-protest.mp4', bgm: null, amb: null },
+  // 재이 시위 영상(22초, 1·2 이어 붙임). 대사·거리 소리가 영상에 들어 있다.
+  // 자막은 영상에 굽지 않고 코드로 얹는다. 시점은 예전에 영상에 구워져 있던 자막이 뜨고 지던 때를 재서 옮겼다(media-src/subtitle-removal).
   {
-    type: 'choice', id: 'c4', num: '④', axis: 'hq', bgm: 'day', amb: 'street-day',
+    type: 'video', src: 'scene/jae-protest.mp4', bgm: null, amb: null,
+    cues: [
+      { at: 0.3, to: 4.6, text: 'HQ는 인간다움이 아닙니다!\n그걸 누가 정하죠?!', en: 'HQ is NOT what makes us human! Who gets to decide that?!' },
+      { at: 4.8, to: 10.2, text: '나조차 나를 모르는데,\n누가 인간다움을 규정할 수 있단 말입니까?!', en: 'I don’t even understand myself... so how can anyone define what it means to be human?!' },
+      { at: 12.6, to: 17.8, text: '실수를 하면? 감정을 느끼면?\n그게 인간다움이 아닙니다!', en: 'Making mistakes? Feeling emotions? That’s not what humanity is!' },
+      { at: 18.0, to: 21.95, text: '인간다움은 정해져 있지 않습니다.\n우리가 스스로 찾아가는 것입니다!', en: 'It isn’t fixed... It’s something we discover for ourselves!' },
+    ],
+  },
+  {
+    type: 'choice', id: 'c4', num: '④', axis: 'hq', bgm: 'day', amb: 'street-day', at: [1260, 420, 'right'],
     prompt: N('재이가 HQ 폐지 시위를 하고 있다.', 'Jae is protesting to abolish HQ.'),
     options: [
       { text: '‘그래도 인간다움을 판단할 기준은 필요하지 않을까?’ 생각하며 지나친다.', sign: 1 },
@@ -215,7 +224,7 @@ const raw = [
   L('나인', '“그러고 보니 클로이 파티에 가는 것도 정말 오랜만이네요.”', '“Come to think of it, it’s been a while since you last went to one of Chloe’s parties.”'),
   L(ME, '“그러게. 오랜만이라 그런가 좀 걱정되네. 요즘 클로이랑 무슨 얘길 했는지도 잘 모르겠고.”', '“Yeah. I guess I’m a little nervous. I don’t even know what Chloe’s been into lately.”'),
   {
-    type: 'choice', id: 'c5', num: '⑤', axis: 'ai', img: 's2-walk-nine',
+    type: 'choice', id: 'c5', num: '⑤', axis: 'ai', img: 's2-walk-nine', at: [380, 380, 'left'],
     prompt: L('나인', '“그럼 제가 클로이의 관심사를 기반으로 축하 대화를 시뮬레이션해 드릴까요? 제가 준비한 대사대로 말만 해도 그녀는 굉장히 좋아할 거예요.”', '“Would you like me to simulate a congratulatory conversation based on Chloe’s interests? If you just say the lines I’ve prepared, she’ll absolutely love it.”'),
     options: [
       { text: '“좋아. 클로이가 요즘 뭘 좋아하는지부터 알아봐 줘.”', sign: 1 },
@@ -231,7 +240,7 @@ const raw = [
   L('AI 승객', '“괜찮아? 많이 놀랐지. 자, 이제 괜찮아. 울지 않아도 돼.”', '“Oh, are you alright? That must have startled you. There, there. You’re okay now.”'),
   N('이를 본 나인이 옆에서 조용히 말을 건넨다.', 'Seeing this, Nyin speaks quietly beside you.', { img: 's3-nine' }),
   {
-    type: 'choice', id: 'c6', num: '⑥', axis: 'ai',
+    type: 'choice', id: 'c6', num: '⑥', axis: 'ai', at: [320, 380, 'left'],
     prompt: L('나인', '“참 다정하네요.”', '“He’s very kind.”'),
     options: [
       { text: '“그러게. 정말 다정하다. 나도 좀 배워야겠어.”', sign: 1 },
@@ -262,7 +271,7 @@ const raw = [
     ],
   },
   {
-    type: 'choice', id: 'c7', num: '⑦', axis: 'ai', img: 's3-julian', bgm: 'evening', amb: 'subway-ride',
+    type: 'choice', id: 'c7', num: '⑦', axis: 'ai', img: 's3-julian', at: [1290, 330, 'right'], bgm: 'evening', amb: 'subway-ride',
     prompt: L('줄리안', '“AI의 발전은 축복이 아니라 위협일 뿐이야. 인간을 닮아 갈수록 그 위험성은 커지는 법이지.”', '“AI’s progress isn’t a blessing. It’s a threat. The more it resembles us, the more dangerous it gets.”'),
     options: [
       { text: '“글쎄, 나는 나인 덕분에 훨씬 편해졌어.”', sign: 1 },
@@ -272,7 +281,7 @@ const raw = [
   N('당신이 내릴 즈음, 줄리안이 나인을 턱으로 가리키며 말한다.', 'As you are about to get off, Julian nods toward Nyin.', { img: 's3-julian-point' }),
   // Figma 03에는 선택 ⑧이 없다. 루트 계산에 ⑧이 쓰이므로 줄리안 대사만 Figma 문장으로 바꾸고 선택지는 유지한다.
   {
-    type: 'choice', id: 'c8', num: '⑧', axis: 'ai',
+    type: 'choice', id: 'c8', num: '⑧', axis: 'ai', at: [300, 380, 'left'],
     prompt: L('줄리안', '“그 깡통이랑 그만 어울려. 진심으로 하는 말이야. 언젠가는 후회하게 될 거야. 결국 우리 자리를 빼앗으려 들 테니까.”', '“Stop hanging around with that tin can. I’m serious. You’ll regret it someday. They’re going to take our place.”'),
     options: [
       { text: '“AI한테 도움받는 거랑 사람한테 도움받는 거랑 뭐가 달라?”', sign: 1 },

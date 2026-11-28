@@ -34,8 +34,15 @@ button { font: inherit; color: inherit; border: 0; background: none; }
   background-size: cover; background-position: center;
 }
 /* 새 컷은 이전 컷 위로 겹쳐 올라오며 살짝 당겨진다 */
-.photo-new { animation: photo-in 0.9s ease both; }
-@keyframes photo-in { from { opacity: 0; scale: 1.03; } to { opacity: 1; scale: 1; } }
+.photo-new { animation: photo-in 1.2s cubic-bezier(0.3, 0.1, 0.3, 1) both; }
+/* 장면 컷은 머무는 동안 아주 천천히 다가간다(20초에 4%). 같은 컷이 이어지면 처음부터 다시 하지 않는다.
+   photo-in은 scale 속성을, 이 효과는 transform을 써서 두 움직임이 겹쳐도 서로 지우지 않는다. */
+.film .photo:not(.photo-video) { animation: photo-drift 20s cubic-bezier(0.25, 0.1, 0.25, 1) both; }
+.film .photo-new:not(.photo-video) { animation: photo-in 1.2s cubic-bezier(0.3, 0.1, 0.3, 1) both, photo-drift 20s cubic-bezier(0.25, 0.1, 0.25, 1) both; }
+@keyframes photo-drift { from { transform: scale(1); } to { transform: scale(1.04); } }
+
+/* 컷 전환: 새 컷이 흐릿한 상태로 살짝 크게 겹쳐 들어와 1.2초에 걸쳐 또렷해진다 */
+@keyframes photo-in { from { opacity: 0; scale: 1.03; filter: blur(8px); } 60% { filter: blur(0); } to { opacity: 1; scale: 1; filter: none; } }
 
 /* 화면이 바뀔 때(타이틀 → 장면 → 질문 → 결과 → 카드) 어둠에서 서서히 밝아진다 */
 .film, .after, .result, .cards, .choices, .opening { animation: screen-in 0.8s ease both; }
@@ -145,7 +152,7 @@ button { font: inherit; color: inherit; border: 0; background: none; }
 
 /* ───────── 하단 자막 영역 */
 .caption-bar {
-  position: absolute; left: 0; right: 0; bottom: 0; z-index: 2;
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; pointer-events: none; /* 아래쪽 스캐너도 누를 수 있게 막대 자체는 클릭을 받지 않는다 */
   display: flex; align-items: flex-end; gap: 80px;
   padding: 120px 80px 60px;
 }
@@ -188,7 +195,31 @@ button { font: inherit; color: inherit; border: 0; background: none; }
 .continue span { font-family: var(--pretendard); font-weight: 400; font-size: 24px; line-height: 1.4; letter-spacing: -1.2px; }
 .continue em { font-style: normal; font-family: var(--helvetica); font-weight: 300; font-size: 20px; letter-spacing: -0.4px; opacity: 0.5; }
 .continue:hover { background-color: rgba(255, 255, 255, 0.08); }
-.caption-actions { flex: none; display: flex; gap: 12px; align-items: center; }
+.caption-actions { flex: none; display: flex; gap: 12px; align-items: center; pointer-events: auto; }
+
+/* ───────── 스캐너: 테두리 위를 도는 흰 빛 한 줄, 누르는 동안 차오르는 흰 테두리 */
+.scan { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.scan ellipse { fill: none; }
+.scan-orbit {
+  stroke: #fff; stroke-width: 8; stroke-linecap: round; stroke-dasharray: 16 84;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.95)) drop-shadow(0 0 14px rgba(190, 225, 255, 0.7));
+  animation: scan-in 0.6s ease backwards, scan-orbit 1.4s linear infinite;
+}
+.scan-fill { stroke: #fff; stroke-width: 9; stroke-linecap: round; filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.9)); }
+.scan-orbit { transition: opacity 0.15s ease; }
+.scan.holding .scan-orbit, .scan.done .scan-orbit { opacity: 0; } /* 누르는 동안에는 도는 흰 선을 감추고 차오르는 선만 보인다 */
+.scan.done .scan-fill { animation: scan-done 0.45s ease both; }
+.scan-hit { fill: transparent !important; pointer-events: all; }
+@keyframes scan-orbit { to { stroke-dashoffset: -100; } }
+@keyframes scan-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scan-breathe { 50% { stroke: rgba(255, 255, 255, 0.5); } }
+@keyframes scan-done { 50% { stroke-width: 12; filter: drop-shadow(0 0 26px #adeaed); } }
+.scan-hint {
+  display: flex; align-items: center; gap: 10px; padding: 12px 22px; border: 1px solid rgba(255, 255, 255, 0.5);
+  font-family: var(--gothic); font-size: 22px; letter-spacing: -0.6px; opacity: 0.85; animation: scan-in 0.5s ease 0.3s both;
+}
+.scan-hint em { font-style: normal; font-family: var(--helvetica); font-weight: 300; font-size: 16px; opacity: 0.6; }
+.scan-hint.on { border-color: #fff; opacity: 1; }
 /* 건너뛰기: 빛이 테두리를 타고 한 바퀴 돌고 띵 */
 .continue.ghost { border-color: rgba(255, 255, 255, 0.4); overflow: visible; }
 .continue.ghost:not(.on) span { opacity: 0.7; }
@@ -237,6 +268,11 @@ button { font: inherit; color: inherit; border: 0; background: none; }
 }
 .option:nth-child(2) { animation-delay: 0.08s; }
 .option:hover { background-color: var(--panel-hover); }
+/* 인물 옆에 놓는 선택지: 폭을 줄이고, 인물 쪽에서 작게 튀어나와 제자리에 놓인다 */
+.options.placed { max-width: 600px; }
+.options.placed .option { animation: option-pop 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; animation-delay: 0.15s; }
+.options.placed .option:nth-child(2) { animation-delay: 0.27s; }
+@keyframes option-pop { from { opacity: 0; transform: translateX(var(--from)) scale(0.9); filter: blur(4px); } to { opacity: 1; transform: none; filter: none; } }
 .options.picked .option { pointer-events: none; }
 .options.picked .option:not(.on) { animation: option-out 0.4s ease forwards; }
 @keyframes option-out { from { opacity: 1; } to { opacity: 0; translate: 12px 0; } }
@@ -571,6 +607,8 @@ li.admin-chapter:hover { background: #0e1014; }
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
 }
 .video-cue .ko { display: flex; flex-direction: column; font-family: var(--pretendard); font-weight: 500; font-size: 36px; line-height: 48px; }
+/* 흰 배경 구간(오프닝의 Human Quotient 타이틀·HQ 숫자)에서는 어두운 글씨로 띄운다 */
+.video-cue.dark { color: #16181b; text-shadow: none; }
 
 /* ───────── 클로이의 전화 (Figma 3233:1078·1089·1100, 162×190 프레임을 3.549배로 키움) */
 .call-card {
