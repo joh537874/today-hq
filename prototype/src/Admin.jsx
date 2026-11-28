@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef } from 'react'
-import { BEATS, CHAPTERS, ENDINGS, ENDING_ORDER } from './story.js'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { BEATS, CHAPTERS, ENDINGS, ENDING_ORDER, RAW } from './story.js'
 
 // 관리자 뷰어. 주소 끝이 #/admin일 때만 켜진다.
 // 왼쪽 목차에서 비트를 누르면 그 비트로 바로 이동하고, 문장을 고쳐 저장하면 같은 자리로 돌아온다.
+// 개발 서버(npm run dev)에서는 목차 위 편집 칸에서 지금 비트의 문장을 고쳐 story.js에 바로 저장할 수 있다.
 export const isAdmin = () => location.hash.replace(/\/$/, '') === '#/admin'
 export const PANEL_W = 400
 const KEY = 'hq-admin'
@@ -83,6 +84,73 @@ function tagOf(b, i) {
 const TYPE = { narr: '나레이션', line: '대사', choice: '선택', final: '최종 선택', video: '영상', news: '뉴스 영상', voice: '목소리', name: '이름 입력', cut: '컷', call: '전화 받기', notice: '안내', clip: '영상 컷', callvid: '통화 영상', after: '엔딩 질문', result: '결과' }
 const preview = (b) => (b.text ?? b.prompt?.text ?? b.src ?? b.cues?.[0]?.text ?? '').replace(/\n/g, ' ')
 
+// ───────── 문장 편집
+// 고친 문장은 개발 서버(vite.config.js의 admin-edit)가 story.js 원문에 바로 적는다. 배포본에는 파일을 쓸 서버가 없어 편집 칸을 띄우지 않는다.
+const CAN_EDIT = import.meta.env.DEV
+// 비트 하나에서 고칠 수 있는 한글 문장. story.js에 적힌 순서와 같아야 한다.
+function fieldsOf(b) {
+  const out = []
+  if (b.type === 'narr' || b.type === 'line') out.push({ label: '문장', text: b.text })
+  if (b.prompt) out.push({ label: '질문', text: b.prompt.text })
+  b.options?.forEach((o, k) => out.push({ label: `선택지 ${k + 1}`, text: o.text }))
+  b.cues?.forEach((c, k) => out.push({ label: `자막 ${k + 1}`, text: c.text }))
+  b.lines?.forEach((t, k) => out.push({ label: `안내 ${k + 1}`, text: t }))
+  return out
+}
+const FIELDS = RAW.map(fieldsOf)
+const ALL = FIELDS.flat().map((f) => f.text)
+const OFFSET = []
+FIELDS.reduce((n, f, i) => { OFFSET[i] = n; return n + f.length }, 0)
+// 같은 문장이 대본에 여러 번 나오면 몇 번째인지(nth)로 구분한다. total은 서버가 파일과 대조하는 데 쓴다.
+const locate = (ri, k) => {
+  const g = OFFSET[ri] + k
+  return { nth: ALL.slice(0, g).filter((t) => t === ALL[g]).length, total: ALL.filter((t) => t === ALL[g]).length }
+}
+
+function Editor({ ri }) {
+  const fields = FIELDS[ri] ?? []
+  const [draft, setDraft] = useState({})
+  const [msg, setMsg] = useState('')
+  const [busy, setBusy] = useState(false)
+  useEffect(() => { setDraft({}); setMsg('') }, [ri])
+  if (!fields.length) return null
+  const edits = fields.map((f, k) => ({ old: f.text, text: draft[k], ...locate(ri, k) })).filter((e) => e.text != null && e.text !== e.old)
+  const save = async () => {
+    if (!edits.length || busy) return
+    if (edits.some((e) => !e.text.trim())) { setMsg('빈 문장은 저장할 수 없습니다.'); return }
+    setBusy(true)
+    try {
+      const res = await fetch('/__admin/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ edits }) })
+      const out = await res.json()
+      if (!res.ok) throw new Error(out.error)
+      location.reload() // 보던 비트는 saveAdmin이 기억해 둔다
+    } catch (e) {
+      setMsg(`저장 실패: ${e.message}`)
+      setBusy(false)
+    }
+  }
+  return (
+    // 입력 중의 키(Space·Enter·S·화살표)가 게임 진행으로 넘어가지 않게 막는다.
+    <div className="admin-edit" onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); save() } }}>
+      {fields.map((f, k) => {
+        const v = draft[k] ?? f.text
+        return (
+          <label key={k} className={v !== f.text ? 'dirty' : ''}>
+            <span>{f.label}</span>
+            <textarea value={v} rows={Math.min(6, Math.max(1, Math.ceil(v.length / 26) + (v.split('\n').length - 1)))}
+              onChange={(e) => setDraft({ ...draft, [k]: e.target.value })} spellCheck={false} />
+          </label>
+        )
+      })}
+      <div className="admin-edit-foot">
+        <em>{msg || (edits.length ? `${edits.length}곳 수정됨 · ⌘Enter` : 'story.js에 바로 저장')}</em>
+        <button disabled={!edits.length || busy} onClick={() => { setDraft({}); setMsg('') }}>되돌리기</button>
+        <button className="on" disabled={!edits.length || busy} onClick={save}>{busy ? '저장 중' : '저장'}</button>
+      </div>
+    </div>
+  )
+}
+
 export function loadAdmin() {
   try {
     const saved = JSON.parse(sessionStorage.getItem(KEY))
@@ -124,6 +192,7 @@ export function AdminPanel({ state, cfg, setCfg, dispatch, instant, setInstant }
   useEffect(() => {
     const onKey = (e) => {
       if (e.code !== 'ArrowLeft' && e.code !== 'ArrowRight') return
+      if (e.target?.closest?.('.admin-edit')) return // 문장을 고치는 중에는 커서 이동으로 쓴다
       e.preventDefault(); e.stopImmediatePropagation()
       const dir = e.code === 'ArrowRight' ? 1 : -1
       let i = state.idx + dir
@@ -164,6 +233,7 @@ export function AdminPanel({ state, cfg, setCfg, dispatch, instant, setInstant }
           <em>← → 이동</em>
         </div>
       </div>
+      {CAN_EDIT && <Editor ri={BEATS[state.idx]?.ri} />}
       <ol className="admin-list" ref={listRef}>
         {BEATS.map((b, i) => {
           if (b.type === 'route') return null
