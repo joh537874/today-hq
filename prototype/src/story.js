@@ -505,7 +505,7 @@ export const ENDINGS = {
   insurgent: {
     name: 'The Insurgent', last: 'e-mail', portrait: 'insurgent',
     // 결과 화면 (Figma 3122:2562)
-    portraitStyle: { width: 2381, height: 1402, left: -287, top: -190 },
+    portraitStyle: { width: 2381, height: 1770, left: -287, top: -380 },
     quotePos: { left: 1195, top: 389 },
     tint: 'rgba(174,234,237,0.25)', base: 'rgb(100,152,174)',
     desc: '나를 규정하는 기준 자체를 무너뜨리려는 사람',
