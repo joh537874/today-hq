@@ -296,8 +296,8 @@ const raw = [
   N('잠시 망설이던 당신은 초인종을 누른다. 곧 도어폰 너머로 클로이의 목소리가 들려온다.', 'After a moment’s hesitation, you ring the bell. Soon Chloe’s voice comes through the intercom.', { sfx: ['doorbell', 'intercom'] }),
   L('클로이', '“왔구나. …어, 잠깐만 너 HQ가…”', '“You’re here! ...Oh, wait, your HQ...”'),
   N('스피커 너머로 잠시 정적이 흐른다. 뒤쪽에서는 누군가 웃는 소리가 들려온다.', 'A brief silence comes through the speaker. Someone is laughing in the background.', { amb: 'party' }),
-  L('클로이', '“미리 말했어야 했는데. 미안해. 그런데 너도 알잖아. 요즘은 HQ가 비슷한 사람들끼리 어울리는 게 당연하니까. 우리도 나름 기준이 있는데, 너 하나 때문에 바꾸긴 좀 그렇잖아?”', '“I should have told you earlier. I’m sorry. But you know how it is. These days, people with similar HQ stick together. We have our own standard, and it’s a bit much to change it just for you, right?”'),
-  L('클로이', '“다른 애들도 별로 내키지 않는 눈치고…… HQ 조금만 더 올려서 다시 오면 안 될까?”', '“The others don’t seem too keen either... Could you raise your HQ a little and come back?”'),
+  L('클로이', '”미리 말했어야 했는데. 미안해. 그런데 너도 알잖아. 요즘은 HQ가 비슷한 사람들끼리 어울리는 게 당연하니까.”', '”I should\'ve told you earlier. Sorry. But you know how things are these days. People tend to stick with others who are on their level.”'),
+  L('클로이', '”HQ 조금만 더 올려서 다시 오면 안 될까?”', '”Could you raise your HQ a little and come back?”'),
 
   // Route A · AI를 인정한 사람들
   { when: ifRoute('A'), img: 's4-jin-a', ...N('당신과 나인은 클로이의 집 앞에 멍하니 서 있다. 손에는 클로이에게 전할 편지와 선물이 들려 있다.', 'You and Nyin stand blankly at Chloe’s door, the letter and gift for Chloe in your hands.') },
@@ -333,10 +333,10 @@ const raw = [
   { when: ifFinal('zealot'), ...L(ME, '“……나인, 미안해.”', '“...Nyin, I’m sorry.”') },
   { when: ifFinal('zealot'), ...L('나인', '“네? {name}……?”', '“What? {name}...?”') },
   { when: ifFinal('zealot'), ...N('당신은 나인의 말이 끝나기도 전에 나인의 귀에 부착된 휴미터를 거칠게 뜯어낸다. 휴미터를 손에 쥐고 자신의 귀에 가져다 대자 HQ가 올라가는 것이 느껴진다. 당신은 바닥에 쓰러진 나인을 뒤로한 채, 망설임 없이 집 안으로 들어선다.', 'Before Nyin can finish, you rip the Humeter from Nyin’s ear. As you hold it to your own ear, you feel your HQ rise. Leaving Nyin collapsed on the floor, you walk into the house without hesitation.') },
-  { when: ifFinal('outlier'), ...L(ME, '“사람들이 정한 인간다움에 맞추려고 내 행동까지 바꾸고 싶진 않아. 그렇다고 AI의 도움을 받고 싶지도 않고.”', '“I don’t want to change who I am to fit what people call human. But I don’t want an AI’s help either.”') },
-  { when: ifFinal('outlier'), ...L('나인', '“그렇군요. 그럼 돌아갈까요?”', '“I see. Shall we go back, then?”') },
-  { when: ifFinal('outlier'), ...L(ME, '“난 돌아가겠어.”', '“I’m going back.”') },
-  { when: ifFinal('outlier'), ...N('당신은 나인과 함께 발걸음을 돌려 집으로 향한다. 클로이에게 무시당한 건 여전히 마음에 걸리지만, 한편으로는 마음 한켠이 한결 가볍다.', 'You turn around and head home with Nyin. Being brushed off by Chloe still stings, but part of you feels lighter.') },
+  { when: ifFinal('outlier'), ...L(ME, '”사람들이 정한 인간다움에 맞추려고 내 행동까지 바꾸고 싶진 않아. 그렇다고 AI의 도움을 받아서까지 그러고 싶지도 않고.”', '”I don\'t want to change the way I act just to fit someone else\'s idea of what it means to be human. And I don\'t want an AI\'s help to do it, either.”') },
+  { when: ifFinal('outlier'), ...L('나인', '”{name}, 설마 휴미터를 떼어내려는 건가요?”', '”{name}, you\'re not thinking of removing the Humeter, are you?”') },
+  { when: ifFinal('outlier'), ...L(ME, '”난 그냥 돌아갈래.”', '”I just want to go back.”') },
+  { when: ifFinal('outlier'), ...N('당신은 귀에 부착된 휴미터를 떼어 바닥에 내던진다. 그리고는 뒤돌아 집으로 향한다. 이제 공식적으로 가장 인간답지 않은 사람이 되었다. 하지만 정말 그럴까?', 'You rip the Humeter from your ear and hurl it to the ground. Then you turn and head home. Officially, you are now the least human person there is. But is that really true?') },
 
   // ───────── 5장 · 엔딩 (엔딩 영상 → 마지막 질문 → 결과 화면, Figma 2254 · 2255 · 2262)
   { chapter: 5, when: ifFinal('adapter'), img: 'e-adapter-phone', bgm: 'end-adapter', amb: 'street-day', ...N('급하게 감동적인 영상을 찾아보고, 기부를 하고, 길에서 쓰레기를 줍는다.', '{name} rushes to watch moving videos, makes a donation, picks up trash on the street.') },
