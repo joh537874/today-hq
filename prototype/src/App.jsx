@@ -316,7 +316,6 @@ function Caption({ item, typing }) {
         </div>
       )}
       <p className="ko"><Sentences full={item.text} shown={text.length} /></p>
-      {item.en && <p className="en"><Sentences full={item.en} shown={typing ? Math.round((item.en.length * text.length) / Math.max(1, item.text.length)) : undefined} /></p>}
     </div>
   )
 }
@@ -391,7 +390,6 @@ function OpeningVideo({ beat, dispatch, muted }) {
       {c && (
         <div className="video-cue">
           <p className="ko">{c.text.split('\n').map((l, i) => <span key={i}>{l}</span>)}</p>
-          {c.en && <p className="en">{c.en}</p>}
         </div>
       )}
     </div>
@@ -500,7 +498,6 @@ function NewsVideo({ beat, dispatch, muted }) {
       {c && (
         <div className="video-cue" key={cue}>
           <p className="ko">{c.text.split('\n').map((l, i) => <span key={i}>{l}</span>)}</p>
-          {c.en && <p className="en">{c.en}</p>}
         </div>
       )}
     </div>
@@ -541,7 +538,6 @@ function VoiceOver({ beat, dispatch, muted }) {
       {c && (
         <div className="voice-cue" key={i}>
           <p className="ko">{c.text}</p>
-          {c.en && <p className="en">{c.en}</p>}
         </div>
       )}
     </div>
@@ -755,7 +751,6 @@ function CallCard({ beat, idx, dispatch }) {
     {beat.type === 'callvid' && cue && (
       <div className="video-cue">
         <p className="ko">{cue.text.split('\n').map((l, i) => <span key={i}>{l}</span>)}</p>
-        {cue.en && <p className="en">{cue.en}</p>}
       </div>
     )}
     <div className={`call-card ${on ? 'on' : 'ring'}`}>
@@ -915,7 +910,7 @@ function Result({ state, dispatch }) {
   return (
     <div className="result" style={{ '--tint': end.tint, '--base': end.base, '--base-t': end.base.replace('rgb(', 'rgba(').replace(')', ',0)') }}>
       <div className="result-photo-wrap" style={ps ? { width: ps.width, height: ps.height, left: ps.left, top: ps.top } : undefined}>
-        {end.photoGradient && <div style={{ position: 'absolute', inset: 0, mixBlendMode: 'luminosity', backgroundImage: end.photoGradient }} />}
+        {end.photoGradient && <div style={{ position: 'absolute', inset: 0, backgroundImage: end.photoGradient }} />}
         <img className="result-photo" src={`${BASE}ending/${end.portrait}.jpg`} alt="" />
       </div>
       <div className="result-tint" />

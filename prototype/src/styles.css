@@ -75,8 +75,7 @@ button { font: inherit; color: inherit; border: 0; background: none; }
 .opening video { position: absolute; inset: -1px; width: calc(100% + 2px); height: calc(100% + 2px); object-fit: cover; display: block; }
 .voice { background: #000; display: flex; align-items: center; justify-content: center; }
 .voice-cue { display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; animation: caption-in 0.6s ease both; }
-.voice-cue .ko { font-family: var(--gothic); font-weight: 400; font-size: 32px; line-height: 1.5; letter-spacing: -1.92px; }
-.voice-cue .en { font-family: var(--gothic); font-weight: 200; font-size: 20px; line-height: 1.4; opacity: 0.6; }
+.voice-cue .ko { font-family: var(--gothic); font-weight: 400; font-size: 36px; line-height: 1.5; letter-spacing: -2.16px; }
 @keyframes screen-in { from { opacity: 0; } to { opacity: 1; } }
 
 .film, .title, .after, .result, .cards, .choices, .opening, .voice, .news { position: absolute; inset: 0; }
@@ -168,18 +167,13 @@ button { font: inherit; color: inherit; border: 0; background: none; }
 @keyframes caption-in { from { opacity: 0; transform: translateY(10px); filter: blur(4px); } to { opacity: 1; transform: none; filter: none; } }
 
 .caption .ko {
-  font-family: var(--gothic); font-weight: 400; font-size: 28px; line-height: 1.5; letter-spacing: -1.68px;
+  font-family: var(--gothic); font-weight: 400; font-size: 36px; line-height: 1.5; letter-spacing: -2.16px;
   max-width: 1240px; word-break: keep-all;
 }
 .caption.center .ko { max-width: 1100px; }
 .caption .sent { display: block; text-wrap: pretty; }
 .caption.center .sent { text-wrap: balance; }
 .caption .ghost { opacity: 0; }
-.caption .en {
-  font-family: var(--gothic); font-weight: 200; font-size: 20px; line-height: 1.4; opacity: 0.8;
-  max-width: 1240px; transition: opacity 0.4s ease;
-}
-.caption.line .en { margin-top: -8px; }
 .caption .who {
   display: flex; gap: 8px; align-items: flex-start;
   font-family: var(--helvetica); font-weight: 300; font-size: 24px; letter-spacing: -0.48px;
@@ -299,12 +293,12 @@ button { font: inherit; color: inherit; border: 0; background: none; }
 /* ───────── 결과 화면 (2262) */
 .result { background: #000; }
 .result-photo-wrap {
-  position: absolute; overflow: hidden;
+  position: absolute; mix-blend-mode: luminosity; pointer-events: none;
   animation: photo-in 0.9s ease both;
 }
 .result-photo {
   width: 100%; height: 100%;
-  object-fit: cover; object-position: center top; mix-blend-mode: luminosity;
+  object-fit: cover; object-position: center 30%;
 }
 .result-tint { position: absolute; inset: -15px -31px; background: var(--tint); mix-blend-mode: color; }
 .result-fade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0) 0%, var(--base-t) 42%, var(--base) 88%, var(--base) 100%); }
@@ -550,8 +544,7 @@ li.admin-chapter:hover { background: #0e1014; }
   display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center;
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
 }
-.video-cue .ko { display: flex; flex-direction: column; font-family: var(--pretendard); font-weight: 500; font-size: 30px; line-height: 40px; }
-.video-cue .en { font-family: var(--pretendard); font-weight: 400; font-size: 19px; line-height: 1.3; color: rgba(200, 200, 200, 0.75); }
+.video-cue .ko { display: flex; flex-direction: column; font-family: var(--pretendard); font-weight: 500; font-size: 36px; line-height: 48px; }
 
 /* ───────── 클로이의 전화 (Figma 3233:1078·1089·1100, 162×190 프레임을 3.549배로 키움) */
 .call-card {
