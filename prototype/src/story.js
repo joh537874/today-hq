@@ -350,6 +350,9 @@ const raw = [
   { type: 'result', bgm: 'result', amb: null },
 ]
 
+// 관리자 뷰어의 문장 편집이 원문(이름을 채우기 전, 페이지를 나누기 전)을 읽을 때 쓴다.
+export const RAW = raw
+
 // chapter, img를 앞 비트에서 이어받는다. 각 장의 첫 내레이션과 1장 내레이션은 가운데 정렬한다.
 // ───────── 자막 나누기
 // 한 화면의 자막은 2줄을 넘지 않는다. 짧은 문장은 한 줄에 붙이고, 길면 다음 자막으로 넘긴다.
@@ -444,7 +447,7 @@ function buildChoiceMap(src) {
 // 자막은 이름 길이에 따라 줄바꿈과 페이지 수가 달라지므로, 이름을 채운 뒤에 페이지를 나눈다.
 function buildBeats(src) {
   let carry = { chapter: 0, img: 'p-fog', bgm: null, amb: null }
-  return src.flatMap((b) => {
+  return src.flatMap((b, ri) => {
     const chapterStart = b.chapter != null && b.chapter !== carry.chapter
     carry = {
       chapter: b.chapter ?? carry.chapter,
@@ -453,7 +456,8 @@ function buildBeats(src) {
       amb: 'amb' in b ? b.amb : carry.amb,
     }
     const center = false // 가운데 정렬은 오프닝 영상 자막과 검은 화면 자막만 쓴다
-    const beat = { ...b, ...carry, center, start: chapterStart }
+    // ri는 raw에서의 순번이다. 한 문장이 여러 화면으로 나뉘어도 같은 원문을 가리킨다.
+    const beat = { ...b, ...carry, center, start: chapterStart, ri }
     if (beat.type === 'narr' || beat.type === 'line') return paginate(beat)
     if (beat.prompt) {
       const w = KO_LINE.left

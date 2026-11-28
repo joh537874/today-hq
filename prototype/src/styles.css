@@ -524,6 +524,17 @@ button { font: inherit; color: inherit; border: 0; background: none; }
 .admin-cfg button.on { background: #d5f6ff; color: #0e1014; }
 .admin-cfg button.neg { background: #3a2a2e; color: #f1b9c3; }
 .admin-cfg em { margin-left: auto; color: #5d6570; font-style: normal; font-size: 12px; }
+.admin-edit { padding: 10px 16px 12px; border-bottom: 1px solid #1d2026; display: grid; gap: 8px; max-height: 46vh; overflow-y: auto; }
+.admin-edit label { display: grid; gap: 3px; }
+.admin-edit label span { color: #7d8590; font-size: 11.5px; }
+.admin-edit textarea { width: 100%; box-sizing: border-box; resize: vertical; padding: 6px 8px; border: 1px solid #262a32; border-radius: 5px; background: #14171c; color: #dfe3e8; font: inherit; line-height: 1.5; cursor: text !important; }
+.admin-edit textarea:focus { outline: none; border-color: #d5f6ff; }
+.admin-edit label.dirty textarea { border-color: #e0b354; }
+.admin-edit-foot { display: flex; align-items: center; gap: 4px; }
+.admin-edit-foot em { margin-right: auto; color: #5d6570; font-style: normal; font-size: 12px; }
+.admin-edit-foot button { padding: 3px 10px; border-radius: 5px; background: #1a1d23; color: #9aa2ad; font-size: 12px; }
+.admin-edit-foot button.on { background: #d5f6ff; color: #0e1014; }
+.admin-edit-foot button:disabled { opacity: 0.4; cursor: default !important; }
 .admin-list { list-style: none; margin: 0; padding: 0 0 40px; overflow-y: auto; flex: 1; }
 .admin-list li { display: grid; grid-template-columns: 34px 1fr; column-gap: 6px; padding: 7px 16px 7px 10px; border-left: 3px solid transparent; cursor: pointer !important; }
 .admin-list li * { cursor: pointer !important; }
